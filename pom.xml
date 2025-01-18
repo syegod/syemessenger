@@ -36,7 +36,6 @@
     <liquibase.version>4.28.0</liquibase.version>
     <jackson.version>2.16.1</jackson.version>
     <hikaricp.version>5.1.0</hikaricp.version>
-    <spring-boot-starter-websocket.version>3.4.1</spring-boot-starter-websocket.version>
 
     <!--BOM dependency versions for test-->
     <junit.version>5.11.3</junit.version>
@@ -46,12 +45,7 @@
 
   <dependencyManagement>
     <dependencies>
-      <!-- Spring -->
-      <dependency>
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-websocket</artifactId>
-        <version>${spring-boot-starter-websocket.version}</version>
-      </dependency>
+      <!-- Jetty -->
 
       <!-- Logging -->
       <dependency>
@@ -137,11 +131,7 @@
   </dependencyManagement>
 
   <dependencies>
-    <!-- Spring -->
-    <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-websocket</artifactId>
-    </dependency>
+    <!-- Jetty -->
 
     <!-- Logs -->
     <dependency>
