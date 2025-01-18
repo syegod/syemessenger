@@ -36,6 +36,7 @@
     <liquibase.version>4.28.0</liquibase.version>
     <jackson.version>2.16.1</jackson.version>
     <hikaricp.version>5.1.0</hikaricp.version>
+    <jetty.version>12.0.16</jetty.version>
 
     <!--BOM dependency versions for test-->
     <junit.version>5.11.3</junit.version>
@@ -46,6 +47,20 @@
   <dependencyManagement>
     <dependencies>
       <!-- Jetty -->
+      <dependency>
+        <groupId>org.eclipse.jetty</groupId>
+        <artifactId>jetty-bom</artifactId>
+        <version>${jetty.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.eclipse.jetty.ee10</groupId>
+        <artifactId>jetty-ee10-bom</artifactId>
+        <version>${jetty.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
 
       <!-- Logging -->
       <dependency>
@@ -132,6 +147,22 @@
 
   <dependencies>
     <!-- Jetty -->
+    <dependency>
+      <groupId>org.eclipse.jetty</groupId>
+      <artifactId>jetty-server</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse.jetty.ee10.websocket</groupId>
+      <artifactId>jetty-ee10-websocket-jetty-server</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse.jetty.ee10</groupId>
+      <artifactId>jetty-ee10-servlet</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse.jetty</groupId>
+      <artifactId>jetty-slf4j-impl</artifactId>
+    </dependency>
 
     <!-- Logs -->
     <dependency>
