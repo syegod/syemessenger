@@ -14,14 +14,14 @@ import org.junit.jupiter.api.Test;
 
 public class SampleTest {
 
-
   private static Server server;
 
   @BeforeAll
   static void beforeAll() throws Exception {
     server = new Server(8080);
 
-    ServletContextHandler contextHandler = new ServletContextHandler(ServletContextHandler.SESSIONS);
+    ServletContextHandler contextHandler =
+        new ServletContextHandler(ServletContextHandler.SESSIONS);
     contextHandler.setContextPath("/");
     server.setHandler(contextHandler);
 
@@ -44,7 +44,8 @@ public class SampleTest {
     HttpClient client = HttpClient.newHttpClient();
     WebSocket.Builder builder = client.newWebSocketBuilder();
 
-    WebSocket webSocket = builder.buildAsync(URI.create("ws://localhost:8080/echo"), new WebSocketListener()).join();
+    WebSocket webSocket =
+        builder.buildAsync(URI.create("ws://localhost:8080/echo"), new WebSocketListener()).join();
 
     webSocket.sendText("Hello, WebSocket!", true);
 
@@ -55,7 +56,9 @@ public class SampleTest {
     }
 
     // Close the WebSocket
-    webSocket.sendClose(WebSocket.NORMAL_CLOSURE, "Bye").thenRun(() -> System.out.println("WebSocket closed"));
+    webSocket
+        .sendClose(WebSocket.NORMAL_CLOSURE, "Bye")
+        .thenRun(() -> System.out.println("WebSocket closed"));
   }
 
   static class WebSocketListener implements WebSocket.Listener {

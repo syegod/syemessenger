@@ -164,7 +164,7 @@
       <artifactId>jetty-slf4j-impl</artifactId>
     </dependency>
 
-    <!-- Logs -->
+    <!-- Logging -->
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>

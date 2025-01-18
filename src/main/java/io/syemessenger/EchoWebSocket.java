@@ -12,30 +12,32 @@ import org.slf4j.LoggerFactory;
 
 @WebSocket
 public class EchoWebSocket {
-  private static final Logger LOG = LoggerFactory.getLogger(EchoWebSocket.class);
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(EchoWebSocket.class);
+
   private Session session;
 
   @OnWebSocketClose
   public void onWebSocketClose(int statusCode, String reason) {
     this.session = null;
-    LOG.info("WebSocket Close: {} - {}", statusCode, reason);
+    LOGGER.info("WebSocket Close: {} - {}", statusCode, reason);
   }
 
   @OnWebSocketOpen
   public void onWebSocketOpen(Session session) {
     this.session = session;
-    LOG.info("WebSocket Open: {}", session);
+    LOGGER.info("WebSocket Open: {}", session);
     this.session.sendText("You are now connected to " + this.getClass().getName(), Callback.NOOP);
   }
 
   @OnWebSocketError
   public void onWebSocketError(Throwable cause) {
-    LOG.warn("WebSocket Error", cause);
+    LOGGER.warn("WebSocket Error", cause);
   }
 
   @OnWebSocketMessage
   public void onWebSocketText(String message) {
-    LOG.info("Echoing back text message [{}]", message);
+    LOGGER.info("Echoing back text message [{}]", message);
     this.session.sendText(message, Callback.NOOP);
   }
 }
