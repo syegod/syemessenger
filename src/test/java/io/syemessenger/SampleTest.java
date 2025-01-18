@@ -1,5 +1,3 @@
 package io.syemessenger;
 
-public class SampleTest {
-
-}
+public class SampleTest {}
