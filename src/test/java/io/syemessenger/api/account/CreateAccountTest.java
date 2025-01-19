@@ -1,10 +1,8 @@
-package io.syemessenger;
+package io.syemessenger.api.account;
 
+import io.syemessenger.WebSocketServer;
 import io.syemessenger.api.ServiceException;
-import io.syemessenger.api.account.AccountSdk;
-import io.syemessenger.api.account.CreateAccountRequest;
 import java.util.stream.Stream;
-import org.eclipse.jetty.websocket.core.util.InvokerUtils.Arg;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
