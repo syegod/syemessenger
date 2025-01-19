@@ -14,28 +14,17 @@ import org.junit.jupiter.api.Test;
 
 public class SampleTest {
 
-  private static Server server;
+  private static WebSocketServer server;
 
   @BeforeAll
-  static void beforeAll() throws Exception {
-    server = new Server(8080);
-
-    ServletContextHandler contextHandler =
-        new ServletContextHandler(ServletContextHandler.SESSIONS);
-    contextHandler.setContextPath("/");
-    server.setHandler(contextHandler);
-
-    // Add websocket servlet
-    JettyWebSocketServletContainerInitializer.configure(contextHandler, null);
-    contextHandler.addServlet(new ServletHolder("echo", new EchoWebSocketServlet()), "/echo");
-
-    server.start();
+  static void beforeAll() {
+    server = WebSocketServer.start(8080);
   }
 
   @AfterAll
   static void afterAll() throws Exception {
     if (server != null) {
-      server.stop();
+      server.close();
     }
   }
 
