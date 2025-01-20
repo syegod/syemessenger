@@ -2,9 +2,9 @@ package io.syemessenger.api.account;
 
 import org.testcontainers.shaded.com.fasterxml.jackson.core.JsonProcessingException;
 
-public interface AccountSdk {
+public interface AccountSdk extends AutoCloseable {
 
-  Long createAccount(CreateAccountRequest request) throws JsonProcessingException;
+  Long createAccount(CreateAccountRequest request);
 
   AccountInfo updateAccount(UpdateAccountRequest request);
 
@@ -13,5 +13,8 @@ public interface AccountSdk {
   AccountInfo getSessionAccount();
 
   PublicAccountInfo showAccount(Long id);
+
+  @Override
+  public void close();
 
 }

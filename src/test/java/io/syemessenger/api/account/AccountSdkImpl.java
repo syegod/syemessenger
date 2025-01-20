@@ -11,11 +11,11 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.TimeUnit;
 import org.testcontainers.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 
-public class AccountSdkImpl implements AccountSdk, AutoCloseable {
+public class AccountSdkImpl implements AccountSdk {
 
   private WebSocket ws;
   private final ObjectMapper objectMapper = new ObjectMapper();
-  private final BlockingQueue<ServiceMessage> messageQueue = new ArrayBlockingQueue<>(64 * 1024);
+  private final BlockingQueue<ServiceMessage> messageQueue = new ArrayBlockingQueue<>(64);
 
   public AccountSdkImpl() {
     HttpClient client = HttpClient.newHttpClient();
@@ -56,12 +56,24 @@ public class AccountSdkImpl implements AccountSdk, AutoCloseable {
 
   @Override
   public PublicAccountInfo showAccount(Long id) {
-    return null;
+    try {
+      final var message = new ServiceMessage();
+      message.qualifier("showAccount");
+      message.data(id);
+      ws.sendText(objectMapper.writeValueAsString(message), true);
+      final var response = messageQueue.poll(3, TimeUnit.SECONDS);
+      if (response == null) {
+        throw new RuntimeException("Poll failed");
+      }
+      return (PublicAccountInfo) response.data();
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
   }
 
   @Override
   public void close() {
-    ws.sendClose(WebSocket.NORMAL_CLOSURE, "Bye")
+    ws.sendClose(WebSocket.NORMAL_CLOSURE, "Exit")
         .thenRun(() -> System.out.println("WebSocket closed"));
   }
 
