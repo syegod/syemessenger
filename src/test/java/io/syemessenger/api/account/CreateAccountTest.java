@@ -52,9 +52,11 @@ public class CreateAccountTest {
     try (AccountSdk sdk = new AccountSdkImpl()) {
       sdk.createAccount(request);
       Assertions.fail("Expected exception");
-    } catch (ServiceException ex) {
-      Assertions.assertEquals(errorCode, ex.errorCode());
-      Assertions.assertEquals(errorMessage, ex.getMessage());
+    } catch (Exception ex) {
+      Assertions.assertInstanceOf(ServiceException.class, ex);
+      final var serviceException = (ServiceException) ex;
+      Assertions.assertEquals(errorCode, serviceException.errorCode());
+      Assertions.assertEquals(errorMessage, serviceException.getMessage());
     }
   }
 

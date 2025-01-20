@@ -12,7 +12,9 @@
   </Appenders>
 
   <Loggers>
-    <Root level="${env:logLevel:-INFO}">
+    <Logger name="org.eclipse.jetty" level="WARN"/>
+
+    <Root level="${env:logLevel:-DEBUG}">
       <AppenderRef ref="${env:logAppender:-STDOUT}"/>
     </Root>
   </Loggers>

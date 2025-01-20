@@ -4,7 +4,6 @@ import org.eclipse.jetty.ee10.servlet.ServletContextHandler;
 import org.eclipse.jetty.ee10.servlet.ServletHolder;
 import org.eclipse.jetty.ee10.websocket.server.config.JettyWebSocketServletContainerInitializer;
 import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.websocket.api.annotations.WebSocket;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,7 +27,7 @@ public class WebSocketServer implements AutoCloseable {
 
       // Add websocket servlet
       JettyWebSocketServletContainerInitializer.configure(contextHandler, null);
-      contextHandler.addServlet(new ServletHolder("echo", new EchoWebSocketServlet()), "/echo");
+      contextHandler.addServlet(new ServletHolder("echo", new WebSocketServlet()), "/");
 
       server.start();
     } catch (Exception ex) {
