@@ -61,7 +61,9 @@ public class AccountSdkImpl implements AccountSdk {
   }
 
   @Override
-  public void login(LoginAccountRequest request) {}
+  public Long login(LoginAccountRequest request) {
+    return null;
+  }
 
   @Override
   public AccountInfo getSessionAccount() {

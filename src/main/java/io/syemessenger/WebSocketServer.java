@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class WebSocketServer implements AutoCloseable {
+
   private static final Logger LOGGER = LoggerFactory.getLogger(WebSocketServer.class);
 
   private final Server server;
@@ -27,7 +28,7 @@ public class WebSocketServer implements AutoCloseable {
 
       // Add websocket servlet
       JettyWebSocketServletContainerInitializer.configure(contextHandler, null);
-      contextHandler.addServlet(new ServletHolder("echo", new WebSocketServlet()), "/");
+      contextHandler.addServlet(new ServletHolder("ws", new WebSocketServlet()), "/");
 
       server.start();
     } catch (Exception ex) {
