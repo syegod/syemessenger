@@ -1,7 +1,9 @@
 package io.syemessenger.api.account;
 
 import io.syemessenger.SenderContext;
+import jakarta.inject.Named;
 
+@Named
 public class AccountService {
 
   public Long createAccount(SenderContext senderContext, CreateAccountRequest request) {

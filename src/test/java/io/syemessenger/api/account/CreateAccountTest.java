@@ -1,5 +1,7 @@
 package io.syemessenger.api.account;
 
+import io.syemessenger.ServiceBootstrap;
+import io.syemessenger.ServiceConfig;
 import io.syemessenger.WebSocketServer;
 import io.syemessenger.api.ServiceException;
 import java.util.stream.Stream;
@@ -13,17 +15,18 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 public class CreateAccountTest {
 
-  private static WebSocketServer server;
+  private static ServiceBootstrap serviceBootstrap;
 
   @BeforeAll
   static void beforeAll() {
-    server = WebSocketServer.start(8080);
+    serviceBootstrap = new ServiceBootstrap(new ServiceConfig());
+    serviceBootstrap.start();
   }
 
   @AfterAll
   static void afterAll() {
-    if (server != null) {
-      server.close();
+    if (serviceBootstrap != null) {
+      serviceBootstrap.stop();
     }
   }
 

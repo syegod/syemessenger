@@ -2,9 +2,13 @@ package io.syemessenger;
 
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import io.syemessenger.api.account.AccountService;
+import io.syemessenger.api.account.CreateAccountRequest;
+import io.syemessenger.api.account.UpdateAccountRequest;
+import jakarta.inject.Named;
 import org.eclipse.jetty.ee10.websocket.server.JettyWebSocketServlet;
 import org.eclipse.jetty.ee10.websocket.server.JettyWebSocketServletFactory;
 
+@Named
 public class WebSocketServlet extends JettyWebSocketServlet {
 
   private final JsonMapper jsonMapper;
@@ -12,10 +16,14 @@ public class WebSocketServlet extends JettyWebSocketServlet {
   private final AccountService accountService;
 
   public WebSocketServlet(
-      JsonMapper jsonMapper, MessageCodec messageCodec, AccountService accountService) {
+      JsonMapper jsonMapper, AccountService accountService) {
     this.jsonMapper = jsonMapper;
-    this.messageCodec = messageCodec;
     this.accountService = accountService;
+    this.messageCodec = new MessageCodec(jsonMapper, map -> {
+      map.put("createAccount", CreateAccountRequest.class);
+      map.put("updateAccount", UpdateAccountRequest.class);
+      map.put("showAccount", Long.class);
+    });
   }
 
   @Override
