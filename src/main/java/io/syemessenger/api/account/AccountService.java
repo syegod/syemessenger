@@ -1,27 +1,27 @@
 package io.syemessenger.api.account;
 
-import io.syemessenger.api.AccountSession;
+import io.syemessenger.SenderContext;
 
 public class AccountService {
 
-  public Long createAccount(CreateAccountRequest request) {
+  public Long createAccount(SenderContext senderContext, CreateAccountRequest request) {
     return null;
   }
 
-  public AccountInfo updateAccount(AccountSession session, UpdateAccountRequest request) {
+  public AccountInfo updateAccount(SenderContext senderContext, UpdateAccountRequest request) {
     return null;
   }
 
-  public Long login(AccountSession session, LoginAccountRequest request) {
+  public Long login(SenderContext senderContext, LoginAccountRequest request) {
 
     return null;
   }
 
-  public AccountInfo getSessionAccount(AccountSession session) {
+  public AccountInfo getSessionAccount(SenderContext senderContext) {
     return null;
   }
 
-  public PublicAccountInfo showAccount(AccountSession session, Long id) {
+  public PublicAccountInfo showAccount(SenderContext senderContext, Long id) {
     return null;
   }
 }

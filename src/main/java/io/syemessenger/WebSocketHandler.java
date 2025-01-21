@@ -23,23 +23,26 @@ public class WebSocketHandler {
 
   private final JsonMapper jsonMapper;
   private final AccountService accountService;
+  private final MessageCodec messageCodec;
 
-  private AccountSession accountSession;
+  private SenderContext senderContext;
 
-  public WebSocketHandler(JsonMapper jsonMapper, AccountService accountService) {
+  public WebSocketHandler(
+      JsonMapper jsonMapper, AccountService accountService, MessageCodec messageCodec) {
     this.jsonMapper = jsonMapper;
     this.accountService = accountService;
+    this.messageCodec = messageCodec;
   }
 
   @OnWebSocketClose
   public void onWebSocketClose(int statusCode, String reason) {
-    this.accountSession = null;
+    senderContext = null;
     LOGGER.info("WebSocket Close: {} - {}", statusCode, reason);
   }
 
   @OnWebSocketOpen
   public void onWebSocketOpen(Session session) {
-    accountSession = new AccountSession(session, null);
+    senderContext = new SenderContext(session, jsonMapper);
     LOGGER.info("WebSocket Open: {}", session);
   }
 
@@ -51,40 +54,26 @@ public class WebSocketHandler {
   @OnWebSocketMessage
   public void onWebSocketText(String message) {
     LOGGER.info("Received message [{}]", message);
-    //    this.session.sendText(message, Callback.NOOP);
     try {
       final var serviceMessage = jsonMapper.readValue(message, ServiceMessage.class);
       final var qualifier = serviceMessage.qualifier();
-      final var data = serviceMessage.data();
 
       if (qualifier == null) {
         throw new RuntimeException("Wrong message: qualifier is missing");
       }
 
-      if (qualifier.equals("createAccount")) {
-        final var createAccountRequest = jsonMapper.convertValue(data, CreateAccountRequest.class);
-        final var accountId = accountService.createAccount(createAccountRequest);
+      final var request = messageCodec.decode(serviceMessage);
 
-        accountSession.session().sendText(
-            jsonMapper.writeValueAsString(
-                new ServiceMessage().qualifier(qualifier).data(accountId)),
-            Callback.NOOP);
-      } else if (qualifier.equals("updateAccount")) {
-        final var updateAccountRequest = jsonMapper.convertValue(data, UpdateAccountRequest.class);
-        final var accountInfo = accountService.updateAccount(accountSession, updateAccountRequest);
-
-        accountSession.session().sendText(
-            jsonMapper.writeValueAsString(
-                new ServiceMessage().qualifier(qualifier).data(accountInfo)),
-            Callback.NOOP);
-      } else if (qualifier.equals("showAccount")) {
-        final var accountId = jsonMapper.convertValue(data, Long.class);
-        final var publicAccountInfo = accountService.showAccount(accountSession, accountId);
-
-        accountSession.session().sendText(
-            jsonMapper.writeValueAsString(
-                new ServiceMessage().qualifier(qualifier).data(publicAccountInfo)),
-            Callback.NOOP);
+      switch (qualifier) {
+        case "createAccount":
+          accountService.createAccount(senderContext, (CreateAccountRequest) request);
+          break;
+        case "updateAccount":
+          accountService.updateAccount(senderContext, (UpdateAccountRequest) request);
+          break;
+        case "showAccount":
+          accountService.showAccount(senderContext, (Long) request);
+          break;
       }
     } catch (Exception e) {
       LOGGER.error("[onWebSocketText] Failed to parse message [{}]", message, e);
