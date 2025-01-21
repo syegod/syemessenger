@@ -1,12 +1,10 @@
 package io.syemessenger;
 
 import com.fasterxml.jackson.databind.json.JsonMapper;
-import io.syemessenger.api.AccountSession;
 import io.syemessenger.api.ServiceMessage;
 import io.syemessenger.api.account.AccountService;
 import io.syemessenger.api.account.CreateAccountRequest;
 import io.syemessenger.api.account.UpdateAccountRequest;
-import org.eclipse.jetty.websocket.api.Callback;
 import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.annotations.OnWebSocketClose;
 import org.eclipse.jetty.websocket.api.annotations.OnWebSocketError;
@@ -28,7 +26,7 @@ public class WebSocketHandler {
   private SenderContext senderContext;
 
   public WebSocketHandler(
-      JsonMapper jsonMapper, AccountService accountService, MessageCodec messageCodec) {
+      JsonMapper jsonMapper, MessageCodec messageCodec, AccountService accountService) {
     this.jsonMapper = jsonMapper;
     this.accountService = accountService;
     this.messageCodec = messageCodec;
