@@ -2,6 +2,7 @@ package io.syemessenger;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.json.JsonMapper;
+import io.syemessenger.api.ErrorData;
 import io.syemessenger.api.ServiceMessage;
 import org.eclipse.jetty.websocket.api.Callback;
 import org.eclipse.jetty.websocket.api.Session;
@@ -22,5 +23,9 @@ public class SenderContext {
     } catch (JsonProcessingException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  public void sendError(String qualifier, int errorCode, String errorMessage) {
+    send(new ServiceMessage().qualifier(qualifier).data(new ErrorData(errorCode, errorMessage)));
   }
 }
