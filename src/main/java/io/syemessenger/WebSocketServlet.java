@@ -3,6 +3,7 @@ package io.syemessenger;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import io.syemessenger.api.account.AccountService;
 import io.syemessenger.api.account.CreateAccountRequest;
+import io.syemessenger.api.account.LoginAccountRequest;
 import io.syemessenger.api.account.UpdateAccountRequest;
 import jakarta.inject.Named;
 import org.eclipse.jetty.ee10.websocket.server.JettyWebSocketServlet;
@@ -23,6 +24,8 @@ public class WebSocketServlet extends JettyWebSocketServlet {
       map.put("createAccount", CreateAccountRequest.class);
       map.put("updateAccount", UpdateAccountRequest.class);
       map.put("showAccount", Long.class);
+      map.put("login", LoginAccountRequest.class);
+      map.put("getSessionAccount", Void.class);
     });
   }
 

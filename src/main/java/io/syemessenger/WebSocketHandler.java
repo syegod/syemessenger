@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.json.JsonMapper;
 import io.syemessenger.api.ServiceMessage;
 import io.syemessenger.api.account.AccountService;
 import io.syemessenger.api.account.CreateAccountRequest;
+import io.syemessenger.api.account.LoginAccountRequest;
 import io.syemessenger.api.account.UpdateAccountRequest;
 import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.annotations.OnWebSocketClose;
@@ -71,6 +72,12 @@ public class WebSocketHandler {
           break;
         case "showAccount":
           accountService.showAccount(senderContext, (Long) request);
+          break;
+        case "login":
+          accountService.login(senderContext, (LoginAccountRequest) request);
+          break;
+        case "getSessionAccount":
+          accountService.getSessionAccount(senderContext);
           break;
       }
     } catch (Exception e) {

@@ -33,7 +33,7 @@ public class CreateAccountTest {
   @Test
   void testCreateAccount() {
     try (AccountSdk sdk = new AccountSdkImpl()) {
-      String username = "Test";
+      String username = "Test123";
       String email = "example@gmail.com";
       String password = "test123";
 
@@ -68,20 +68,20 @@ public class CreateAccountTest {
         Arguments.of(
             new CreateAccountRequest().username("").email("").password(""),
             400,
-            "Invalid credentials"),
-        Arguments.of(new CreateAccountRequest(), 400, "Invalid credentials"),
+            "Missing or invalid: username"),
+        Arguments.of(new CreateAccountRequest(), 400, "Missing or invalid: username"),
         Arguments.of(
             new CreateAccountRequest().username("test").email("test@gmail.com"),
             400,
-            "Invalid credentials"),
+            "Missing or invalid: password"),
         Arguments.of(
             new CreateAccountRequest().email("test@gmail.com").password("test123"),
             400,
-            "Invalid credentials"),
+            "Missing or invalid: username"),
         Arguments.of(
             new CreateAccountRequest().username("test321321").password("test123"),
             400,
-            "Invalid credentials"),
+            "Missing or invalid: email"),
 
         // Username too short
         Arguments.of(
@@ -90,7 +90,7 @@ public class CreateAccountTest {
                 .email("testuser@gmail.com")
                 .password("password123"),
             400,
-            "Username must be between 6 and 30 characters"),
+            "Missing or invalid: username"),
 
         // Username too long
         Arguments.of(
@@ -99,13 +99,13 @@ public class CreateAccountTest {
                 .email("testuser@gmail.com")
                 .password("password123"),
             400,
-            "Username must be between 6 and 30 characters"),
+            "Missing or invalid: username"),
 
         // Email too short
         Arguments.of(
             new CreateAccountRequest().username("validuser").email("t@e.c").password("password123"),
             400,
-            "Email must be between 10 and 50 characters"),
+            "Missing or invalid: email"),
 
         // Email too long
         Arguments.of(
@@ -114,7 +114,7 @@ public class CreateAccountTest {
                 .email("averylongemailaddresswhichexceedsthefiftycharacterslimit@example.com")
                 .password("password123"),
             400,
-            "Email must be between 10 and 50 characters"),
+            "Missing or invalid: email"),
 
         // Password too short
         Arguments.of(
@@ -123,7 +123,7 @@ public class CreateAccountTest {
                 .email("testuser@gmail.com")
                 .password("pass"),
             400,
-            "Password must be between 6 and 25 characters"),
+            "Missing or invalid: password"),
 
         // Password too long
         Arguments.of(
@@ -132,61 +132,62 @@ public class CreateAccountTest {
                 .email("testuser@gmail.com")
                 .password("averylongpasswordexceedingthetwentyfivecharacterslimit"),
             400,
-            "Password must be between 6 and 25 characters"),
+            "Missing or invalid: password")
 
-        // Boundary test: Username at minimum length
-        Arguments.of(
-            new CreateAccountRequest()
-                .username("usrnam")
-                .email("testuser@gmail.com")
-                .password("password123"),
-            400,
-            "Invalid credentials"), // Assuming other invalid criteria
-
-        // Boundary test: Username at maximum length
-        Arguments.of(
-            new CreateAccountRequest()
-                .username("thirtycharusernameexactlyyayy")
-                .email("testuser@gmail.com")
-                .password("password123"),
-            400,
-            "Invalid credentials"), // Assuming other invalid criteria
-
-        // Boundary test: Email at minimum length
-        Arguments.of(
-            new CreateAccountRequest()
-                .username("validuser")
-                .email("test@domain.com")
-                .password("password123"),
-            400,
-            "Invalid credentials"), // Assuming other invalid criteria
-
-        // Boundary test: Email at maximum length
-        Arguments.of(
-            new CreateAccountRequest()
-                .username("validuser")
-                .email("averylongemailaddresswithmaximum50charactrs@ex.com")
-                .password("password123"),
-            400,
-            "Invalid credentials"), // Assuming other invalid criteria
-
-        // Boundary test: Password at minimum length
-        Arguments.of(
-            new CreateAccountRequest()
-                .username("validuser")
-                .email("testuser@gmail.com")
-                .password("passw6"),
-            400,
-            "Invalid credentials"), // Assuming other invalid criteria
-
-        // Boundary test: Password at maximum length
-        Arguments.of(
-            new CreateAccountRequest()
-                .username("validuser")
-                .email("testuser@gmail.com")
-                .password("thisis25characterslongxx"),
-            400,
-            "Invalid credentials") // Assuming other invalid criteria
+//        TODO: Move to successful scenarios
+//        // Boundary test: Username at minimum length
+//        Arguments.of(
+//            new CreateAccountRequest()
+//                .username("usrnam")
+//                .email("testuser@gmail.com")
+//                .password("password123"),
+//            400,
+//            "Invalid credentials"), // Assuming other invalid criteria
+//
+//        // Boundary test: Username at maximum length
+//        Arguments.of(
+//            new CreateAccountRequest()
+//                .username("thirtycharusernameexactlyyayy")
+//                .email("testuser@gmail.com")
+//                .password("password123"),
+//            400,
+//            "Invalid credentials"), // Assuming other invalid criteria
+//
+//        // Boundary test: Email at minimum length
+//        Arguments.of(
+//            new CreateAccountRequest()
+//                .username("validuser")
+//                .email("test@domain.com")
+//                .password("password123"),
+//            400,
+//            "Invalid credentials"), // Assuming other invalid criteria
+//
+//        // Boundary test: Email at maximum length
+//        Arguments.of(
+//            new CreateAccountRequest()
+//                .username("validuser")
+//                .email("averylongemailaddresswithmaximum50charactrs@ex.com")
+//                .password("password123"),
+//            400,
+//            "Invalid credentials"), // Assuming other invalid criteria
+//
+//        // Boundary test: Password at minimum length
+//        Arguments.of(
+//            new CreateAccountRequest()
+//                .username("validuser")
+//                .email("testuser@gmail.com")
+//                .password("passw6"),
+//            400,
+//            "Invalid credentials"), // Assuming other invalid criteria
+//
+//        // Boundary test: Password at maximum length
+//        Arguments.of(
+//            new CreateAccountRequest()
+//                .username("validuser")
+//                .email("testuser@gmail.com")
+//                .password("thisis25characterslongxx"),
+//            400,
+//            "Invalid credentials") // Assuming other invalid criteria
         );
   }
 }
