@@ -25,7 +25,7 @@ public class SenderContext {
     }
   }
 
-  public void sendError(String qualifier, int errorCode, String errorMessage) {
-    send(new ServiceMessage().qualifier(qualifier).data(new ErrorData(errorCode, errorMessage)));
+  public void sendError(int errorCode, String errorMessage) {
+    send(new ServiceMessage().qualifier("error").data(new ErrorData(errorCode, errorMessage)));
   }
 }

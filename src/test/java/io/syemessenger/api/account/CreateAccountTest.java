@@ -2,7 +2,7 @@ package io.syemessenger.api.account;
 
 import io.syemessenger.ServiceBootstrap;
 import io.syemessenger.ServiceConfig;
-import io.syemessenger.WebSocketServer;
+import io.syemessenger.api.ClientCodec;
 import io.syemessenger.api.ServiceException;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterAll;
@@ -15,6 +15,8 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 public class CreateAccountTest {
 
+
+  private static final ClientCodec clientCodec = ClientCodec.getInstance();
   private static ServiceBootstrap serviceBootstrap;
 
   @BeforeAll
@@ -32,7 +34,7 @@ public class CreateAccountTest {
 
   @Test
   void testCreateAccount() {
-    try (AccountSdk sdk = new AccountSdkImpl()) {
+    try (AccountSdk sdk = new AccountSdkImpl(clientCodec)) {
       String username = "Test123";
       String email = "example@gmail.com";
       String password = "test123";
@@ -52,11 +54,11 @@ public class CreateAccountTest {
   @MethodSource(value = "failedAccountMethodSource")
   @ParameterizedTest
   void testCreateAccountFailed(CreateAccountRequest request, int errorCode, String errorMessage) {
-    try (AccountSdk sdk = new AccountSdkImpl()) {
+    try (AccountSdk sdk = new AccountSdkImpl(clientCodec)) {
       sdk.createAccount(request);
       Assertions.fail("Expected exception");
     } catch (Exception ex) {
-      Assertions.assertInstanceOf(ServiceException.class, ex);
+      Assertions.assertInstanceOf(ServiceException.class, ex, "Exception: " + ex);
       final var serviceException = (ServiceException) ex;
       Assertions.assertEquals(errorCode, serviceException.errorCode());
       Assertions.assertEquals(errorMessage, serviceException.getMessage());
@@ -71,7 +73,7 @@ public class CreateAccountTest {
             "Missing or invalid: username"),
         Arguments.of(new CreateAccountRequest(), 400, "Missing or invalid: username"),
         Arguments.of(
-            new CreateAccountRequest().username("test").email("test@gmail.com"),
+            new CreateAccountRequest().username("test123").email("test@gmail.com"),
             400,
             "Missing or invalid: password"),
         Arguments.of(

@@ -7,6 +7,11 @@ public class ErrorData {
   private final int errorCode;
   private final String errorMessage;
 
+  public ErrorData() {
+    errorCode = -1;
+    errorMessage = null;
+  }
+
   public ErrorData(int errorCode, String errorMessage) {
     this.errorCode = errorCode;
     this.errorMessage = errorMessage;

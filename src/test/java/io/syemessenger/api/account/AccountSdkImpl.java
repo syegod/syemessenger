@@ -1,7 +1,11 @@
 package io.syemessenger.api.account;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import io.syemessenger.JsonMappers;
+import io.syemessenger.MessageCodec;
+import io.syemessenger.api.ErrorData;
+import io.syemessenger.api.ServiceException;
 import io.syemessenger.api.ServiceMessage;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -19,12 +23,15 @@ public class AccountSdkImpl implements AccountSdk {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(AccountSdkImpl.class);
 
-  private WebSocket ws;
+  private final MessageCodec messageCodec;
+
+  private final WebSocket ws;
   private final JsonMapper objectMapper = JsonMappers.jsonMapper();
   private final BlockingQueue<ServiceMessage> messageQueue = new ArrayBlockingQueue<>(64);
   private final CountDownLatch latch = new CountDownLatch(1);
 
-  public AccountSdkImpl() {
+  public AccountSdkImpl(MessageCodec messageCodec) {
+    this.messageCodec = messageCodec;
     HttpClient client = HttpClient.newHttpClient();
     WebSocket.Builder builder = client.newWebSocketBuilder();
 
@@ -40,19 +47,9 @@ public class AccountSdkImpl implements AccountSdk {
 
   @Override
   public Long createAccount(CreateAccountRequest request) {
-    try {
-      final var message = new ServiceMessage();
-      message.qualifier("createAccount");
-      message.data(request);
-      ws.sendText(objectMapper.writeValueAsString(message), true);
-      final var response = messageQueue.poll(3, TimeUnit.SECONDS);
-      if (response == null) {
-        throw new RuntimeException("Poll failed");
-      }
-      return (Long) response.data();
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
+    final var message = new ServiceMessage().qualifier("createAccount").data(request);
+    sendText(message);
+    return (Long) pollResponse();
   }
 
   @Override
@@ -72,25 +69,43 @@ public class AccountSdkImpl implements AccountSdk {
 
   @Override
   public PublicAccountInfo showAccount(Long id) {
-    try {
-      final var message = new ServiceMessage();
-      message.qualifier("showAccount");
-      message.data(id);
-      ws.sendText(objectMapper.writeValueAsString(message), true);
-      final var response = messageQueue.poll(3, TimeUnit.SECONDS);
-      if (response == null) {
-        throw new RuntimeException("Poll failed");
-      }
-      return (PublicAccountInfo) response.data();
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
+    final var message = new ServiceMessage().qualifier("showAccount").data(id);
+    sendText(message);
+    return (PublicAccountInfo) pollResponse();
   }
 
   @Override
   public void close() {
     ws.sendClose(WebSocket.NORMAL_CLOSURE, "Exit")
         .thenRun(() -> System.out.println("WebSocket closed"));
+  }
+
+  private Object pollResponse() {
+    final ServiceMessage response;
+    try {
+      response = messageQueue.poll(3, TimeUnit.SECONDS);
+    } catch (InterruptedException e) {
+      throw new RuntimeException(e);
+    }
+    if (response == null) {
+      throw new RuntimeException("Poll failed");
+    }
+
+    final var data = messageCodec.decode(response);
+
+    if (data instanceof ErrorData errorData) {
+      throw new ServiceException(errorData.errorCode(), errorData.errorMessage());
+    }
+
+    return data;
+  }
+
+  private void sendText(ServiceMessage message) {
+    try {
+      ws.sendText(objectMapper.writeValueAsString(message), true);
+    } catch (JsonProcessingException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   private class WebSocketListener implements WebSocket.Listener {
