@@ -1,5 +1,10 @@
 package io.syemessenger.api.account;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import io.syemessenger.ServiceBootstrap;
 import io.syemessenger.ServiceConfig;
 import io.syemessenger.api.ClientCodec;
@@ -14,7 +19,6 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 public class CreateAccountTest {
-
 
   private static final ClientCodec clientCodec = ClientCodec.getInstance();
   private static ServiceBootstrap serviceBootstrap;
@@ -39,15 +43,14 @@ public class CreateAccountTest {
       String email = "example@gmail.com";
       String password = "test123";
 
-      final Long accountId =
+      final AccountInfo accountInfo =
           sdk.createAccount(
               new CreateAccountRequest().username(username).email(email).password(password));
-
-      Assertions.assertTrue(accountId > 0);
-
-      final var publicAccountInfo = sdk.showAccount(accountId);
-      Assertions.assertEquals(accountId, publicAccountInfo.id());
-      Assertions.assertEquals(email, publicAccountInfo.username());
+      assertEquals(username, accountInfo.username());
+      assertEquals(email, accountInfo.email());
+      assertEquals(AccountStatus.NON_CONFIRMED, accountInfo.status());
+      assertNotNull(accountInfo.createdAt());
+      assertTrue(accountInfo.id() > 0, "accountInfo.id: " + accountInfo.id());
     }
   }
 
@@ -58,10 +61,10 @@ public class CreateAccountTest {
       sdk.createAccount(request);
       Assertions.fail("Expected exception");
     } catch (Exception ex) {
-      Assertions.assertInstanceOf(ServiceException.class, ex, "Exception: " + ex);
+      assertInstanceOf(ServiceException.class, ex, "Exception: " + ex);
       final var serviceException = (ServiceException) ex;
-      Assertions.assertEquals(errorCode, serviceException.errorCode());
-      Assertions.assertEquals(errorMessage, serviceException.getMessage());
+      assertEquals(errorCode, serviceException.errorCode());
+      assertEquals(errorMessage, serviceException.getMessage());
     }
   }
 
@@ -136,60 +139,60 @@ public class CreateAccountTest {
             400,
             "Missing or invalid: password")
 
-//        TODO: Move to successful scenarios
-//        // Boundary test: Username at minimum length
-//        Arguments.of(
-//            new CreateAccountRequest()
-//                .username("usrnam")
-//                .email("testuser@gmail.com")
-//                .password("password123"),
-//            400,
-//            "Invalid credentials"), // Assuming other invalid criteria
-//
-//        // Boundary test: Username at maximum length
-//        Arguments.of(
-//            new CreateAccountRequest()
-//                .username("thirtycharusernameexactlyyayy")
-//                .email("testuser@gmail.com")
-//                .password("password123"),
-//            400,
-//            "Invalid credentials"), // Assuming other invalid criteria
-//
-//        // Boundary test: Email at minimum length
-//        Arguments.of(
-//            new CreateAccountRequest()
-//                .username("validuser")
-//                .email("test@domain.com")
-//                .password("password123"),
-//            400,
-//            "Invalid credentials"), // Assuming other invalid criteria
-//
-//        // Boundary test: Email at maximum length
-//        Arguments.of(
-//            new CreateAccountRequest()
-//                .username("validuser")
-//                .email("averylongemailaddresswithmaximum50charactrs@ex.com")
-//                .password("password123"),
-//            400,
-//            "Invalid credentials"), // Assuming other invalid criteria
-//
-//        // Boundary test: Password at minimum length
-//        Arguments.of(
-//            new CreateAccountRequest()
-//                .username("validuser")
-//                .email("testuser@gmail.com")
-//                .password("passw6"),
-//            400,
-//            "Invalid credentials"), // Assuming other invalid criteria
-//
-//        // Boundary test: Password at maximum length
-//        Arguments.of(
-//            new CreateAccountRequest()
-//                .username("validuser")
-//                .email("testuser@gmail.com")
-//                .password("thisis25characterslongxx"),
-//            400,
-//            "Invalid credentials") // Assuming other invalid criteria
+        //        TODO: Move to successful scenarios
+        //        // Boundary test: Username at minimum length
+        //        Arguments.of(
+        //            new CreateAccountRequest()
+        //                .username("usrnam")
+        //                .email("testuser@gmail.com")
+        //                .password("password123"),
+        //            400,
+        //            "Invalid credentials"), // Assuming other invalid criteria
+        //
+        //        // Boundary test: Username at maximum length
+        //        Arguments.of(
+        //            new CreateAccountRequest()
+        //                .username("thirtycharusernameexactlyyayy")
+        //                .email("testuser@gmail.com")
+        //                .password("password123"),
+        //            400,
+        //            "Invalid credentials"), // Assuming other invalid criteria
+        //
+        //        // Boundary test: Email at minimum length
+        //        Arguments.of(
+        //            new CreateAccountRequest()
+        //                .username("validuser")
+        //                .email("test@domain.com")
+        //                .password("password123"),
+        //            400,
+        //            "Invalid credentials"), // Assuming other invalid criteria
+        //
+        //        // Boundary test: Email at maximum length
+        //        Arguments.of(
+        //            new CreateAccountRequest()
+        //                .username("validuser")
+        //                .email("averylongemailaddresswithmaximum50charactrs@ex.com")
+        //                .password("password123"),
+        //            400,
+        //            "Invalid credentials"), // Assuming other invalid criteria
+        //
+        //        // Boundary test: Password at minimum length
+        //        Arguments.of(
+        //            new CreateAccountRequest()
+        //                .username("validuser")
+        //                .email("testuser@gmail.com")
+        //                .password("passw6"),
+        //            400,
+        //            "Invalid credentials"), // Assuming other invalid criteria
+        //
+        //        // Boundary test: Password at maximum length
+        //        Arguments.of(
+        //            new CreateAccountRequest()
+        //                .username("validuser")
+        //                .email("testuser@gmail.com")
+        //                .password("thisis25characterslongxx"),
+        //            400,
+        //            "Invalid credentials") // Assuming other invalid criteria
         );
   }
 }

@@ -46,10 +46,10 @@ public class AccountSdkImpl implements AccountSdk {
   }
 
   @Override
-  public Long createAccount(CreateAccountRequest request) {
+  public AccountInfo createAccount(CreateAccountRequest request) {
     final var message = new ServiceMessage().qualifier("createAccount").data(request);
     sendText(message);
-    return (Long) pollResponse();
+    return (AccountInfo) pollResponse();
   }
 
   @Override

@@ -3,7 +3,7 @@ package io.syemessenger.api.account;
 
 public interface AccountSdk extends AutoCloseable {
 
-  Long createAccount(CreateAccountRequest request);
+  AccountInfo createAccount(CreateAccountRequest request);
 
   AccountInfo updateAccount(UpdateAccountRequest request);
 

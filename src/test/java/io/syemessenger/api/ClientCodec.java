@@ -13,7 +13,7 @@ public class ClientCodec extends MessageCodec {
     super(
         JsonMappers.jsonMapper(),
         (map) -> {
-          map.put("createAccount", Long.class);
+          map.put("createAccount", AccountInfo.class);
           map.put("updateAccount", AccountInfo.class);
           map.put("login", Long.class);
           map.put("getSessionAccount", AccountInfo.class);
