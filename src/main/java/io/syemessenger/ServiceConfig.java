@@ -2,7 +2,7 @@ package io.syemessenger;
 
 public class ServiceConfig {
 
-  private int port = 8000;
+  private int port = 8080;
 
   public int port() {
     return port;
