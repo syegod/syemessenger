@@ -1,6 +1,6 @@
 package io.syemessenger.api.account;
 
-import io.syemessenger.SenderContext;
+import io.syemessenger.websocket.SenderContext;
 import jakarta.inject.Named;
 
 @Named

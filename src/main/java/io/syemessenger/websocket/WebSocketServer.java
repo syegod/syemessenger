@@ -1,4 +1,4 @@
-package io.syemessenger;
+package io.syemessenger.websocket;
 
 import org.eclipse.jetty.ee10.servlet.ServletContextHandler;
 import org.eclipse.jetty.ee10.servlet.ServletHolder;

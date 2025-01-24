@@ -1,6 +1,7 @@
-package io.syemessenger;
+package io.syemessenger.websocket;
 
 import com.fasterxml.jackson.databind.json.JsonMapper;
+import io.syemessenger.MessageCodec;
 import io.syemessenger.api.account.AccountService;
 import io.syemessenger.api.account.CreateAccountRequest;
 import io.syemessenger.api.account.LoginAccountRequest;

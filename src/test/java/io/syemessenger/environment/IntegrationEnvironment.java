@@ -12,9 +12,15 @@ public class IntegrationEnvironment {
   public void start() {
     try {
       postgres = new PostgreSQLContainer("postgres:16-alpine");
+      postgres.withExposedPorts(5432);
       postgres.start();
 
-      serviceBootstrap = new ServiceBootstrap(new ServiceConfig());
+      serviceBootstrap =
+          new ServiceBootstrap(
+              new ServiceConfig()
+                  .dbUrl(postgres.getJdbcUrl())
+                  .dbUser(postgres.getUsername())
+                  .dbPassword(postgres.getPassword()));
       serviceBootstrap.start();
     } catch (Exception e) {
       close();

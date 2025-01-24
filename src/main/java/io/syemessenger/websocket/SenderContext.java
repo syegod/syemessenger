@@ -1,4 +1,4 @@
-package io.syemessenger;
+package io.syemessenger.websocket;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.json.JsonMapper;
