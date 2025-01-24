@@ -19,7 +19,7 @@ public class ServiceBootstrap {
     applicationContext.refresh();
   }
 
-  public void stop() {
+  public void close() {
     if (applicationContext != null) {
       applicationContext.close();
     }

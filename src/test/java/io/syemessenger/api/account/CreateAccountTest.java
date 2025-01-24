@@ -9,6 +9,7 @@ import io.syemessenger.ServiceBootstrap;
 import io.syemessenger.ServiceConfig;
 import io.syemessenger.api.ClientCodec;
 import io.syemessenger.api.ServiceException;
+import io.syemessenger.environment.IntegrationEnvironment;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
@@ -21,18 +22,18 @@ import org.junit.jupiter.params.provider.MethodSource;
 public class CreateAccountTest {
 
   private static final ClientCodec clientCodec = ClientCodec.getInstance();
-  private static ServiceBootstrap serviceBootstrap;
+  private static IntegrationEnvironment environment;
 
   @BeforeAll
   static void beforeAll() {
-    serviceBootstrap = new ServiceBootstrap(new ServiceConfig());
-    serviceBootstrap.start();
+    environment = new IntegrationEnvironment();
+    environment.start();
   }
 
   @AfterAll
   static void afterAll() {
-    if (serviceBootstrap != null) {
-      serviceBootstrap.stop();
+    if (environment != null) {
+      environment.close();
     }
   }
 
