@@ -32,7 +32,6 @@ public class AppConfiguration {
   }
 
   @Bean
-  @Lazy(value = false)
   public Liquibase liquibase(ServiceConfig config) throws Exception {
     try (Connection connection =
         DriverManager.getConnection(config.dbUrl(), config.dbUser(), config.dbPassword())) {
