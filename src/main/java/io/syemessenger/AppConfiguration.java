@@ -22,6 +22,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.orm.jpa.JpaDialect;
 import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
+import org.springframework.orm.jpa.vendor.Database;
 import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
@@ -43,29 +44,12 @@ public class AppConfiguration {
   }
 
   @Bean
-  public Liquibase liquibase(DataSource dataSource) throws Exception {
-    try (Connection connection = dataSource.getConnection()) {
-      final var database =
-          DatabaseFactory.getInstance()
-              .findCorrectDatabaseImplementation(new JdbcConnection(connection));
-      final var liquibase =
-          new Liquibase("dbchangelog/dbchangelog.xml", new ClassLoaderResourceAccessor(), database);
-
-      liquibase.update();
-
-      return liquibase;
-    }
-  }
-
-  @Bean
   public LocalContainerEntityManagerFactoryBean entityManagerFactory(DataSource dataSource) {
     HibernateJpaVendorAdapter vendorAdapter = new HibernateJpaVendorAdapter();
     vendorAdapter.setShowSql(true);
+    vendorAdapter.setDatabase(Database.POSTGRESQL);
 
     LocalContainerEntityManagerFactoryBean factory = new LocalContainerEntityManagerFactoryBean();
-    Map<String, Object> jpaProperties = new HashMap<>();
-    jpaProperties.put("hibernate.dialect", "org.hibernate.dialect.PostgreSQLDialect");
-    factory.setJpaPropertyMap(jpaProperties);
     factory.setJpaVendorAdapter(vendorAdapter);
     factory.setPackagesToScan("io.syemessenger");
     factory.setDataSource(dataSource);
