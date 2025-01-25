@@ -8,7 +8,7 @@
       CREATE TYPE account_status AS ENUM ('CONFIRMED','NON_CONFIRMED');
     </sql>
     <rollback>
-      DROP TYPE IF EXIST account_status;
+      DROP TYPE IF EXISTS account_status;
     </rollback>
   </changeSet>
 

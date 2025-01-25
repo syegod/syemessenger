@@ -44,6 +44,8 @@
     <jetty.version>12.0.16</jetty.version>
     <jakarta.inject-api.version>2.0.0</jakarta.inject-api.version>
     <spring-framework-bom.version>6.2.2</spring-framework-bom.version>
+    <spring-data-bom.version>2024.1.2</spring-data-bom.version>
+    <hibernate-core.version>6.6.4.Final</hibernate-core.version>
   </properties>
 
   <dependencyManagement>
@@ -69,6 +71,14 @@
         <groupId>org.springframework</groupId>
         <artifactId>spring-framework-bom</artifactId>
         <version>${spring-framework-bom.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+
+      <dependency>
+        <groupId>org.springframework.data</groupId>
+        <artifactId>spring-data-bom</artifactId>
+        <version>${spring-data-bom.version}</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
@@ -113,6 +123,12 @@
         <groupId>com.zaxxer</groupId>
         <artifactId>HikariCP</artifactId>
         <version>${hikaricp.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.hibernate.orm</groupId>
+        <artifactId>hibernate-core</artifactId>
+        <version>${hibernate-core.version}</version>
       </dependency>
 
       <!-- Liquibase -->
@@ -188,6 +204,11 @@
       <artifactId>spring-context</artifactId>
     </dependency>
 
+    <dependency>
+      <groupId>org.springframework.data</groupId>
+      <artifactId>spring-data-jpa</artifactId>
+    </dependency>
+
     <!-- Jakarta DI -->
     <dependency>
       <groupId>jakarta.inject</groupId>
@@ -220,6 +241,11 @@
     <dependency>
       <groupId>com.zaxxer</groupId>
       <artifactId>HikariCP</artifactId>
+    </dependency>
+    <!-- Hibernate -->
+    <dependency>
+      <groupId>org.hibernate.orm</groupId>
+      <artifactId>hibernate-core</artifactId>
     </dependency>
 
     <!-- Jackson -->
