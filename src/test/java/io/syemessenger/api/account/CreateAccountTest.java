@@ -4,9 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.testcontainers.shaded.org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
 
-import io.syemessenger.ServiceBootstrap;
-import io.syemessenger.ServiceConfig;
 import io.syemessenger.api.ClientCodec;
 import io.syemessenger.api.ServiceException;
 import io.syemessenger.environment.IntegrationEnvironment;
@@ -23,11 +22,14 @@ public class CreateAccountTest {
 
   private static final ClientCodec clientCodec = ClientCodec.getInstance();
   private static IntegrationEnvironment environment;
+  private static AccountInfo existingAccountInfo;
 
   @BeforeAll
   static void beforeAll() {
     environment = new IntegrationEnvironment();
     environment.start();
+
+    existingAccountInfo = createExistingAccount();
   }
 
   @AfterAll
@@ -40,9 +42,9 @@ public class CreateAccountTest {
   @Test
   void testCreateAccount() {
     try (AccountSdk sdk = new AccountSdkImpl(clientCodec)) {
-      String username = "Test123";
-      String email = "example@gmail.com";
-      String password = "test123";
+      String username = randomAlphanumeric(6, 30);
+      String email = randomAlphanumeric(10, 50);
+      String password = randomAlphanumeric(6, 25);
 
       final AccountInfo accountInfo =
           sdk.createAccount(
@@ -138,7 +140,23 @@ public class CreateAccountTest {
                 .email("testuser@gmail.com")
                 .password("averylongpasswordexceedingthetwentyfivecharacterslimit"),
             400,
-            "Missing or invalid: password")
+            "Missing or invalid: password"),
+
+        // Uniqueness test
+        Arguments.of(
+            new CreateAccountRequest()
+                .username(existingAccountInfo.username())
+                .email(randomAlphanumeric(10, 50))
+                .password(randomAlphanumeric(6, 25)),
+            400,
+            "Cannot create account: already exists"),
+        Arguments.of(
+            new CreateAccountRequest()
+                .username(randomAlphanumeric(6, 30))
+                .email(existingAccountInfo.email())
+                .password(randomAlphanumeric(6, 25)),
+            400,
+            "Cannot create account: already exists")
 
         //        TODO: Move to successful scenarios
         //        // Boundary test: Username at minimum length
@@ -195,5 +213,16 @@ public class CreateAccountTest {
         //            400,
         //            "Invalid credentials") // Assuming other invalid criteria
         );
+  }
+
+  static AccountInfo createExistingAccount() {
+    try (AccountSdk sdk = new AccountSdkImpl(clientCodec)) {
+      String username = randomAlphanumeric(6, 30);
+      String email = randomAlphanumeric(10, 50);
+      String password = "test123";
+
+      return sdk.createAccount(
+          new CreateAccountRequest().username(username).email(email).password(password));
+    }
   }
 }

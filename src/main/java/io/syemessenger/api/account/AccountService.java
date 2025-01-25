@@ -7,6 +7,7 @@ import io.syemessenger.websocket.SenderContext;
 import jakarta.inject.Named;
 import java.time.Clock;
 import java.time.LocalDateTime;
+import org.springframework.dao.DataAccessException;
 import org.springframework.transaction.annotation.Transactional;
 
 @Named
@@ -59,11 +60,16 @@ public class AccountService {
             .status(AccountStatus.NON_CONFIRMED)
             .createdAt(now)
             .updatedAt(now);
-
     try {
       final var saved = accountRepository.save(account);
       final var accountInfo = toAccountInfo(saved);
       senderContext.send(new ServiceMessage().qualifier("createAccount").data(accountInfo));
+    } catch (DataAccessException e) {
+      if (e.getMessage().contains("duplicate key value violates unique constraint")) {
+        senderContext.sendError(400, "Cannot create account: already exists");
+      } else {
+        senderContext.sendError(400, "Cannot create account");
+      }
     } catch (Exception e) {
       senderContext.sendError(500, e.getMessage());
     }
