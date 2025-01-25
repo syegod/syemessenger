@@ -1,10 +1,22 @@
 package io.syemessenger.api.account;
 
+import io.syemessenger.api.ServiceMessage;
+import io.syemessenger.api.account.repository.Account;
+import io.syemessenger.api.account.repository.AccountRepository;
 import io.syemessenger.websocket.SenderContext;
 import jakarta.inject.Named;
+import java.time.Clock;
+import java.time.LocalDateTime;
+import org.springframework.transaction.annotation.Transactional;
 
 @Named
 public class AccountService {
+
+  private final AccountRepository accountRepository;
+
+  public AccountService(AccountRepository accountRepository) {
+    this.accountRepository = accountRepository;
+  }
 
   public void createAccount(SenderContext senderContext, CreateAccountRequest request) {
     final var username = request.username();
@@ -36,16 +48,42 @@ public class AccountService {
       senderContext.sendError(400, "Missing or invalid: password");
       return;
     }
+
+    final var now = LocalDateTime.now(Clock.systemUTC());
+    // TODO: passwordHash
+    final var account =
+        new Account()
+            .username(username)
+            .email(email)
+            .passwordHash(password)
+            .status(AccountStatus.NON_CONFIRMED)
+            .createdAt(now)
+            .updatedAt(now);
+
+    try {
+      final var saved = accountRepository.save(account);
+      final var accountInfo = toAccountInfo(saved);
+      senderContext.send(new ServiceMessage().qualifier("createAccount").data(accountInfo));
+    } catch (Exception e) {
+      senderContext.sendError(500, e.getMessage());
+    }
   }
 
   public void updateAccount(SenderContext senderContext, UpdateAccountRequest request) {}
 
-  public void login(SenderContext senderContext, LoginAccountRequest request) {
-  }
+  public void login(SenderContext senderContext, LoginAccountRequest request) {}
 
-  public void getSessionAccount(SenderContext senderContext) {
-  }
+  public void getSessionAccount(SenderContext senderContext) {}
 
-  public void showAccount(SenderContext senderContext, Long id) {
+  public void showAccount(SenderContext senderContext, Long id) {}
+
+  private static AccountInfo toAccountInfo(Account account) {
+    return new AccountInfo()
+        .id(account.id())
+        .username(account.username())
+        .email(account.email())
+        .status(account.status())
+        .createdAt(account.createdAt())
+        .updatedAt(account.updatedAt());
   }
 }

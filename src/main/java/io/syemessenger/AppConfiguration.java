@@ -8,6 +8,8 @@ import io.syemessenger.websocket.WebSocketServlet;
 import jakarta.persistence.EntityManagerFactory;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.util.HashMap;
+import java.util.Map;
 import javax.sql.DataSource;
 import liquibase.Liquibase;
 import liquibase.database.DatabaseFactory;
@@ -17,6 +19,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.orm.jpa.JpaDialect;
 import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
 import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
@@ -60,6 +63,9 @@ public class AppConfiguration {
     vendorAdapter.setShowSql(true);
 
     LocalContainerEntityManagerFactoryBean factory = new LocalContainerEntityManagerFactoryBean();
+    Map<String, Object> jpaProperties = new HashMap<>();
+    jpaProperties.put("hibernate.dialect", "org.hibernate.dialect.PostgreSQLDialect");
+    factory.setJpaPropertyMap(jpaProperties);
     factory.setJpaVendorAdapter(vendorAdapter);
     factory.setPackagesToScan("io.syemessenger");
     factory.setDataSource(dataSource);

@@ -7,6 +7,9 @@
     <sql>
       CREATE TYPE account_status AS ENUM ('CONFIRMED','NON_CONFIRMED');
     </sql>
+    <sql>
+      CREATE CAST (varchar AS account_status) WITH INOUT AS IMPLICIT;
+    </sql>
     <rollback>
       DROP TYPE IF EXISTS account_status;
     </rollback>
