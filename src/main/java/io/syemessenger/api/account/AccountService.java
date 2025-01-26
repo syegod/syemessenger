@@ -8,7 +8,6 @@ import jakarta.inject.Named;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import org.springframework.dao.DataAccessException;
-import org.springframework.transaction.annotation.Transactional;
 
 @Named
 public class AccountService {
@@ -51,12 +50,14 @@ public class AccountService {
     }
 
     final var now = LocalDateTime.now(Clock.systemUTC());
-    // TODO: passwordHash
+
+    final var hashedPassword = PasswordHashing.hash(password);
+
     final var account =
         new Account()
             .username(username)
             .email(email)
-            .passwordHash(password)
+            .passwordHash(hashedPassword)
             .status(AccountStatus.NON_CONFIRMED)
             .createdAt(now)
             .updatedAt(now);

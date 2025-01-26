@@ -46,6 +46,7 @@
     <spring-framework-bom.version>6.2.2</spring-framework-bom.version>
     <spring-data-bom.version>2024.1.2</spring-data-bom.version>
     <hibernate-core.version>6.6.4.Final</hibernate-core.version>
+    <spring-security-crypto.version>6.4.2</spring-security-crypto.version>
   </properties>
 
   <dependencyManagement>
@@ -73,6 +74,12 @@
         <version>${spring-framework-bom.version}</version>
         <type>pom</type>
         <scope>import</scope>
+      </dependency>
+
+      <dependency>
+        <groupId>org.springframework.security</groupId>
+        <artifactId>spring-security-crypto</artifactId>
+        <version>${spring-security-crypto.version}</version>
       </dependency>
 
       <dependency>
@@ -207,6 +214,11 @@
     <dependency>
       <groupId>org.springframework.data</groupId>
       <artifactId>spring-data-jpa</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.springframework.security</groupId>
+      <artifactId>spring-security-crypto</artifactId>
     </dependency>
 
     <!-- Jakarta DI -->
