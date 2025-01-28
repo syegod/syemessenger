@@ -48,15 +48,18 @@ public class UpdateAccountTest {
     try (AccountSdk sdk = new AccountSdkImpl(clientCodec)) {
       final var username = randomAlphanumeric(6, 30);
       final var email = randomAlphanumeric(10, 50);
+      final var password = randomAlphanumeric(6, 25);
+
+      final var account =
+          sdk.createAccount(
+              new CreateAccountRequest().username(username).email(email).password(password));
+
+      sdk.login(new LoginAccountRequest().username(account.username()).password(password));
 
       final var accountInfo =
-          sdk.updateAccount(
-              new UpdateAccountRequest()
-                  .id(existingAccountInfo.id())
-                  .username(username)
-                  .email(email));
-      assertEquals(
-          existingAccountInfo.id(), accountInfo.id(), "accountInfo.id: " + accountInfo.id());
+          sdk.updateAccount(new UpdateAccountRequest().username(username).email(email));
+
+      assertEquals(account.id(), accountInfo.id(), "accountInfo.id: " + accountInfo.id());
       assertEquals(username, accountInfo.username());
       assertEquals(email, accountInfo.email());
     }
@@ -66,6 +69,8 @@ public class UpdateAccountTest {
   @MethodSource(value = "failedUpdateAccountMethodSource")
   void testUpdateAccountFailed(UpdateAccountRequest request, int errorCode, String errorMessage) {
     try (AccountSdk sdk = new AccountSdkImpl(clientCodec)) {
+      sdk.login(
+          new LoginAccountRequest().username(existingAccountInfo.username()).password("test12345"));
       sdk.updateAccount(request);
       Assertions.fail("Expected exception");
     } catch (Exception ex) {
@@ -81,55 +86,25 @@ public class UpdateAccountTest {
     return Stream.of(
         // Length checks
         Arguments.of(
-            new UpdateAccountRequest()
-                .id(existingAccountInfo.id())
-                .username(randomAlphanumeric(35)),
-            400,
-            "Invalid: username"),
+            new UpdateAccountRequest().username(randomAlphanumeric(35)), 400, "Invalid: username"),
         Arguments.of(
-            new UpdateAccountRequest().id(existingAccountInfo.id()).username(randomAlphanumeric(5)),
-            400,
-            "Invalid: username"),
+            new UpdateAccountRequest().username(randomAlphanumeric(5)), 400, "Invalid: username"),
         Arguments.of(
-            new UpdateAccountRequest().id(existingAccountInfo.id()).email(randomAlphanumeric(55)),
-            400,
-            "Invalid: email"),
+            new UpdateAccountRequest().email(randomAlphanumeric(55)), 400, "Invalid: email"),
         Arguments.of(
-            new UpdateAccountRequest().id(existingAccountInfo.id()).email(randomAlphanumeric(5)),
-            400,
-            "Invalid: email"),
+            new UpdateAccountRequest().email(randomAlphanumeric(5)), 400, "Invalid: email"),
         Arguments.of(
-            new UpdateAccountRequest()
-                .id(existingAccountInfo.id())
-                .password(randomAlphanumeric(35)),
-            400,
-            "Invalid: password"),
+            new UpdateAccountRequest().password(randomAlphanumeric(35)), 400, "Invalid: password"),
         Arguments.of(
-            new UpdateAccountRequest().id(existingAccountInfo.id()).password(randomAlphanumeric(5)),
-            400,
-            "Invalid: password"),
-        // No id provided
-        Arguments.of(
-            new UpdateAccountRequest().username(randomAlphanumeric(10)), 404, "Account not found"),
-        // Wrong id provided
-        Arguments.of(
-            new UpdateAccountRequest()
-                .id(Long.parseLong(randomNumeric(5)))
-                .username(randomAlphanumeric(10)),
-            404,
-            "Account not found"),
+            new UpdateAccountRequest().password(randomAlphanumeric(5)), 400, "Invalid: password"),
         // Updating username to already existing
         Arguments.of(
-            new UpdateAccountRequest()
-                .id(existingAccountInfo.id())
-                .username(existingAccountInfo2.username()),
+            new UpdateAccountRequest().username(existingAccountInfo2.username()),
             400,
             "Cannot update account: already exists"),
         // Updating email to already existing
         Arguments.of(
-            new UpdateAccountRequest()
-                .id(existingAccountInfo.id())
-                .email(existingAccountInfo2.email()),
+            new UpdateAccountRequest().email(existingAccountInfo2.email()),
             400,
             "Cannot update account: already exists"));
   }
@@ -138,7 +113,7 @@ public class UpdateAccountTest {
     try (AccountSdk sdk = new AccountSdkImpl(clientCodec)) {
       String username = randomAlphanumeric(6, 30);
       String email = randomAlphanumeric(10, 50);
-      String password = randomAlphanumeric(6, 25);
+      String password = "test12345";
 
       return sdk.createAccount(
           new CreateAccountRequest().username(username).email(email).password(password));

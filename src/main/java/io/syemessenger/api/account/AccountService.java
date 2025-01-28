@@ -75,10 +75,9 @@ public class AccountService {
     }
   }
 
-  // TODO: provide authorization checks
   public void updateAccount(SessionContext sessionContext, UpdateAccountRequest request) {
-    if (request.id() == null) {
-      sessionContext.sendError(404, "Account not found");
+    if (!sessionContext.isLoggedIn()) {
+      sessionContext.sendError(401, "Not authenticated");
       return;
     }
 
@@ -107,11 +106,12 @@ public class AccountService {
     }
 
     try {
-      final var account = accountRepository.findById(request.id()).orElse(null);
+      final var account = accountRepository.findById(sessionContext.accountId()).orElse(null);
       if (account == null) {
         sessionContext.sendError(404, "Account not found");
         return;
       }
+
       if (username != null) {
         account.username(username);
       }
@@ -171,11 +171,27 @@ public class AccountService {
     sessionContext.send(new ServiceMessage().qualifier("login").data(account.id()));
   }
 
-  //TODO
-  public void getSessionAccount(SessionContext sessionContext) {}
+  public void getSessionAccount(SessionContext sessionContext) {
+    if (!sessionContext.isLoggedIn()) {
+      sessionContext.sendError(401, "Not authenticated");
+      return;
+    }
 
-  //TODO: provide authorization checks
+    final var account = accountRepository.findById(sessionContext.accountId()).orElse(null);
+    if (account == null) {
+      sessionContext.sendError(404, "Account not found");
+      return;
+    }
+
+    sessionContext.send(new ServiceMessage().qualifier("showAccount").data(toAccountInfo(account)));
+  }
+
   public void showAccount(SessionContext sessionContext, Long id) {
+    if (!sessionContext.isLoggedIn()) {
+      sessionContext.sendError(401, "Not authenticated");
+      return;
+    }
+
     if (id == null) {
       sessionContext.sendError(404, "Account not found");
       return;
