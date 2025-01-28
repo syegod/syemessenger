@@ -58,7 +58,6 @@ public class AccountService {
             .username(username)
             .email(email)
             .passwordHash(hashedPassword)
-            .status(AccountStatus.NON_CONFIRMED)
             .createdAt(now)
             .updatedAt(now);
     try {
@@ -172,8 +171,10 @@ public class AccountService {
     sessionContext.send(new ServiceMessage().qualifier("login").data(account.id()));
   }
 
+  //TODO
   public void getSessionAccount(SessionContext sessionContext) {}
 
+  //TODO: provide authorization checks
   public void showAccount(SessionContext sessionContext, Long id) {
     if (id == null) {
       sessionContext.sendError(404, "Account not found");
@@ -193,7 +194,6 @@ public class AccountService {
         .id(account.id())
         .username(account.username())
         .email(account.email())
-        .status(account.status())
         .createdAt(account.createdAt())
         .updatedAt(account.updatedAt());
   }

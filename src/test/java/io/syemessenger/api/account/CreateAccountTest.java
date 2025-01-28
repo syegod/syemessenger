@@ -51,7 +51,6 @@ public class CreateAccountTest {
               new CreateAccountRequest().username(username).email(email).password(password));
       assertEquals(username, accountInfo.username());
       assertEquals(email, accountInfo.email());
-      assertEquals(AccountStatus.NON_CONFIRMED, accountInfo.status());
       assertNotNull(accountInfo.createdAt());
       assertTrue(accountInfo.id() > 0, "accountInfo.id: " + accountInfo.id());
     }

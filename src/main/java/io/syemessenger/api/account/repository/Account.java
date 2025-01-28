@@ -1,6 +1,5 @@
 package io.syemessenger.api.account.repository;
 
-import io.syemessenger.api.account.AccountStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -24,9 +23,6 @@ public class Account {
 
   @Column(name = "password_hash")
   private String passwordHash;
-
-  @Enumerated(EnumType.STRING)
-  private AccountStatus status;
 
   @Column(name = "created_at")
   private LocalDateTime createdAt;
@@ -67,15 +63,6 @@ public class Account {
 
   public Account passwordHash(String passwordHash) {
     this.passwordHash = passwordHash;
-    return this;
-  }
-
-  public AccountStatus status() {
-    return status;
-  }
-
-  public Account status(AccountStatus status) {
-    this.status = status;
     return this;
   }
 

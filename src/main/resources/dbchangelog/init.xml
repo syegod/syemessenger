@@ -4,18 +4,6 @@
   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.16.xsd">
 
   <changeSet id="1" author="Oleh Vysochyn">
-    <sql>
-      CREATE TYPE account_status AS ENUM ('CONFIRMED','NON_CONFIRMED');
-    </sql>
-    <sql>
-      CREATE CAST (varchar AS account_status) WITH INOUT AS IMPLICIT;
-    </sql>
-    <rollback>
-      DROP TYPE IF EXISTS account_status;
-    </rollback>
-  </changeSet>
-
-  <changeSet id="2" author="Oleh Vysochyn">
     <createTable tableName="accounts">
       <column name="id" type="bigserial">
         <constraints primaryKey="true"/>
@@ -27,7 +15,6 @@
         <constraints unique="true"/>
       </column>
       <column name="password_hash" type="varchar"/>
-      <column name="status" type="account_status"/>
       <column name="created_at" type="timestamp without time zone"/>
       <column name="updated_at" type="timestamp without time zone"/>
     </createTable>
