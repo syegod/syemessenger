@@ -83,19 +83,12 @@ public class AccountService {
       senderContext.sendError(404, "Account not found");
       return;
     }
-    final var account = accountRepository.findById(request.id()).orElse(null);
-    if (account == null) {
-      senderContext.sendError(404, "Account not found");
-      return;
-    }
 
     final var username = request.username();
     if (username != null) {
       if (username.length() < 6 || username.length() > 30) {
         senderContext.sendError(400, "Invalid: username");
         return;
-      } else {
-        account.username(username);
       }
     }
 
@@ -104,8 +97,6 @@ public class AccountService {
       if (email.length() < 10 || email.length() > 50) {
         senderContext.sendError(400, "Invalid: email");
         return;
-      } else {
-        account.email(email);
       }
     }
 
@@ -114,15 +105,29 @@ public class AccountService {
       if (password.length() < 6 || password.length() > 25) {
         senderContext.sendError(400, "Invalid: password");
         return;
-      } else {
-        final var hashed = PasswordHashing.hash(password);
-        account.passwordHash(hashed);
       }
     }
 
     try {
-      final var updated = accountRepository.save(account.updatedAt(LocalDateTime.now(Clock.systemUTC())));
+      final var account = accountRepository.findById(request.id()).orElse(null);
+      if (account == null) {
+        senderContext.sendError(404, "Account not found");
+        return;
+      }
+      if (username != null) {
+        account.username(username);
+      }
+      if (email != null) {
+        account.email(email);
+      }
+      if (password != null) {
+        account.passwordHash(PasswordHashing.hash(password));
+      }
+
+      final var updated =
+          accountRepository.save(account.updatedAt(LocalDateTime.now(Clock.systemUTC())));
       final var accountInfo = toAccountInfo(updated);
+
       senderContext.send(new ServiceMessage().qualifier("updateAccount").data(accountInfo));
     } catch (DataAccessException e) {
       if (e.getMessage().contains("duplicate key value violates unique constraint")) {
@@ -135,7 +140,9 @@ public class AccountService {
     }
   }
 
-  public void login(SenderContext senderContext, LoginAccountRequest request) {}
+  public void login(SenderContext senderContext, LoginAccountRequest request) {
+
+  }
 
   public void getSessionAccount(SenderContext senderContext) {}
 
@@ -149,7 +156,8 @@ public class AccountService {
       senderContext.sendError(404, "Account not found");
       return;
     }
-    senderContext.send(new ServiceMessage().qualifier("showAccount").data(toPublicAccountInfo(account)));
+    senderContext.send(
+        new ServiceMessage().qualifier("showAccount").data(toPublicAccountInfo(account)));
   }
 
   private static AccountInfo toAccountInfo(Account account) {
