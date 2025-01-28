@@ -141,6 +141,34 @@ public class AccountService {
   }
 
   public void login(SenderContext senderContext, LoginAccountRequest request) {
+    final var username = request.username();
+    final var email = request.email();
+    if (username != null && email != null) {
+      senderContext.sendError(401, "Login failed");
+      return;
+    }
+    if (username == null && email == null) {
+      senderContext.sendError(401, "Login failed");
+      return;
+    }
+
+    final var password = request.password();
+    if (password == null) {
+      senderContext.sendError(401, "Login failed");
+      return;
+    }
+
+    final var account = accountRepository.findByEmailOrUsername(email, username);
+    if (account == null) {
+      senderContext.sendError(401, "Login failed");
+      return;
+    }
+
+    if (!PasswordHashing.check(password, account.passwordHash())) {
+      senderContext.sendError(401, "Login failed");
+      return;
+    }
+
 
   }
 
