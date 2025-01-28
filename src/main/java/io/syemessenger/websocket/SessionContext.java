@@ -7,12 +7,14 @@ import io.syemessenger.api.ServiceMessage;
 import org.eclipse.jetty.websocket.api.Callback;
 import org.eclipse.jetty.websocket.api.Session;
 
-public class SenderContext {
+public class SessionContext {
 
   private final Session session;
   private final JsonMapper jsonMapper;
 
-  public SenderContext(Session session, JsonMapper jsonMapper) {
+  private Long accountId;
+
+  public SessionContext(Session session, JsonMapper jsonMapper) {
     this.session = session;
     this.jsonMapper = jsonMapper;
   }
@@ -27,5 +29,18 @@ public class SenderContext {
 
   public void sendError(int errorCode, String errorMessage) {
     send(new ServiceMessage().qualifier("error").data(new ErrorData(errorCode, errorMessage)));
+  }
+
+  public Long accountId() {
+    return accountId;
+  }
+
+  public SessionContext accountId(Long accountId) {
+    this.accountId = accountId;
+    return this;
+  }
+
+  public boolean isLoggedIn() {
+    return accountId != null;
   }
 }

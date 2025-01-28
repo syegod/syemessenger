@@ -14,6 +14,7 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -36,6 +37,30 @@ public class LoginTest {
   static void afterAll() {
     if (environment != null) {
       environment.close();
+    }
+  }
+
+  @Test
+  void testLoginByUsername() {
+    try (final var sdk = new AccountSdkImpl(clientCodec)) {
+      final var accountId =
+          sdk.login(
+              new LoginAccountRequest()
+                  .username(existingAccountInfo.username())
+                  .password("test12345"));
+
+      assertEquals(existingAccountInfo.id(), accountId, "accountId");
+    }
+  }
+
+  @Test
+  void testLoginByEmail() {
+    try (final var sdk = new AccountSdkImpl(clientCodec)) {
+      final var accountId =
+          sdk.login(
+              new LoginAccountRequest().email(existingAccountInfo.email()).password("test12345"));
+
+      assertEquals(existingAccountInfo.id(), accountId, "accountId");
     }
   }
 
@@ -94,7 +119,7 @@ public class LoginTest {
     try (AccountSdk sdk = new AccountSdkImpl(clientCodec)) {
       String username = randomAlphanumeric(6, 30);
       String email = randomAlphanumeric(10, 50);
-      String password = randomAlphanumeric(6, 25);
+      String password = "test12345";
 
       return sdk.createAccount(
           new CreateAccountRequest().username(username).email(email).password(password));

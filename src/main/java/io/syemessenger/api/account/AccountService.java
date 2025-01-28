@@ -3,11 +3,10 @@ package io.syemessenger.api.account;
 import io.syemessenger.api.ServiceMessage;
 import io.syemessenger.api.account.repository.Account;
 import io.syemessenger.api.account.repository.AccountRepository;
-import io.syemessenger.websocket.SenderContext;
+import io.syemessenger.websocket.SessionContext;
 import jakarta.inject.Named;
 import java.time.Clock;
 import java.time.LocalDateTime;
-import java.util.Optional;
 import org.springframework.dao.DataAccessException;
 
 @Named
@@ -19,34 +18,34 @@ public class AccountService {
     this.accountRepository = accountRepository;
   }
 
-  public void createAccount(SenderContext senderContext, CreateAccountRequest request) {
+  public void createAccount(SessionContext sessionContext, CreateAccountRequest request) {
     final var username = request.username();
     if (username == null) {
-      senderContext.sendError(400, "Missing or invalid: username");
+      sessionContext.sendError(400, "Missing or invalid: username");
       return;
     }
     if (username.length() < 6 || username.length() > 30) {
-      senderContext.sendError(400, "Missing or invalid: username");
+      sessionContext.sendError(400, "Missing or invalid: username");
       return;
     }
 
     final var email = request.email();
     if (email == null) {
-      senderContext.sendError(400, "Missing or invalid: email");
+      sessionContext.sendError(400, "Missing or invalid: email");
       return;
     }
     if (email.length() < 10 || email.length() > 50) {
-      senderContext.sendError(400, "Missing or invalid: email");
+      sessionContext.sendError(400, "Missing or invalid: email");
       return;
     }
 
     final var password = request.password();
     if (password == null) {
-      senderContext.sendError(400, "Missing or invalid: password");
+      sessionContext.sendError(400, "Missing or invalid: password");
       return;
     }
     if (password.length() < 6 || password.length() > 25) {
-      senderContext.sendError(400, "Missing or invalid: password");
+      sessionContext.sendError(400, "Missing or invalid: password");
       return;
     }
 
@@ -65,29 +64,29 @@ public class AccountService {
     try {
       final var saved = accountRepository.save(account);
       final var accountInfo = toAccountInfo(saved);
-      senderContext.send(new ServiceMessage().qualifier("createAccount").data(accountInfo));
+      sessionContext.send(new ServiceMessage().qualifier("createAccount").data(accountInfo));
     } catch (DataAccessException e) {
       if (e.getMessage().contains("duplicate key value violates unique constraint")) {
-        senderContext.sendError(400, "Cannot create account: already exists");
+        sessionContext.sendError(400, "Cannot create account: already exists");
       } else {
-        senderContext.sendError(400, "Cannot create account");
+        sessionContext.sendError(400, "Cannot create account");
       }
     } catch (Exception e) {
-      senderContext.sendError(500, e.getMessage());
+      sessionContext.sendError(500, e.getMessage());
     }
   }
 
   // TODO: provide authorization checks
-  public void updateAccount(SenderContext senderContext, UpdateAccountRequest request) {
+  public void updateAccount(SessionContext sessionContext, UpdateAccountRequest request) {
     if (request.id() == null) {
-      senderContext.sendError(404, "Account not found");
+      sessionContext.sendError(404, "Account not found");
       return;
     }
 
     final var username = request.username();
     if (username != null) {
       if (username.length() < 6 || username.length() > 30) {
-        senderContext.sendError(400, "Invalid: username");
+        sessionContext.sendError(400, "Invalid: username");
         return;
       }
     }
@@ -95,7 +94,7 @@ public class AccountService {
     final var email = request.email();
     if (email != null) {
       if (email.length() < 10 || email.length() > 50) {
-        senderContext.sendError(400, "Invalid: email");
+        sessionContext.sendError(400, "Invalid: email");
         return;
       }
     }
@@ -103,7 +102,7 @@ public class AccountService {
     final var password = request.password();
     if (password != null) {
       if (password.length() < 6 || password.length() > 25) {
-        senderContext.sendError(400, "Invalid: password");
+        sessionContext.sendError(400, "Invalid: password");
         return;
       }
     }
@@ -111,7 +110,7 @@ public class AccountService {
     try {
       final var account = accountRepository.findById(request.id()).orElse(null);
       if (account == null) {
-        senderContext.sendError(404, "Account not found");
+        sessionContext.sendError(404, "Account not found");
         return;
       }
       if (username != null) {
@@ -128,63 +127,64 @@ public class AccountService {
           accountRepository.save(account.updatedAt(LocalDateTime.now(Clock.systemUTC())));
       final var accountInfo = toAccountInfo(updated);
 
-      senderContext.send(new ServiceMessage().qualifier("updateAccount").data(accountInfo));
+      sessionContext.send(new ServiceMessage().qualifier("updateAccount").data(accountInfo));
     } catch (DataAccessException e) {
       if (e.getMessage().contains("duplicate key value violates unique constraint")) {
-        senderContext.sendError(400, "Cannot update account: already exists");
+        sessionContext.sendError(400, "Cannot update account: already exists");
       } else {
-        senderContext.sendError(400, "Cannot update account");
+        sessionContext.sendError(400, "Cannot update account");
       }
     } catch (Exception e) {
-      senderContext.sendError(500, e.getMessage());
+      sessionContext.sendError(500, e.getMessage());
     }
   }
 
-  public void login(SenderContext senderContext, LoginAccountRequest request) {
+  public void login(SessionContext sessionContext, LoginAccountRequest request) {
     final var username = request.username();
     final var email = request.email();
     if (username != null && email != null) {
-      senderContext.sendError(401, "Login failed");
+      sessionContext.sendError(401, "Login failed");
       return;
     }
     if (username == null && email == null) {
-      senderContext.sendError(401, "Login failed");
+      sessionContext.sendError(401, "Login failed");
       return;
     }
 
     final var password = request.password();
     if (password == null) {
-      senderContext.sendError(401, "Login failed");
+      sessionContext.sendError(401, "Login failed");
       return;
     }
 
     final var account = accountRepository.findByEmailOrUsername(email, username);
     if (account == null) {
-      senderContext.sendError(401, "Login failed");
+      sessionContext.sendError(401, "Login failed");
       return;
     }
 
     if (!PasswordHashing.check(password, account.passwordHash())) {
-      senderContext.sendError(401, "Login failed");
+      sessionContext.sendError(401, "Login failed");
       return;
     }
 
-
+    sessionContext.accountId(account.id());
+    sessionContext.send(new ServiceMessage().qualifier("login").data(account.id()));
   }
 
-  public void getSessionAccount(SenderContext senderContext) {}
+  public void getSessionAccount(SessionContext sessionContext) {}
 
-  public void showAccount(SenderContext senderContext, Long id) {
+  public void showAccount(SessionContext sessionContext, Long id) {
     if (id == null) {
-      senderContext.sendError(404, "Account not found");
+      sessionContext.sendError(404, "Account not found");
       return;
     }
     final var account = accountRepository.findById(id).orElse(null);
     if (account == null) {
-      senderContext.sendError(404, "Account not found");
+      sessionContext.sendError(404, "Account not found");
       return;
     }
-    senderContext.send(
+    sessionContext.send(
         new ServiceMessage().qualifier("showAccount").data(toPublicAccountInfo(account)));
   }
 

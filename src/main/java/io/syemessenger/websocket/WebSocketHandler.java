@@ -25,7 +25,7 @@ public class WebSocketHandler {
   private final AccountService accountService;
   private final MessageCodec messageCodec;
 
-  private SenderContext senderContext;
+  private SessionContext sessionContext;
 
   public WebSocketHandler(
       JsonMapper jsonMapper, MessageCodec messageCodec, AccountService accountService) {
@@ -36,13 +36,13 @@ public class WebSocketHandler {
 
   @OnWebSocketClose
   public void onWebSocketClose(int statusCode, String reason) {
-    senderContext = null;
+    sessionContext = null;
     LOGGER.info("WebSocket Close: {} - {}", statusCode, reason);
   }
 
   @OnWebSocketOpen
   public void onWebSocketOpen(Session session) {
-    senderContext = new SenderContext(session, jsonMapper);
+    sessionContext = new SessionContext(session, jsonMapper);
     LOGGER.info("WebSocket Open: {}", session);
   }
 
@@ -66,19 +66,19 @@ public class WebSocketHandler {
 
       switch (qualifier) {
         case "createAccount":
-          accountService.createAccount(senderContext, (CreateAccountRequest) request);
+          accountService.createAccount(sessionContext, (CreateAccountRequest) request);
           break;
         case "updateAccount":
-          accountService.updateAccount(senderContext, (UpdateAccountRequest) request);
+          accountService.updateAccount(sessionContext, (UpdateAccountRequest) request);
           break;
         case "showAccount":
-          accountService.showAccount(senderContext, (Long) request);
+          accountService.showAccount(sessionContext, (Long) request);
           break;
         case "login":
-          accountService.login(senderContext, (LoginAccountRequest) request);
+          accountService.login(sessionContext, (LoginAccountRequest) request);
           break;
         case "getSessionAccount":
-          accountService.getSessionAccount(senderContext);
+          accountService.getSessionAccount(sessionContext);
           break;
       }
     } catch (Exception e) {
