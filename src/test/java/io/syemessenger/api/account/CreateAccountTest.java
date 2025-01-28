@@ -219,7 +219,7 @@ public class CreateAccountTest {
     try (AccountSdk sdk = new AccountSdkImpl(clientCodec)) {
       String username = randomAlphanumeric(6, 30);
       String email = randomAlphanumeric(10, 50);
-      String password = "test123";
+      String password = randomAlphanumeric(6, 25);
 
       return sdk.createAccount(
           new CreateAccountRequest().username(username).email(email).password(password));

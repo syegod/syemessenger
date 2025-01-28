@@ -54,7 +54,9 @@ public class AccountSdkImpl implements AccountSdk {
 
   @Override
   public AccountInfo updateAccount(UpdateAccountRequest request) {
-    return null;
+    final var message = new ServiceMessage().qualifier("updateAccount").data(request);
+    sendText(message);
+    return (AccountInfo) pollResponse();
   }
 
   @Override

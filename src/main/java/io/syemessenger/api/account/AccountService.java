@@ -7,6 +7,7 @@ import io.syemessenger.websocket.SenderContext;
 import jakarta.inject.Named;
 import java.time.Clock;
 import java.time.LocalDateTime;
+import java.util.Optional;
 import org.springframework.dao.DataAccessException;
 
 @Named
@@ -76,13 +77,80 @@ public class AccountService {
     }
   }
 
-  public void updateAccount(SenderContext senderContext, UpdateAccountRequest request) {}
+  // TODO: provide authorization checks
+  public void updateAccount(SenderContext senderContext, UpdateAccountRequest request) {
+    if (request.id() == null) {
+      senderContext.sendError(404, "Account not found");
+      return;
+    }
+    final var account = accountRepository.findById(request.id()).orElse(null);
+    if (account == null) {
+      senderContext.sendError(404, "Account not found");
+      return;
+    }
+
+    final var username = request.username();
+    if (username != null) {
+      if (username.length() < 6 || username.length() > 30) {
+        senderContext.sendError(400, "Invalid: username");
+        return;
+      } else {
+        account.username(username);
+      }
+    }
+
+    final var email = request.email();
+    if (email != null) {
+      if (email.length() < 10 || email.length() > 50) {
+        senderContext.sendError(400, "Invalid: email");
+        return;
+      } else {
+        account.email(email);
+      }
+    }
+
+    final var password = request.password();
+    if (password != null) {
+      if (password.length() < 6 || password.length() > 25) {
+        senderContext.sendError(400, "Invalid: password");
+        return;
+      } else {
+        final var hashed = PasswordHashing.hash(password);
+        account.passwordHash(hashed);
+      }
+    }
+
+    try {
+      final var updated = accountRepository.save(account.updatedAt(LocalDateTime.now(Clock.systemUTC())));
+      final var accountInfo = toAccountInfo(updated);
+      senderContext.send(new ServiceMessage().qualifier("updateAccount").data(accountInfo));
+    } catch (DataAccessException e) {
+      if (e.getMessage().contains("duplicate key value violates unique constraint")) {
+        senderContext.sendError(400, "Cannot update account: already exists");
+      } else {
+        senderContext.sendError(400, "Cannot update account");
+      }
+    } catch (Exception e) {
+      senderContext.sendError(500, e.getMessage());
+    }
+  }
 
   public void login(SenderContext senderContext, LoginAccountRequest request) {}
 
   public void getSessionAccount(SenderContext senderContext) {}
 
-  public void showAccount(SenderContext senderContext, Long id) {}
+  public void showAccount(SenderContext senderContext, Long id) {
+    if (id == null) {
+      senderContext.sendError(404, "Account not found");
+      return;
+    }
+    final var account = accountRepository.findById(id).orElse(null);
+    if (account == null) {
+      senderContext.sendError(404, "Account not found");
+      return;
+    }
+    senderContext.send(new ServiceMessage().qualifier("showAccount").data(toPublicAccountInfo(account)));
+  }
 
   private static AccountInfo toAccountInfo(Account account) {
     return new AccountInfo()
@@ -92,5 +160,9 @@ public class AccountService {
         .status(account.status())
         .createdAt(account.createdAt())
         .updatedAt(account.updatedAt());
+  }
+
+  private static PublicAccountInfo toPublicAccountInfo(Account account) {
+    return new PublicAccountInfo().id(account.id()).username(account.username());
   }
 }

@@ -3,10 +3,20 @@ package io.syemessenger.api.account;
 import java.util.StringJoiner;
 
 public class UpdateAccountRequest {
-  
+
+  private Long id;
   private String username;
   private String email;
   private String password;
+
+  public Long id() {
+    return id;
+  }
+
+  public UpdateAccountRequest id(Long id) {
+    this.id = id;
+    return this;
+  }
 
   public String username() {
     return username;
