@@ -15,7 +15,7 @@ public class AccountService {
 
   private final AccountRepository accountRepository;
 
-  private static final Pattern EMAIL =
+  private static final Pattern EMAIL_PATTERN =
       Pattern.compile("^[a-zA-Z0-9_!#$%&'*+/=?`{|}~^.-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
 
   public AccountService(AccountRepository accountRepository) {
@@ -215,7 +215,7 @@ public class AccountService {
       return;
     }
     sessionContext.send(
-        new ServiceMessage().qualifier("showAccount").data(toPublicAccountInfo(account)));
+        new ServiceMessage().qualifier("showAccount").data(toAccountViewInfo(account)));
   }
 
   private static AccountInfo toAccountInfo(Account account) {
@@ -227,11 +227,11 @@ public class AccountService {
         .updatedAt(account.updatedAt());
   }
 
-  private static PublicAccountInfo toPublicAccountInfo(Account account) {
-    return new PublicAccountInfo().id(account.id()).username(account.username());
+  private static AccountViewInfo toAccountViewInfo(Account account) {
+    return new AccountViewInfo().id(account.id()).username(account.username());
   }
 
   private static boolean isEmailValid(String email) {
-    return EMAIL.matcher(email).matches();
+    return EMAIL_PATTERN.matcher(email).matches();
   }
 }

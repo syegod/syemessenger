@@ -2,7 +2,7 @@ package io.syemessenger.api.account;
 
 import java.util.StringJoiner;
 
-public class PublicAccountInfo {
+public class AccountViewInfo {
 
   private long id;
   private String username;
@@ -11,7 +11,7 @@ public class PublicAccountInfo {
     return id;
   }
 
-  public PublicAccountInfo id(long id) {
+  public AccountViewInfo id(long id) {
     this.id = id;
     return this;
   }
@@ -20,14 +20,14 @@ public class PublicAccountInfo {
     return username;
   }
 
-  public PublicAccountInfo username(String username) {
+  public AccountViewInfo username(String username) {
     this.username = username;
     return this;
   }
 
   @Override
   public String toString() {
-    return new StringJoiner(", ", PublicAccountInfo.class.getSimpleName() + "[", "]")
+    return new StringJoiner(", ", AccountViewInfo.class.getSimpleName() + "[", "]")
         .add("id=" + id)
         .add("username='" + username + "'")
         .toString();

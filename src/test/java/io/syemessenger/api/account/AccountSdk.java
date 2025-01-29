@@ -11,7 +11,7 @@ public interface AccountSdk extends AutoCloseable {
 
   AccountInfo getSessionAccount();
 
-  PublicAccountInfo showAccount(Long id);
+  AccountViewInfo showAccount(Long id);
 
   @Override
   void close();

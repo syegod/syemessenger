@@ -3,7 +3,7 @@ package io.syemessenger.api;
 import io.syemessenger.JsonMappers;
 import io.syemessenger.MessageCodec;
 import io.syemessenger.api.account.AccountInfo;
-import io.syemessenger.api.account.PublicAccountInfo;
+import io.syemessenger.api.account.AccountViewInfo;
 
 public class ClientCodec extends MessageCodec {
 
@@ -17,7 +17,7 @@ public class ClientCodec extends MessageCodec {
           map.put("updateAccount", AccountInfo.class);
           map.put("login", Long.class);
           map.put("getSessionAccount", AccountInfo.class);
-          map.put("showAccount", PublicAccountInfo.class);
+          map.put("showAccount", AccountViewInfo.class);
           map.put("error", ErrorData.class);
         });
   }

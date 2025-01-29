@@ -74,10 +74,10 @@ public class AccountSdkImpl implements AccountSdk {
   }
 
   @Override
-  public PublicAccountInfo showAccount(Long id) {
+  public AccountViewInfo showAccount(Long id) {
     final var message = new ServiceMessage().qualifier("showAccount").data(id);
     sendText(message);
-    return (PublicAccountInfo) pollResponse();
+    return (AccountViewInfo) pollResponse();
   }
 
   @Override

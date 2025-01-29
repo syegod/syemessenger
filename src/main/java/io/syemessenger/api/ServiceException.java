@@ -1,5 +1,7 @@
 package io.syemessenger.api;
 
+import java.util.StringJoiner;
+
 public class ServiceException extends RuntimeException {
 
   private int errorCode;
@@ -11,5 +13,13 @@ public class ServiceException extends RuntimeException {
 
   public int errorCode() {
     return errorCode;
+  }
+
+  @Override
+  public String toString() {
+    return new StringJoiner(", ", getClass().getSimpleName() + "[", "]")
+        .add("errorCode=" + errorCode)
+        .add("errorMessage='" + getMessage() + "'")
+        .toString();
   }
 }
