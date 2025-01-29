@@ -9,8 +9,8 @@
   <version>1.0-SNAPSHOT</version>
 
   <properties>
-    <maven.compiler.source>23</maven.compiler.source>
-    <maven.compiler.target>23</maven.compiler.target>
+    <maven.compiler.source>21</maven.compiler.source>
+    <maven.compiler.target>21</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
     <!-- plugins versions -->
@@ -27,8 +27,14 @@
 
     <!-- check style configuration -->
     <checkstyle.config.location>google_checks.xml</checkstyle.config.location>
+    <checkstyle.suppressions.location>checkstyle-suppressions.xml</checkstyle.suppressions.location>
     <com.puppycrawl.tools.checkstyle-version>10.12.4</com.puppycrawl.tools.checkstyle-version>
     <checkstyle.skip>false</checkstyle.skip>
+
+    <!-- BOM dependency versions for test -->
+    <junit.version>5.11.3</junit.version>
+    <mockito.version>5.14.2</mockito.version>
+    <testcontainers.version>1.20.4</testcontainers.version>
 
     <slf4j.version>1.7.36</slf4j.version>
     <log4j.version>2.17.2</log4j.version>
@@ -37,11 +43,11 @@
     <jackson.version>2.16.1</jackson.version>
     <hikaricp.version>5.1.0</hikaricp.version>
     <jetty.version>12.0.16</jetty.version>
-
-    <!--BOM dependency versions for test-->
-    <junit.version>5.11.3</junit.version>
-    <mockito.version>5.14.2</mockito.version>
-    <testcontainers.version>1.20.4</testcontainers.version>
+    <jakarta.inject-api.version>2.0.1</jakarta.inject-api.version>
+    <spring-framework-bom.version>6.2.2</spring-framework-bom.version>
+    <spring-data-bom.version>2024.1.2</spring-data-bom.version>
+    <hibernate-core.version>6.6.4.Final</hibernate-core.version>
+    <spring-security-crypto.version>6.4.2</spring-security-crypto.version>
   </properties>
 
   <dependencyManagement>
@@ -58,6 +64,29 @@
         <groupId>org.eclipse.jetty.ee10</groupId>
         <artifactId>jetty-ee10-bom</artifactId>
         <version>${jetty.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+
+      <!-- Spring -->
+      <dependency>
+        <groupId>org.springframework</groupId>
+        <artifactId>spring-framework-bom</artifactId>
+        <version>${spring-framework-bom.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+
+      <dependency>
+        <groupId>org.springframework.security</groupId>
+        <artifactId>spring-security-crypto</artifactId>
+        <version>${spring-security-crypto.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.springframework.data</groupId>
+        <artifactId>spring-data-bom</artifactId>
+        <version>${spring-data-bom.version}</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
@@ -104,11 +133,40 @@
         <version>${hikaricp.version}</version>
       </dependency>
 
+      <!-- Hibernate -->
+      <dependency>
+        <groupId>org.hibernate.orm</groupId>
+        <artifactId>hibernate-core</artifactId>
+        <version>${hibernate-core.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>jakarta.activation</groupId>
+        <artifactId>jakarta.activation-api</artifactId>
+        <version>2.1.1</version>
+      </dependency>
+
       <!-- Liquibase -->
       <dependency>
         <groupId>org.liquibase</groupId>
         <artifactId>liquibase-core</artifactId>
         <version>${liquibase.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.commons</groupId>
+        <artifactId>commons-lang3</artifactId>
+        <version>3.14.0</version>
+      </dependency>
+
+      <!-- Jakarta DI -->
+      <dependency>
+        <groupId>jakarta.inject</groupId>
+        <artifactId>jakarta.inject-api</artifactId>
+        <version>${jakarta.inject-api.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>jakarta.annotation</groupId>
+        <artifactId>jakarta.annotation-api</artifactId>
+        <version>2.1.1</version>
       </dependency>
 
       <!-- Tests -->
@@ -164,6 +222,28 @@
       <artifactId>jetty-slf4j-impl</artifactId>
     </dependency>
 
+    <!-- Spring Context -->
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-context</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.springframework.data</groupId>
+      <artifactId>spring-data-jpa</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.springframework.security</groupId>
+      <artifactId>spring-security-crypto</artifactId>
+    </dependency>
+
+    <!-- Jakarta DI -->
+    <dependency>
+      <groupId>jakarta.inject</groupId>
+      <artifactId>jakarta.inject-api</artifactId>
+    </dependency>
+
     <!-- Logging -->
     <dependency>
       <groupId>org.slf4j</groupId>
@@ -190,6 +270,21 @@
     <dependency>
       <groupId>com.zaxxer</groupId>
       <artifactId>HikariCP</artifactId>
+    </dependency>
+    <!-- Hibernate -->
+    <dependency>
+      <groupId>org.hibernate.orm</groupId>
+      <artifactId>hibernate-core</artifactId>
+    </dependency>
+
+    <!-- Jackson -->
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.datatype</groupId>
+      <artifactId>jackson-datatype-jsr310</artifactId>
     </dependency>
 
     <!-- Tests -->
@@ -230,5 +325,222 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
+
+  <reporting>
+    <plugins>
+      <plugin>
+        <artifactId>maven-checkstyle-plugin</artifactId>
+        <version>${maven-checkstyle-plugin.version}</version>
+        <configuration>
+          <failsOnError>true</failsOnError>
+          <failOnViolation>true</failOnViolation>
+          <configLocation>${checkstyle.config.location}</configLocation>
+        </configuration>
+      </plugin>
+    </plugins>
+  </reporting>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>xml-maven-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <artifactId>maven-checkstyle-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <artifactId>maven-enforcer-plugin</artifactId>
+      </plugin>
+    </plugins>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-compiler-plugin</artifactId>
+          <version>${maven-compiler-plugin.version}</version>
+        </plugin>
+        <plugin>
+          <artifactId>maven-javadoc-plugin</artifactId>
+          <version>${maven-javadoc-plugin.version}</version>
+          <executions>
+            <execution>
+              <id>attach-javadocs</id>
+              <phase>post-integration-test</phase>
+              <goals>
+                <goal>jar</goal>
+              </goals>
+              <configuration>
+                <doclint>none</doclint>
+                <quiet>true</quiet>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
+        <plugin>
+          <artifactId>maven-enforcer-plugin</artifactId>
+          <version>${maven-enforcer-plugin.version}</version>
+          <executions>
+            <execution>
+              <id>enforce</id>
+              <goals>
+                <goal>enforce</goal>
+              </goals>
+              <configuration>
+                <rules>
+                  <requireJavaVersion>
+                    <version>21</version>
+                  </requireJavaVersion>
+                  <reactorModuleConvergence>
+                    <message>The reactor is not valid</message>
+                    <ignoreModuleDependencies>true</ignoreModuleDependencies>
+                  </reactorModuleConvergence>
+                  <dependencyConvergence/>
+                </rules>
+              </configuration>
+            </execution>
+            <execution>
+              <id>enforce-maven</id>
+              <goals>
+                <goal>enforce</goal>
+              </goals>
+              <configuration>
+                <rules>
+                  <requireMavenVersion>
+                    <version>[3.6.0,)</version>
+                  </requireMavenVersion>
+                </rules>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
+        <plugin>
+          <artifactId>maven-checkstyle-plugin</artifactId>
+          <version>${maven-checkstyle-plugin.version}</version>
+          <dependencies>
+            <dependency>
+              <groupId>com.puppycrawl.tools</groupId>
+              <artifactId>checkstyle</artifactId>
+              <version>${com.puppycrawl.tools.checkstyle-version}</version>
+            </dependency>
+          </dependencies>
+          <executions>
+            <execution>
+              <id>checkstyle</id>
+              <goals>
+                <goal>check</goal>
+                <goal>checkstyle-aggregate</goal>
+              </goals>
+              <phase>validate</phase>
+              <configuration>
+                <includeTestSourceDirectory>false</includeTestSourceDirectory>
+                <linkXRef>false</linkXRef>
+                <consoleOutput>true</consoleOutput>
+                <violationSeverity>warning</violationSeverity>
+                <failsOnError>true</failsOnError>
+                <maxAllowedViolations>0</maxAllowedViolations>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
+        <plugin>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <version>${maven-surefire-plugin.version}</version>
+          <configuration>
+            <argLine>--add-opens java.base/sun.nio.ch=ALL-UNNAMED</argLine>
+            <includes>
+              <include>**/Test*.java</include>
+              <include>**/*Test.java</include>
+              <include>**/*Tests.java</include>
+              <include>**/*TestCase.java</include>
+            </includes>
+          </configuration>
+        </plugin>
+        <plugin>
+          <artifactId>maven-failsafe-plugin</artifactId>
+          <version>${maven-surefire-plugin.version}</version>
+          <executions>
+            <execution>
+              <goals>
+                <goal>integration-test</goal>
+                <goal>verify</goal>
+              </goals>
+            </execution>
+          </executions>
+          <configuration>
+            <argLine>--add-opens java.base/sun.nio.ch=ALL-UNNAMED</argLine>
+            <includes>
+              <include>**/*IT.java</include>
+            </includes>
+            <properties>
+              <excludeTags>skip</excludeTags>
+            </properties>
+          </configuration>
+        </plugin>
+        <plugin>
+          <artifactId>maven-jar-plugin</artifactId>
+          <version>${maven-jar-plugin.version}</version>
+          <configuration>
+            <archive>
+              <manifest>
+                <addClasspath>true</addClasspath>
+                <classpathPrefix>lib/</classpathPrefix>
+                <mainClass>${mainClass}</mainClass>
+              </manifest>
+              <manifestEntries>
+                <Add-Opens>java.base/sun.nio.ch</Add-Opens>
+              </manifestEntries>
+            </archive>
+            <excludes>
+              <exclude>META-INF/*.SF</exclude>
+            </excludes>
+          </configuration>
+        </plugin>
+        <plugin>
+          <artifactId>maven-dependency-plugin</artifactId>
+          <version>${maven-dependency-plugin.version}</version>
+          <executions>
+            <execution>
+              <phase>package</phase>
+              <goals>
+                <goal>copy-dependencies</goal>
+              </goals>
+              <configuration>
+                <overWriteReleases>false</overWriteReleases>
+                <includeScope>runtime</includeScope>
+                <outputDirectory>${project.build.directory}/lib</outputDirectory>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>xml-maven-plugin</artifactId>
+          <version>${xml-maven-plugin.version}</version>
+          <executions>
+            <execution>
+              <id>verify-xml</id>
+              <goals>
+                <goal>check-format</goal>
+              </goals>
+            </execution>
+          </executions>
+        </plugin>
+        <plugin>
+          <artifactId>maven-source-plugin</artifactId>
+          <version>${maven-source-plugin.version}</version>
+          <executions>
+            <execution>
+              <id>attach-sources</id>
+              <phase>post-integration-test</phase>
+              <goals>
+                <goal>jar-no-fork</goal>
+              </goals>
+            </execution>
+          </executions>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+  </build>
 
 </project>
