@@ -1,20 +1,24 @@
 package io.syemessenger.api.account;
 
+import static org.testcontainers.shaded.org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.testcontainers.shaded.org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.syemessenger.api.ClientCodec;
 import io.syemessenger.api.ServiceException;
-import io.syemessenger.api.account.repository.Account;
 import io.syemessenger.environment.IntegrationEnvironment;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
-public class ShowAccountTest {
-
+public class GetSessionAccountTest {
   private static final ClientCodec clientCodec = ClientCodec.getInstance();
   private static IntegrationEnvironment environment;
   private static AccountInfo existingAccountInfo;
@@ -35,21 +39,21 @@ public class ShowAccountTest {
   }
 
   @Test
-  void testShowAccount() {
-    try(AccountSdk sdk = new AccountSdkImpl(clientCodec)) {
+  void testGetSessionAccount() {
+    try (AccountSdk sdk = new AccountSdkImpl(clientCodec)) {
       sdk.login(
-          new LoginAccountRequest()
-              .username(existingAccountInfo.username())
-              .password("test12345"));
-      final var publicAccountInfo = sdk.showAccount(existingAccountInfo.id());
-      Assertions.assertEquals(existingAccountInfo.username(), publicAccountInfo.username());
+          new LoginAccountRequest().username(existingAccountInfo.username()).password("test12345"));
+      final var accountInfo = sdk.getSessionAccount();
+      assertEquals(existingAccountInfo.id(), accountInfo.id());
+      assertEquals(existingAccountInfo.username(), accountInfo.username());
+      assertEquals(existingAccountInfo.email(), accountInfo.email());
     }
   }
 
   @Test
-  void testShowAccountNotLoggedIn() {
+  void testGetSessionAccountNotLoggedIn() {
     try (AccountSdk sdk = new AccountSdkImpl(clientCodec)) {
-      sdk.showAccount(existingAccountInfo.id());
+      sdk.getSessionAccount();
     } catch (Exception ex) {
       assertInstanceOf(ServiceException.class, ex, "Exception: " + ex);
       final var serviceException = (ServiceException) ex;

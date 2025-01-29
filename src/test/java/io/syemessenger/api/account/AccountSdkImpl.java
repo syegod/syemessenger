@@ -68,7 +68,9 @@ public class AccountSdkImpl implements AccountSdk {
 
   @Override
   public AccountInfo getSessionAccount() {
-    return null;
+    final var message = new ServiceMessage().qualifier("getSessionAccount");
+    sendText(message);
+    return (AccountInfo) pollResponse();
   }
 
   @Override

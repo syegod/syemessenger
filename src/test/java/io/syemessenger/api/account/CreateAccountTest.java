@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.testcontainers.shaded.org.apache.commons.lang3.RandomStringUtils.random;
 import static org.testcontainers.shaded.org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
 
 import io.syemessenger.api.ClientCodec;
@@ -57,9 +56,10 @@ public class CreateAccountTest {
     }
   }
 
+  @ParameterizedTest(name = "{0}")
   @MethodSource(value = "failedAccountMethodSource")
-  @ParameterizedTest
-  void testCreateAccountFailed(CreateAccountRequest request, int errorCode, String errorMessage) {
+  void testCreateAccountFailed(
+      String test, CreateAccountRequest request, int errorCode, String errorMessage) {
     try (AccountSdk sdk = new AccountSdkImpl(clientCodec)) {
       sdk.createAccount(request);
       Assertions.fail("Expected exception");
@@ -74,85 +74,86 @@ public class CreateAccountTest {
   static Stream<Arguments> failedAccountMethodSource() {
     return Stream.of(
         Arguments.of(
+            "All parameters are empty strings",
             new CreateAccountRequest().username("").email("").password(""),
             400,
             "Missing or invalid: username"),
-        Arguments.of(new CreateAccountRequest(), 400, "Missing or invalid: username"),
         Arguments.of(
+            "All parameters are null",
+            new CreateAccountRequest(),
+            400,
+            "Missing or invalid: username"),
+        Arguments.of(
+            "No password",
             new CreateAccountRequest()
                 .username(randomAlphanumeric(8, 65))
                 .email(randomAlphanumeric(8, 65)),
             400,
             "Missing or invalid: password"),
         Arguments.of(
+            "No username",
             new CreateAccountRequest()
                 .email(randomAlphanumeric(8, 65))
                 .password(randomAlphanumeric(8, 65)),
             400,
             "Missing or invalid: username"),
         Arguments.of(
+            "No email",
             new CreateAccountRequest()
                 .username(randomAlphanumeric(8, 65))
                 .password(randomAlphanumeric(8, 65)),
             400,
             "Missing or invalid: email"),
-
-        // Username too short
         Arguments.of(
+            "Username too short",
             new CreateAccountRequest()
                 .username(randomAlphanumeric(7))
                 .email(randomAlphanumeric(8, 65))
                 .password(randomAlphanumeric(8, 65)),
             400,
             "Missing or invalid: username"),
-
-        // Username too long
         Arguments.of(
+            "Username too long",
             new CreateAccountRequest()
                 .username(randomAlphanumeric(80))
                 .email(randomAlphanumeric(8, 65))
                 .password(randomAlphanumeric(8, 65)),
             400,
             "Missing or invalid: username"),
-
-        // Email too short
         Arguments.of(
+            "Email too short",
             new CreateAccountRequest()
                 .username(randomAlphanumeric(8, 65))
                 .email(randomAlphanumeric(7))
                 .password(randomAlphanumeric(8, 65)),
             400,
             "Missing or invalid: email"),
-
-        // Email too long
         Arguments.of(
+            "Email too long",
             new CreateAccountRequest()
                 .username(randomAlphanumeric(8, 65))
                 .email(randomAlphanumeric(80))
                 .password(randomAlphanumeric(8, 65)),
             400,
             "Missing or invalid: email"),
-
-        // Password too short
         Arguments.of(
+            "Password too short",
             new CreateAccountRequest()
                 .username(randomAlphanumeric(8, 65))
                 .email(randomAlphanumeric(8, 65))
                 .password(randomAlphanumeric(7)),
             400,
             "Missing or invalid: password"),
-
-        // Password too long
         Arguments.of(
+            "Password too long",
             new CreateAccountRequest()
                 .username(randomAlphanumeric(8, 65))
                 .email(randomAlphanumeric(8, 65))
                 .password(randomAlphanumeric(80)),
             400,
             "Missing or invalid: password"),
-
-        // Uniqueness test
         Arguments.of(
+            "Username already exists",
             new CreateAccountRequest()
                 .username(existingAccountInfo.username())
                 .email(randomAlphanumeric(8, 65))
@@ -160,6 +161,7 @@ public class CreateAccountTest {
             400,
             "Cannot create account: already exists"),
         Arguments.of(
+            "Email already exists",
             new CreateAccountRequest()
                 .username(randomAlphanumeric(8, 65))
                 .email(existingAccountInfo.email())

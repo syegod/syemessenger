@@ -65,9 +65,26 @@ public class UpdateAccountTest {
     }
   }
 
-  @ParameterizedTest
+  @Test
+  void testUpdateAccountNotLoggedIn() {
+    try (AccountSdk sdk = new AccountSdkImpl(clientCodec)) {
+      final var username = randomAlphanumeric(8, 65);
+      final var email = randomAlphanumeric(8, 65);
+      final var password = randomAlphanumeric(8, 65);
+
+      sdk.updateAccount(new UpdateAccountRequest().username(username).email(email));
+    } catch (Exception ex) {
+      assertInstanceOf(ServiceException.class, ex, "Exception: " + ex);
+      final var serviceException = (ServiceException) ex;
+      assertEquals(401, serviceException.errorCode());
+      assertEquals("Not authenticated", serviceException.getMessage());
+    }
+  }
+
+  @ParameterizedTest(name = "{0}")
   @MethodSource(value = "failedUpdateAccountMethodSource")
-  void testUpdateAccountFailed(UpdateAccountRequest request, int errorCode, String errorMessage) {
+  void testUpdateAccountFailed(
+      String test, UpdateAccountRequest request, int errorCode, String errorMessage) {
     try (AccountSdk sdk = new AccountSdkImpl(clientCodec)) {
       sdk.login(
           new LoginAccountRequest().username(existingAccountInfo.username()).password("test12345"));
@@ -86,24 +103,42 @@ public class UpdateAccountTest {
     return Stream.of(
         // Length checks
         Arguments.of(
-            new UpdateAccountRequest().username(randomAlphanumeric(80)), 400, "Invalid: username"),
+            "Username too long",
+            new UpdateAccountRequest().username(randomAlphanumeric(80)),
+            400,
+            "Invalid: username"),
         Arguments.of(
-            new UpdateAccountRequest().username(randomAlphanumeric(7)), 400, "Invalid: username"),
+            "Username too short",
+            new UpdateAccountRequest().username(randomAlphanumeric(7)),
+            400,
+            "Invalid: username"),
         Arguments.of(
-            new UpdateAccountRequest().email(randomAlphanumeric(80)), 400, "Invalid: email"),
+            "Email too long",
+            new UpdateAccountRequest().email(randomAlphanumeric(80)),
+            400,
+            "Invalid: email"),
         Arguments.of(
-            new UpdateAccountRequest().email(randomAlphanumeric(7)), 400, "Invalid: email"),
+            "Email too short",
+            new UpdateAccountRequest().email(randomAlphanumeric(7)),
+            400,
+            "Invalid: email"),
         Arguments.of(
-            new UpdateAccountRequest().password(randomAlphanumeric(80)), 400, "Invalid: password"),
+            "Password too long",
+            new UpdateAccountRequest().password(randomAlphanumeric(80)),
+            400,
+            "Invalid: password"),
         Arguments.of(
-            new UpdateAccountRequest().password(randomAlphanumeric(7)), 400, "Invalid: password"),
-        // Updating username to already existing
+            "Password too short",
+            new UpdateAccountRequest().password(randomAlphanumeric(7)),
+            400,
+            "Invalid: password"),
         Arguments.of(
+            "Updating username to already existing",
             new UpdateAccountRequest().username(existingAccountInfo2.username()),
             400,
             "Cannot update account: already exists"),
-        // Updating email to already existing
         Arguments.of(
+            "Updating email to already existing",
             new UpdateAccountRequest().email(existingAccountInfo2.email()),
             400,
             "Cannot update account: already exists"));

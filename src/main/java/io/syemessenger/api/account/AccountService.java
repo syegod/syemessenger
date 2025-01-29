@@ -177,13 +177,13 @@ public class AccountService {
       return;
     }
 
-    final var account = accountRepository.findById(sessionContext.accountId()).orElse(null);
+    final Account account = accountRepository.findById(sessionContext.accountId()).orElse(null);
     if (account == null) {
       sessionContext.sendError(404, "Account not found");
       return;
     }
 
-    sessionContext.send(new ServiceMessage().qualifier("showAccount").data(toAccountInfo(account)));
+    sessionContext.send(new ServiceMessage().qualifier("getSessionAccount").data(toAccountInfo(account)));
   }
 
   public void showAccount(SessionContext sessionContext, Long id) {
