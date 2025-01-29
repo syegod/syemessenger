@@ -15,6 +15,8 @@
     <Logger name="org.eclipse.jetty" level="WARN"/>
     <Logger name="org.testcontainers" level="info"/>
     <Logger name="com.github" level="info"/>
+    <Logger name="org.hibernate.engine.jdbc.spi" level="warn"/>
+    <Logger name="org.hibernate.resource.transaction.backend.jdbc.internal" level="warn"/>
 
     <Root level="${env:logLevel:-DEBUG}">
       <AppenderRef ref="${env:logAppender:-STDOUT}"/>
