@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.testcontainers.shaded.org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
 
 import io.syemessenger.api.ClientCodec;
+import io.syemessenger.api.ClientSdk;
 import io.syemessenger.api.ServiceException;
 import io.syemessenger.environment.IntegrationEnvironment;
 import org.junit.jupiter.api.AfterAll;
@@ -35,7 +36,8 @@ public class ShowAccountTest {
 
   @Test
   void testShowAccount() {
-    try (AccountSdk sdk = new AccountSdkImpl(clientCodec)) {
+    try (ClientSdk clientSdk = new ClientSdk(clientCodec)) {
+      AccountSdk sdk = new AccountSdkImpl(clientSdk);
       sdk.login(
           new LoginAccountRequest().username(existingAccountInfo.username()).password("test12345"));
       final var publicAccountInfo = sdk.showAccount(existingAccountInfo.id());
@@ -45,7 +47,8 @@ public class ShowAccountTest {
 
   @Test
   void testShowAccountNotLoggedIn() {
-    try (AccountSdk sdk = new AccountSdkImpl(clientCodec)) {
+    try (ClientSdk clientSdk = new ClientSdk(clientCodec)) {
+      AccountSdk sdk = new AccountSdkImpl(clientSdk);
       sdk.showAccount(existingAccountInfo.id());
     } catch (Exception ex) {
       assertInstanceOf(ServiceException.class, ex, "Exception: " + ex);
@@ -56,7 +59,8 @@ public class ShowAccountTest {
   }
 
   static AccountInfo createExistingAccount() {
-    try (AccountSdk sdk = new AccountSdkImpl(clientCodec)) {
+    try (ClientSdk clientSdk = new ClientSdk(clientCodec)) {
+      AccountSdk sdk = new AccountSdkImpl(clientSdk);
       String username = randomAlphanumeric(8, 65);
       String email = "test@gmail.com";
       String password = "test12345";

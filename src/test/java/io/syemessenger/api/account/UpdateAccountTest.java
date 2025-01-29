@@ -6,6 +6,7 @@ import static org.testcontainers.shaded.org.apache.commons.lang3.RandomStringUti
 import static org.testcontainers.shaded.org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
 
 import io.syemessenger.api.ClientCodec;
+import io.syemessenger.api.ClientSdk;
 import io.syemessenger.api.ServiceException;
 import io.syemessenger.environment.IntegrationEnvironment;
 import java.util.stream.Stream;
@@ -42,7 +43,8 @@ public class UpdateAccountTest {
 
   @Test
   void testUpdateAccount() {
-    try (AccountSdk sdk = new AccountSdkImpl(clientCodec)) {
+    try (ClientSdk clientSdk = new ClientSdk(clientCodec)) {
+      AccountSdk sdk = new AccountSdkImpl(clientSdk);
       final var username = randomAlphanumeric(8, 65);
       final var email = "example1@gmail.com";
       final var password = randomAlphanumeric(8, 65);
@@ -64,7 +66,8 @@ public class UpdateAccountTest {
 
   @Test
   void testUpdateAccountNotLoggedIn() {
-    try (AccountSdk sdk = new AccountSdkImpl(clientCodec)) {
+    try (ClientSdk clientSdk = new ClientSdk(clientCodec)) {
+      AccountSdk sdk = new AccountSdkImpl(clientSdk);
       final var username = randomAlphanumeric(8, 65);
       final var email = "example@gmail.com";
 
@@ -81,7 +84,8 @@ public class UpdateAccountTest {
   @MethodSource(value = "failedUpdateAccountMethodSource")
   void testUpdateAccountFailed(
       String test, UpdateAccountRequest request, int errorCode, String errorMessage) {
-    try (AccountSdk sdk = new AccountSdkImpl(clientCodec)) {
+    try (ClientSdk clientSdk = new ClientSdk(clientCodec)) {
+      AccountSdk sdk = new AccountSdkImpl(clientSdk);
       sdk.login(
           new LoginAccountRequest().username(existingAccountInfo.username()).password("test12345"));
       sdk.updateAccount(request);
@@ -144,7 +148,8 @@ public class UpdateAccountTest {
   }
 
   static AccountInfo createExistingAccount() {
-    try (AccountSdk sdk = new AccountSdkImpl(clientCodec)) {
+    try (ClientSdk clientSdk = new ClientSdk(clientCodec)) {
+      AccountSdk sdk = new AccountSdkImpl(clientSdk);
       String username = randomAlphanumeric(8, 65);
       String email =
           randomAlphanumeric(4) + "@" + randomAlphabetic(2, 10) + "." + randomAlphabetic(2, 10);

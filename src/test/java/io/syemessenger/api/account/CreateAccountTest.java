@@ -8,6 +8,7 @@ import static org.testcontainers.shaded.org.apache.commons.lang3.RandomStringUti
 import static org.testcontainers.shaded.org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
 
 import io.syemessenger.api.ClientCodec;
+import io.syemessenger.api.ClientSdk;
 import io.syemessenger.api.ServiceException;
 import io.syemessenger.environment.IntegrationEnvironment;
 import java.util.stream.Stream;
@@ -42,7 +43,8 @@ public class CreateAccountTest {
 
   @Test
   void testCreateAccount() {
-    try (AccountSdk sdk = new AccountSdkImpl(clientCodec)) {
+    try (ClientSdk clientSdk = new ClientSdk(clientCodec)) {
+      AccountSdk sdk = new AccountSdkImpl(clientSdk);
       String username = randomAlphanumeric(8, 65);
       String email =
           randomAlphanumeric(4) + "@" + randomAlphabetic(2, 10) + "." + randomAlphabetic(2, 10);
@@ -62,7 +64,8 @@ public class CreateAccountTest {
   @MethodSource(value = "failedAccountMethodSource")
   void testCreateAccountFailed(
       String test, CreateAccountRequest request, int errorCode, String errorMessage) {
-    try (AccountSdk sdk = new AccountSdkImpl(clientCodec)) {
+    try (ClientSdk clientSdk = new ClientSdk(clientCodec)) {
+      AccountSdk sdk = new AccountSdkImpl(clientSdk);
       sdk.createAccount(request);
       Assertions.fail("Expected exception");
     } catch (Exception ex) {
@@ -237,7 +240,8 @@ public class CreateAccountTest {
   }
 
   static AccountInfo createExistingAccount() {
-    try (AccountSdk sdk = new AccountSdkImpl(clientCodec)) {
+    try (ClientSdk clientSdk = new ClientSdk(clientCodec)) {
+      AccountSdk sdk = new AccountSdkImpl(clientSdk);
       String username = randomAlphanumeric(8, 65);
       String email =
           randomAlphanumeric(4) + "@" + randomAlphabetic(2, 10) + "." + randomAlphabetic(2, 10);

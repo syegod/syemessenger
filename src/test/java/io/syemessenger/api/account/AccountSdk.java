@@ -1,6 +1,6 @@
 package io.syemessenger.api.account;
 
-public interface AccountSdk extends AutoCloseable {
+public interface AccountSdk {
 
   AccountInfo createAccount(CreateAccountRequest request);
 
@@ -12,6 +12,4 @@ public interface AccountSdk extends AutoCloseable {
 
   AccountViewInfo showAccount(Long id);
 
-  @Override
-  void close();
 }

@@ -6,6 +6,7 @@ import static org.testcontainers.shaded.org.apache.commons.lang3.RandomStringUti
 import static org.testcontainers.shaded.org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
 
 import io.syemessenger.api.ClientCodec;
+import io.syemessenger.api.ClientSdk;
 import io.syemessenger.api.ServiceException;
 import io.syemessenger.environment.IntegrationEnvironment;
 import org.junit.jupiter.api.AfterAll;
@@ -34,7 +35,8 @@ public class GetSessionAccountTest {
 
   @Test
   void testGetSessionAccount() {
-    try (AccountSdk sdk = new AccountSdkImpl(clientCodec)) {
+    try (ClientSdk clientSdk = new ClientSdk(clientCodec)) {
+      AccountSdk sdk = new AccountSdkImpl(clientSdk);
       sdk.login(
           new LoginAccountRequest().username(existingAccountInfo.username()).password("test12345"));
       final var accountInfo = sdk.getSessionAccount();
@@ -46,7 +48,8 @@ public class GetSessionAccountTest {
 
   @Test
   void testGetSessionAccountNotLoggedIn() {
-    try (AccountSdk sdk = new AccountSdkImpl(clientCodec)) {
+    try (ClientSdk clientSdk = new ClientSdk(clientCodec)) {
+      AccountSdk sdk = new AccountSdkImpl(clientSdk);
       sdk.getSessionAccount();
     } catch (Exception ex) {
       assertInstanceOf(ServiceException.class, ex, "Exception: " + ex);
@@ -57,7 +60,8 @@ public class GetSessionAccountTest {
   }
 
   static AccountInfo createExistingAccount() {
-    try (AccountSdk sdk = new AccountSdkImpl(clientCodec)) {
+    try (ClientSdk clientSdk = new ClientSdk(clientCodec)) {
+      AccountSdk sdk = new AccountSdkImpl(clientSdk);
       String username = randomAlphanumeric(8, 65);
       String email =
           randomAlphanumeric(4) + "@" + randomAlphabetic(2, 10) + "." + randomAlphabetic(2, 10);

@@ -9,9 +9,9 @@ import java.util.function.Consumer;
 public class MessageCodec {
 
   private final JsonMapper jsonMapper;
-  private final Map<String, Class> qualifierMap;
+  private final Map<String, Class<?>> qualifierMap;
 
-  public MessageCodec(JsonMapper jsonMapper, Consumer<Map<String, Class>> consumer) {
+  public MessageCodec(JsonMapper jsonMapper, Consumer<Map<String, Class<?>>> consumer) {
     this.jsonMapper = jsonMapper;
     qualifierMap = new ConcurrentHashMap<>();
     consumer.accept(qualifierMap);
@@ -20,6 +20,10 @@ public class MessageCodec {
   public Object decode(ServiceMessage message) {
     final var qualifier = message.qualifier();
     final var data = message.data();
-    return jsonMapper.convertValue(data, qualifierMap.get(qualifier));
+    final var type = qualifierMap.get(qualifier);
+    if (type == null) {
+      throw new IllegalArgumentException("Cannot find qualifier: " + qualifier);
+    }
+    return jsonMapper.convertValue(data, type);
   }
 }

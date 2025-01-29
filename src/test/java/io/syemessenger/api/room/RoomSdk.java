@@ -1,6 +1,6 @@
 package io.syemessenger.api.room;
 
-public interface RoomSdk extends AutoCloseable {
+public interface RoomSdk {
 
   RoomInfo createRoom(CreateRoomRequest request);
 
