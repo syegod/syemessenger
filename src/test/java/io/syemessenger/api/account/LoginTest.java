@@ -1,11 +1,8 @@
 package io.syemessenger.api.account;
 
-import static org.testcontainers.shaded.org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.testcontainers.shaded.org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
 
 import io.syemessenger.api.ClientCodec;
 import io.syemessenger.api.ServiceException;
@@ -84,41 +81,41 @@ public class LoginTest {
         Arguments.of(
             "Login to non-existing account",
             new LoginAccountRequest()
-                .username(randomAlphanumeric(6, 30))
-                .password(randomAlphanumeric(6, 25)),
+                .username(randomAlphanumeric(8, 65))
+                .password(randomAlphanumeric(8, 65)),
             401,
             "Login failed"),
         Arguments.of(
             "Cannot provide both username and email",
             new LoginAccountRequest()
-                .username(randomAlphanumeric(6, 30))
-                .email(randomAlphanumeric(10, 50))
-                .password(randomAlphanumeric(6, 25)),
+                .username(randomAlphanumeric(8, 65))
+                .email(randomAlphanumeric(8, 65))
+                .password(randomAlphanumeric(8, 65)),
             401,
             "Login failed"),
         Arguments.of(
             "Username and email are not provided",
-            new LoginAccountRequest().password(randomAlphanumeric(6, 25)),
+            new LoginAccountRequest().password(randomAlphanumeric(8, 65)),
             401,
             "Login failed"),
         Arguments.of(
             "Password not provided",
-            new LoginAccountRequest().username(randomAlphanumeric(6, 30)),
+            new LoginAccountRequest().username(randomAlphanumeric(8, 65)),
             401,
             "Login failed"),
         Arguments.of(
             "Invalid password",
             new LoginAccountRequest()
                 .username(existingAccountInfo.username())
-                .password(randomAlphanumeric(6, 25)),
+                .password(randomAlphanumeric(8, 65)),
             401,
             "Login failed"));
   }
 
   static AccountInfo createExistingAccount() {
     try (AccountSdk sdk = new AccountSdkImpl(clientCodec)) {
-      String username = randomAlphanumeric(6, 30);
-      String email = randomAlphanumeric(10, 50);
+      String username = randomAlphanumeric(8, 65);
+      String email = randomAlphanumeric(8, 65);
       String password = "test12345";
 
       return sdk.createAccount(

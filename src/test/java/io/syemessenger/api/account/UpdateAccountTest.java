@@ -46,9 +46,9 @@ public class UpdateAccountTest {
   @Test
   void testUpdateAccount() {
     try (AccountSdk sdk = new AccountSdkImpl(clientCodec)) {
-      final var username = randomAlphanumeric(6, 30);
-      final var email = randomAlphanumeric(10, 50);
-      final var password = randomAlphanumeric(6, 25);
+      final var username = randomAlphanumeric(8, 65);
+      final var email = randomAlphanumeric(8, 65);
+      final var password = randomAlphanumeric(8, 65);
 
       final var account =
           sdk.createAccount(
@@ -86,17 +86,17 @@ public class UpdateAccountTest {
     return Stream.of(
         // Length checks
         Arguments.of(
-            new UpdateAccountRequest().username(randomAlphanumeric(35)), 400, "Invalid: username"),
+            new UpdateAccountRequest().username(randomAlphanumeric(80)), 400, "Invalid: username"),
         Arguments.of(
-            new UpdateAccountRequest().username(randomAlphanumeric(5)), 400, "Invalid: username"),
+            new UpdateAccountRequest().username(randomAlphanumeric(7)), 400, "Invalid: username"),
         Arguments.of(
-            new UpdateAccountRequest().email(randomAlphanumeric(55)), 400, "Invalid: email"),
+            new UpdateAccountRequest().email(randomAlphanumeric(80)), 400, "Invalid: email"),
         Arguments.of(
-            new UpdateAccountRequest().email(randomAlphanumeric(5)), 400, "Invalid: email"),
+            new UpdateAccountRequest().email(randomAlphanumeric(7)), 400, "Invalid: email"),
         Arguments.of(
-            new UpdateAccountRequest().password(randomAlphanumeric(35)), 400, "Invalid: password"),
+            new UpdateAccountRequest().password(randomAlphanumeric(80)), 400, "Invalid: password"),
         Arguments.of(
-            new UpdateAccountRequest().password(randomAlphanumeric(5)), 400, "Invalid: password"),
+            new UpdateAccountRequest().password(randomAlphanumeric(7)), 400, "Invalid: password"),
         // Updating username to already existing
         Arguments.of(
             new UpdateAccountRequest().username(existingAccountInfo2.username()),
@@ -111,8 +111,8 @@ public class UpdateAccountTest {
 
   static AccountInfo createExistingAccount() {
     try (AccountSdk sdk = new AccountSdkImpl(clientCodec)) {
-      String username = randomAlphanumeric(6, 30);
-      String email = randomAlphanumeric(10, 50);
+      String username = randomAlphanumeric(8, 65);
+      String email = randomAlphanumeric(8, 65);
       String password = "test12345";
 
       return sdk.createAccount(

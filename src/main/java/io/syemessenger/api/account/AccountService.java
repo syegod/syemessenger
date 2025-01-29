@@ -24,7 +24,7 @@ public class AccountService {
       sessionContext.sendError(400, "Missing or invalid: username");
       return;
     }
-    if (username.length() < 6 || username.length() > 30) {
+    if (username.length() < 8 || username.length() > 64) {
       sessionContext.sendError(400, "Missing or invalid: username");
       return;
     }
@@ -34,7 +34,7 @@ public class AccountService {
       sessionContext.sendError(400, "Missing or invalid: email");
       return;
     }
-    if (email.length() < 10 || email.length() > 50) {
+    if (email.length() < 8 || email.length() > 64) {
       sessionContext.sendError(400, "Missing or invalid: email");
       return;
     }
@@ -44,7 +44,7 @@ public class AccountService {
       sessionContext.sendError(400, "Missing or invalid: password");
       return;
     }
-    if (password.length() < 6 || password.length() > 25) {
+    if (password.length() < 8 || password.length() > 64) {
       sessionContext.sendError(400, "Missing or invalid: password");
       return;
     }
@@ -83,7 +83,7 @@ public class AccountService {
 
     final var username = request.username();
     if (username != null) {
-      if (username.length() < 6 || username.length() > 30) {
+      if (username.length() < 8 || username.length() > 64) {
         sessionContext.sendError(400, "Invalid: username");
         return;
       }
@@ -91,7 +91,7 @@ public class AccountService {
 
     final var email = request.email();
     if (email != null) {
-      if (email.length() < 10 || email.length() > 50) {
+      if (email.length() < 8 || email.length() > 64) {
         sessionContext.sendError(400, "Invalid: email");
         return;
       }
@@ -99,7 +99,7 @@ public class AccountService {
 
     final var password = request.password();
     if (password != null) {
-      if (password.length() < 6 || password.length() > 25) {
+      if (password.length() < 8 || password.length() > 64) {
         sessionContext.sendError(400, "Invalid: password");
         return;
       }
