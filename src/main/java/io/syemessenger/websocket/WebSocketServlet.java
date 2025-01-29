@@ -2,6 +2,7 @@ package io.syemessenger.websocket;
 
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import io.syemessenger.MessageCodec;
+import io.syemessenger.api.RoomService;
 import io.syemessenger.api.account.AccountService;
 import io.syemessenger.api.account.CreateAccountRequest;
 import io.syemessenger.api.account.LoginAccountRequest;
@@ -10,7 +11,6 @@ import io.syemessenger.api.room.BlockMembersRequest;
 import io.syemessenger.api.room.CreateRoomRequest;
 import io.syemessenger.api.room.ListRoomsRequest;
 import io.syemessenger.api.room.RemoveMembersRequest;
-import io.syemessenger.api.room.RoomInfoList;
 import io.syemessenger.api.room.UnblockMembersRequest;
 import io.syemessenger.api.room.UpdateRoomRequest;
 import jakarta.inject.Named;
@@ -23,10 +23,13 @@ public class WebSocketServlet extends JettyWebSocketServlet {
   private final JsonMapper jsonMapper;
   private final MessageCodec messageCodec;
   private final AccountService accountService;
+  private final RoomService roomService;
 
-  public WebSocketServlet(JsonMapper jsonMapper, AccountService accountService) {
+  public WebSocketServlet(
+      JsonMapper jsonMapper, AccountService accountService, RoomService roomService) {
     this.jsonMapper = jsonMapper;
     this.accountService = accountService;
+    this.roomService = roomService;
     this.messageCodec =
         new MessageCodec(
             jsonMapper,
@@ -52,6 +55,7 @@ public class WebSocketServlet extends JettyWebSocketServlet {
   @Override
   public void configure(JettyWebSocketServletFactory factory) {
     factory.addMapping(
-        "/", (req, res) -> new WebSocketHandler(jsonMapper, messageCodec, accountService));
+        "/",
+        (req, res) -> new WebSocketHandler(jsonMapper, messageCodec, accountService, roomService));
   }
 }

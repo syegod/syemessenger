@@ -47,21 +47,21 @@ public class RoomSdkImpl implements RoomSdk {
   }
 
   @Override
-  public Long removeMembers(RemoveMembersRequest request) {
+  public Long removeRoomMembers(RemoveMembersRequest request) {
     final var message = new ServiceMessage().qualifier("removeMembers").data(request);
     clientSdk.sendText(message);
     return (Long) clientSdk.pollResponse();
   }
 
   @Override
-  public Long blockMembers(BlockMembersRequest request) {
+  public Long blockRoomMembers(BlockMembersRequest request) {
     final var message = new ServiceMessage().qualifier("blockMembers").data(request);
     clientSdk.sendText(message);
     return (Long) clientSdk.pollResponse();
   }
 
   @Override
-  public Long unblockMembers(UnblockMembersRequest request) {
+  public Long unblockRoomMembers(UnblockMembersRequest request) {
     final var message = new ServiceMessage().qualifier("unblockMembers").data(request);
     clientSdk.sendText(message);
     return (Long) clientSdk.pollResponse();

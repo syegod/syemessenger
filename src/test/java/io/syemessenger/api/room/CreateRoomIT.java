@@ -2,7 +2,6 @@ package io.syemessenger.api.room;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.testcontainers.shaded.org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
@@ -18,7 +17,6 @@ import io.syemessenger.api.account.CreateAccountRequest;
 import io.syemessenger.api.account.LoginAccountRequest;
 import io.syemessenger.environment.IntegrationEnvironment;
 import java.util.stream.Stream;
-import org.eclipse.jetty.websocket.core.util.InvokerUtils.Arg;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
@@ -58,6 +56,7 @@ public class CreateRoomIT {
     accountSdk = new AccountSdkImpl(clientSdk);
     roomSdk = new RoomSdkImpl(clientSdk);
     accountInfo = createAccount();
+    existingRoomInfo = createRoom(accountInfo);
   }
 
   @AfterEach
@@ -113,7 +112,19 @@ public class CreateRoomIT {
   @ParameterizedTest(name = "{0}")
   @MethodSource(value = "testCreateRoomFailedMethodSource")
   void testCreateRoomFailed(
-      String test, CreateAccountRequest request, int errorCode, String errorMessage) {}
+      String test, CreateRoomRequest request, int errorCode, String errorMessage) {
+    accountSdk.login(
+        new LoginAccountRequest().username(accountInfo.username()).password("test12345"));
+    try {
+      roomSdk.createRoom(request);
+      Assertions.fail("Expected exception");
+    } catch (Exception ex) {
+      assertInstanceOf(ServiceException.class, ex, "Exception: " + ex);
+      final var serviceException = (ServiceException) ex;
+      assertEquals(errorCode, serviceException.errorCode(), "errorCode");
+      assertEquals(errorMessage, serviceException.getMessage(), "errorMessage");
+    }
+  }
 
   static Stream<Arguments> testCreateRoomFailedMethodSource() {
     return Stream.of(
@@ -148,9 +159,15 @@ public class CreateRoomIT {
             "Cannot create room: already exists"));
   }
 
-//  private static RoomInfo createRoom() {
-//
-//  }
+  private static RoomInfo createRoom(AccountInfo accountInfo) {
+    try (final var client = new ClientSdk(clientCodec)) {
+      final var accountApi = new AccountSdkImpl(client);
+      accountApi.login(
+          new LoginAccountRequest().username(accountInfo.username()).password("test12345"));
+      final var roomApi = new RoomSdkImpl(client);
+      return roomApi.createRoom(new CreateRoomRequest().name(randomAlphanumeric(8, 65)));
+    }
+  }
 
   private static AccountInfo createAccount() {
     String username = randomAlphanumeric(8, 65);

@@ -12,11 +12,11 @@ public interface RoomSdk {
 
   Long leaveRoom(Long id);
 
-  Long removeMembers(RemoveMembersRequest request);
+  Long removeRoomMembers(RemoveMembersRequest request);
 
-  Long blockMembers(BlockMembersRequest request);
+  Long blockRoomMembers(BlockMembersRequest request);
 
-  Long unblockMembers(UnblockMembersRequest request);
+  Long unblockRoomMembers(UnblockMembersRequest request);
 
   RoomInfoList listRooms(ListRoomsRequest request);
 }

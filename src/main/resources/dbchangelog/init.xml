@@ -25,7 +25,7 @@
       <column name="id" type="bigserial">
         <constraints primaryKey="true"/>
       </column>
-      <column name="room_name" type="varchar">
+      <column name="name" type="varchar">
         <constraints unique="true"/>
       </column>
       <column name="owner_id" type="bigint">
