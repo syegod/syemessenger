@@ -18,7 +18,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-public class UpdateAccountTest {
+public class UpdateAccountIT {
 
   private static final ClientCodec clientCodec = ClientCodec.getInstance();
   private static IntegrationEnvironment environment;
@@ -70,8 +70,8 @@ public class UpdateAccountTest {
       AccountSdk sdk = new AccountSdkImpl(clientSdk);
       final var username = randomAlphanumeric(8, 65);
       final var email = "example@gmail.com";
-
       sdk.updateAccount(new UpdateAccountRequest().username(username).email(email));
+      Assertions.fail("Expected exception");
     } catch (Exception ex) {
       assertInstanceOf(ServiceException.class, ex, "Exception: " + ex);
       final var serviceException = (ServiceException) ex;

@@ -5,7 +5,6 @@ import java.util.StringJoiner;
 public class CreateRoomRequest {
 
   private String name;
-  private String ownerId;
   private String description;
 
   public String name() {
@@ -14,15 +13,6 @@ public class CreateRoomRequest {
 
   public CreateRoomRequest name(String name) {
     this.name = name;
-    return this;
-  }
-
-  public String ownerId() {
-    return ownerId;
-  }
-
-  public CreateRoomRequest ownerId(String ownerId) {
-    this.ownerId = ownerId;
     return this;
   }
 
@@ -39,7 +29,6 @@ public class CreateRoomRequest {
   public String toString() {
     return new StringJoiner(", ", CreateRoomRequest.class.getSimpleName() + "[", "]")
         .add("name='" + name + "'")
-        .add("ownerId='" + ownerId + "'")
         .add("description='" + description + "'")
         .toString();
   }

@@ -2,7 +2,6 @@ package io.syemessenger.api.account;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.testcontainers.shaded.org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.testcontainers.shaded.org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
 
 import io.syemessenger.api.ClientCodec;
@@ -10,10 +9,12 @@ import io.syemessenger.api.ClientSdk;
 import io.syemessenger.api.ServiceException;
 import io.syemessenger.environment.IntegrationEnvironment;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-public class GetSessionAccountTest {
+public class ShowAccountIT {
+
   private static final ClientCodec clientCodec = ClientCodec.getInstance();
   private static IntegrationEnvironment environment;
   private static AccountInfo existingAccountInfo;
@@ -34,23 +35,22 @@ public class GetSessionAccountTest {
   }
 
   @Test
-  void testGetSessionAccount() {
+  void testShowAccount() {
     try (ClientSdk clientSdk = new ClientSdk(clientCodec)) {
       AccountSdk sdk = new AccountSdkImpl(clientSdk);
       sdk.login(
           new LoginAccountRequest().username(existingAccountInfo.username()).password("test12345"));
-      final var accountInfo = sdk.getSessionAccount();
-      assertEquals(existingAccountInfo.id(), accountInfo.id());
-      assertEquals(existingAccountInfo.username(), accountInfo.username());
-      assertEquals(existingAccountInfo.email(), accountInfo.email());
+      final var publicAccountInfo = sdk.showAccount(existingAccountInfo.id());
+      Assertions.assertEquals(existingAccountInfo.username(), publicAccountInfo.username());
     }
   }
 
   @Test
-  void testGetSessionAccountNotLoggedIn() {
+  void testShowAccountNotLoggedIn() {
     try (ClientSdk clientSdk = new ClientSdk(clientCodec)) {
       AccountSdk sdk = new AccountSdkImpl(clientSdk);
-      sdk.getSessionAccount();
+      sdk.showAccount(existingAccountInfo.id());
+      Assertions.fail("Expected exception");
     } catch (Exception ex) {
       assertInstanceOf(ServiceException.class, ex, "Exception: " + ex);
       final var serviceException = (ServiceException) ex;
@@ -63,8 +63,7 @@ public class GetSessionAccountTest {
     try (ClientSdk clientSdk = new ClientSdk(clientCodec)) {
       AccountSdk sdk = new AccountSdkImpl(clientSdk);
       String username = randomAlphanumeric(8, 65);
-      String email =
-          randomAlphanumeric(4) + "@" + randomAlphabetic(2, 10) + "." + randomAlphabetic(2, 10);
+      String email = "test@gmail.com";
       String password = "test12345";
 
       return sdk.createAccount(

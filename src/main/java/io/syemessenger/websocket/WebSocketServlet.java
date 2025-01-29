@@ -6,6 +6,13 @@ import io.syemessenger.api.account.AccountService;
 import io.syemessenger.api.account.CreateAccountRequest;
 import io.syemessenger.api.account.LoginAccountRequest;
 import io.syemessenger.api.account.UpdateAccountRequest;
+import io.syemessenger.api.room.BlockMembersRequest;
+import io.syemessenger.api.room.CreateRoomRequest;
+import io.syemessenger.api.room.ListRoomsRequest;
+import io.syemessenger.api.room.RemoveMembersRequest;
+import io.syemessenger.api.room.RoomInfoList;
+import io.syemessenger.api.room.UnblockMembersRequest;
+import io.syemessenger.api.room.UpdateRoomRequest;
 import jakarta.inject.Named;
 import org.eclipse.jetty.ee10.websocket.server.JettyWebSocketServlet;
 import org.eclipse.jetty.ee10.websocket.server.JettyWebSocketServletFactory;
@@ -29,6 +36,16 @@ public class WebSocketServlet extends JettyWebSocketServlet {
               map.put("showAccount", Long.class);
               map.put("login", LoginAccountRequest.class);
               map.put("getSessionAccount", Void.class);
+
+              map.put("createRoom", CreateRoomRequest.class);
+              map.put("updateRoom", UpdateRoomRequest.class);
+              map.put("getRoom", Long.class);
+              map.put("joinRoom", String.class);
+              map.put("leaveRoom", Long.class);
+              map.put("removeRoomMembers", RemoveMembersRequest.class);
+              map.put("blockRoomMembers", BlockMembersRequest.class);
+              map.put("unblockRoomMembers", UnblockMembersRequest.class);
+              map.put("listRooms", ListRoomsRequest.class);
             });
   }
 
