@@ -17,17 +17,19 @@ public class WebSocketServlet extends JettyWebSocketServlet {
   private final MessageCodec messageCodec;
   private final AccountService accountService;
 
-  public WebSocketServlet(
-      JsonMapper jsonMapper, AccountService accountService) {
+  public WebSocketServlet(JsonMapper jsonMapper, AccountService accountService) {
     this.jsonMapper = jsonMapper;
     this.accountService = accountService;
-    this.messageCodec = new MessageCodec(jsonMapper, map -> {
-      map.put("createAccount", CreateAccountRequest.class);
-      map.put("updateAccount", UpdateAccountRequest.class);
-      map.put("showAccount", Long.class);
-      map.put("login", LoginAccountRequest.class);
-      map.put("getSessionAccount", Void.class);
-    });
+    this.messageCodec =
+        new MessageCodec(
+            jsonMapper,
+            map -> {
+              map.put("createAccount", CreateAccountRequest.class);
+              map.put("updateAccount", UpdateAccountRequest.class);
+              map.put("showAccount", Long.class);
+              map.put("login", LoginAccountRequest.class);
+              map.put("getSessionAccount", Void.class);
+            });
   }
 
   @Override

@@ -196,7 +196,8 @@ public class AccountService {
       return;
     }
 
-    sessionContext.send(new ServiceMessage().qualifier("getSessionAccount").data(toAccountInfo(account)));
+    sessionContext.send(
+        new ServiceMessage().qualifier("getSessionAccount").data(toAccountInfo(account)));
   }
 
   public void showAccount(SessionContext sessionContext, Long id) {

@@ -80,6 +80,8 @@ public class WebSocketHandler {
         case "getSessionAccount":
           accountService.getSessionAccount(sessionContext);
           break;
+        default:
+          throw new IllegalArgumentException("Wrong request: " + request);
       }
     } catch (Exception e) {
       LOGGER.error("[onWebSocketText] Failed to parse message [{}]", message, e);
