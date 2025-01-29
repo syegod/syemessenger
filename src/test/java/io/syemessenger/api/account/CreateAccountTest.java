@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.testcontainers.shaded.org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.testcontainers.shaded.org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
 
 import io.syemessenger.api.ClientCodec;
@@ -43,7 +44,8 @@ public class CreateAccountTest {
   void testCreateAccount() {
     try (AccountSdk sdk = new AccountSdkImpl(clientCodec)) {
       String username = randomAlphanumeric(8, 65);
-      String email = randomAlphanumeric(8, 65);
+      String email =
+          randomAlphanumeric(4) + "@" + randomAlphabetic(2, 10) + "." + randomAlphabetic(2, 10);
       String password = randomAlphanumeric(8, 65);
 
       final AccountInfo accountInfo =
@@ -87,13 +89,13 @@ public class CreateAccountTest {
             "No password",
             new CreateAccountRequest()
                 .username(randomAlphanumeric(8, 65))
-                .email(randomAlphanumeric(8, 65)),
+                .email("example@email.com"),
             400,
             "Missing or invalid: password"),
         Arguments.of(
             "No username",
             new CreateAccountRequest()
-                .email(randomAlphanumeric(8, 65))
+                .email("example@email.com")
                 .password(randomAlphanumeric(8, 65)),
             400,
             "Missing or invalid: username"),
@@ -121,6 +123,14 @@ public class CreateAccountTest {
             400,
             "Missing or invalid: username"),
         Arguments.of(
+            "Wrong email type",
+            new CreateAccountRequest()
+                .username(randomAlphanumeric(8, 65))
+                .email(randomAlphanumeric(8, 65))
+                .password(randomAlphanumeric(8, 65)),
+            400,
+            "Missing or invalid: email"),
+        Arguments.of(
             "Email too short",
             new CreateAccountRequest()
                 .username(randomAlphanumeric(8, 65))
@@ -140,7 +150,7 @@ public class CreateAccountTest {
             "Password too short",
             new CreateAccountRequest()
                 .username(randomAlphanumeric(8, 65))
-                .email(randomAlphanumeric(8, 65))
+                .email("example@email.com")
                 .password(randomAlphanumeric(7)),
             400,
             "Missing or invalid: password"),
@@ -148,7 +158,7 @@ public class CreateAccountTest {
             "Password too long",
             new CreateAccountRequest()
                 .username(randomAlphanumeric(8, 65))
-                .email(randomAlphanumeric(8, 65))
+                .email("example@email.com")
                 .password(randomAlphanumeric(80)),
             400,
             "Missing or invalid: password"),
@@ -156,7 +166,7 @@ public class CreateAccountTest {
             "Username already exists",
             new CreateAccountRequest()
                 .username(existingAccountInfo.username())
-                .email(randomAlphanumeric(8, 65))
+                .email("example@email.com")
                 .password(randomAlphanumeric(8, 65)),
             400,
             "Cannot create account: already exists"),
@@ -229,7 +239,8 @@ public class CreateAccountTest {
   static AccountInfo createExistingAccount() {
     try (AccountSdk sdk = new AccountSdkImpl(clientCodec)) {
       String username = randomAlphanumeric(8, 65);
-      String email = randomAlphanumeric(8, 65);
+      String email =
+          randomAlphanumeric(4) + "@" + randomAlphabetic(2, 10) + "." + randomAlphabetic(2, 10);
       String password = randomAlphanumeric(8, 65);
 
       return sdk.createAccount(

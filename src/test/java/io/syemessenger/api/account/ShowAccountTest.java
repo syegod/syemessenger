@@ -36,11 +36,9 @@ public class ShowAccountTest {
 
   @Test
   void testShowAccount() {
-    try(AccountSdk sdk = new AccountSdkImpl(clientCodec)) {
+    try (AccountSdk sdk = new AccountSdkImpl(clientCodec)) {
       sdk.login(
-          new LoginAccountRequest()
-              .username(existingAccountInfo.username())
-              .password("test12345"));
+          new LoginAccountRequest().username(existingAccountInfo.username()).password("test12345"));
       final var publicAccountInfo = sdk.showAccount(existingAccountInfo.id());
       Assertions.assertEquals(existingAccountInfo.username(), publicAccountInfo.username());
     }
@@ -61,7 +59,7 @@ public class ShowAccountTest {
   static AccountInfo createExistingAccount() {
     try (AccountSdk sdk = new AccountSdkImpl(clientCodec)) {
       String username = randomAlphanumeric(8, 65);
-      String email = randomAlphanumeric(8, 65);
+      String email = "test@gmail.com";
       String password = "test12345";
 
       return sdk.createAccount(

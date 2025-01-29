@@ -7,12 +7,16 @@ import io.syemessenger.websocket.SessionContext;
 import jakarta.inject.Named;
 import java.time.Clock;
 import java.time.LocalDateTime;
+import java.util.regex.Pattern;
 import org.springframework.dao.DataAccessException;
 
 @Named
 public class AccountService {
 
   private final AccountRepository accountRepository;
+
+  private static final Pattern EMAIL =
+      Pattern.compile("^[a-zA-Z0-9_!#$%&'*+/=?`{|}~^.-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
 
   public AccountService(AccountRepository accountRepository) {
     this.accountRepository = accountRepository;
@@ -35,6 +39,11 @@ public class AccountService {
       return;
     }
     if (email.length() < 8 || email.length() > 64) {
+      sessionContext.sendError(400, "Missing or invalid: email");
+      return;
+    }
+
+    if (!isEmailValid(email)) {
       sessionContext.sendError(400, "Missing or invalid: email");
       return;
     }
@@ -92,6 +101,10 @@ public class AccountService {
     final var email = request.email();
     if (email != null) {
       if (email.length() < 8 || email.length() > 64) {
+        sessionContext.sendError(400, "Invalid: email");
+        return;
+      }
+      if (!isEmailValid(email)) {
         sessionContext.sendError(400, "Invalid: email");
         return;
       }
@@ -216,5 +229,9 @@ public class AccountService {
 
   private static PublicAccountInfo toPublicAccountInfo(Account account) {
     return new PublicAccountInfo().id(account.id()).username(account.username());
+  }
+
+  private static boolean isEmailValid(String email) {
+    return EMAIL.matcher(email).matches();
   }
 }

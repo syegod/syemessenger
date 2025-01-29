@@ -2,6 +2,7 @@ package io.syemessenger.api.account;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.testcontainers.shaded.org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.testcontainers.shaded.org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
 
 import io.syemessenger.api.ClientCodec;
@@ -89,7 +90,7 @@ public class LoginTest {
             "Cannot provide both username and email",
             new LoginAccountRequest()
                 .username(randomAlphanumeric(8, 65))
-                .email(randomAlphanumeric(8, 65))
+                .email("example@gmail.com")
                 .password(randomAlphanumeric(8, 65)),
             401,
             "Login failed"),
@@ -115,7 +116,8 @@ public class LoginTest {
   static AccountInfo createExistingAccount() {
     try (AccountSdk sdk = new AccountSdkImpl(clientCodec)) {
       String username = randomAlphanumeric(8, 65);
-      String email = randomAlphanumeric(8, 65);
+      String email =
+          randomAlphanumeric(4) + "@" + randomAlphabetic(2, 10) + "." + randomAlphabetic(2, 10);
       String password = "test12345";
 
       return sdk.createAccount(

@@ -1,6 +1,7 @@
 package io.syemessenger.api.account;
 
 import static org.testcontainers.shaded.org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
+import static org.testcontainers.shaded.org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.testcontainers.shaded.org.apache.commons.lang3.RandomStringUtils.randomNumeric;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -19,6 +20,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.testcontainers.shaded.org.checkerframework.checker.units.qual.A;
 
 public class UpdateAccountTest {
 
@@ -47,7 +49,7 @@ public class UpdateAccountTest {
   void testUpdateAccount() {
     try (AccountSdk sdk = new AccountSdkImpl(clientCodec)) {
       final var username = randomAlphanumeric(8, 65);
-      final var email = randomAlphanumeric(8, 65);
+      final var email = "example1@gmail.com";
       final var password = randomAlphanumeric(8, 65);
 
       final var account =
@@ -69,8 +71,7 @@ public class UpdateAccountTest {
   void testUpdateAccountNotLoggedIn() {
     try (AccountSdk sdk = new AccountSdkImpl(clientCodec)) {
       final var username = randomAlphanumeric(8, 65);
-      final var email = randomAlphanumeric(8, 65);
-      final var password = randomAlphanumeric(8, 65);
+      final var email = "example@gmail.com";
 
       sdk.updateAccount(new UpdateAccountRequest().username(username).email(email));
     } catch (Exception ex) {
@@ -98,10 +99,8 @@ public class UpdateAccountTest {
     }
   }
 
-  // TODO: create tests for authorization
   static Stream<Arguments> failedUpdateAccountMethodSource() {
     return Stream.of(
-        // Length checks
         Arguments.of(
             "Username too long",
             new UpdateAccountRequest().username(randomAlphanumeric(80)),
@@ -112,6 +111,11 @@ public class UpdateAccountTest {
             new UpdateAccountRequest().username(randomAlphanumeric(7)),
             400,
             "Invalid: username"),
+        Arguments.of(
+            "Wrong email type",
+            new UpdateAccountRequest().email(randomAlphanumeric(8, 65)),
+            400,
+            "Invalid: email"),
         Arguments.of(
             "Email too long",
             new UpdateAccountRequest().email(randomAlphanumeric(80)),
@@ -147,7 +151,8 @@ public class UpdateAccountTest {
   static AccountInfo createExistingAccount() {
     try (AccountSdk sdk = new AccountSdkImpl(clientCodec)) {
       String username = randomAlphanumeric(8, 65);
-      String email = randomAlphanumeric(8, 65);
+      String email =
+          randomAlphanumeric(4) + "@" + randomAlphabetic(2, 10) + "." + randomAlphabetic(2, 10);
       String password = "test12345";
 
       return sdk.createAccount(
