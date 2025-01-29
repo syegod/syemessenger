@@ -3,7 +3,7 @@ package io.syemessenger.api;
 import java.util.StringJoiner;
 
 public class ServiceMessage {
-  
+
   private String qualifier;
   private Object data;
 

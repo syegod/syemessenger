@@ -6,7 +6,6 @@ import static org.testcontainers.shaded.org.apache.commons.lang3.RandomStringUti
 
 import io.syemessenger.api.ClientCodec;
 import io.syemessenger.api.ServiceException;
-import io.syemessenger.api.account.repository.Account;
 import io.syemessenger.environment.IntegrationEnvironment;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
