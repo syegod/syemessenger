@@ -18,7 +18,7 @@ public interface RoomSdk {
 
   Long unblockRoomMembers(UnblockMembersRequest request);
 
-  RoomInfoList listRooms(ListRoomsRequest request);
+  ListRoomsResponse listRooms(ListRoomsRequest request);
 
-  RoomMemberList getRoomMembers(GetRoomMembersRequest request);
+  GetRoomMembersResponse getRoomMembers(GetRoomMembersRequest request);
 }

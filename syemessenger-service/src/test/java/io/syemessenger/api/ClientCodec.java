@@ -4,10 +4,10 @@ import io.syemessenger.JsonMappers;
 import io.syemessenger.MessageCodec;
 import io.syemessenger.api.account.AccountInfo;
 import io.syemessenger.api.account.AccountViewInfo;
-import io.syemessenger.api.account.RoomList;
+import io.syemessenger.api.account.GetRoomsResponse;
+import io.syemessenger.api.room.GetRoomMembersResponse;
+import io.syemessenger.api.room.ListRoomsResponse;
 import io.syemessenger.api.room.RoomInfo;
-import io.syemessenger.api.room.RoomInfoList;
-import io.syemessenger.api.room.RoomMemberList;
 
 public class ClientCodec extends MessageCodec {
 
@@ -22,18 +22,18 @@ public class ClientCodec extends MessageCodec {
           map.put("login", Long.class);
           map.put("getSessionAccount", AccountInfo.class);
           map.put("showAccount", AccountViewInfo.class);
-          map.put("getRooms", RoomList.class);
+          map.put("getRooms", GetRoomsResponse.class);
 
           map.put("createRoom", RoomInfo.class);
           map.put("updateRoom", RoomInfo.class);
           map.put("getRoom", RoomInfo.class);
           map.put("joinRoom", Long.class);
           map.put("leaveRoom", Long.class);
-          map.put("getRoomMembers", RoomMemberList.class);
+          map.put("getRoomMembers", GetRoomMembersResponse.class);
           map.put("removeRoomMembers", Long.class);
           map.put("blockRoomMembers", Long.class);
           map.put("unblockRoomMembers", Long.class);
-          map.put("listRooms", RoomInfoList.class);
+          map.put("listRooms", ListRoomsResponse.class);
 
           map.put("error", ErrorData.class);
         });
