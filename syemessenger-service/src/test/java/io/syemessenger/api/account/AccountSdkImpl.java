@@ -47,9 +47,9 @@ public class AccountSdkImpl implements AccountSdk {
   }
 
   @Override
-  public RoomList getRooms(GetRoomsRequest request) {
+  public GetRoomsResponse getRooms(GetRoomsRequest request) {
     final var message = new ServiceMessage().qualifier("getRooms").data(request);
     clientSdk.sendText(message);
-    return (RoomList) clientSdk.pollResponse();
+    return (GetRoomsResponse) clientSdk.pollResponse();
   }
 }

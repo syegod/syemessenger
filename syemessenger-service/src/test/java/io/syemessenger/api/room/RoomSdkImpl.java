@@ -68,16 +68,16 @@ public class RoomSdkImpl implements RoomSdk {
   }
 
   @Override
-  public RoomInfoList listRooms(ListRoomsRequest request) {
-    final var message = new ServiceMessage().qualifier("unblockMembers").data(request);
+  public ListRoomsResponse listRooms(ListRoomsRequest request) {
+    final var message = new ServiceMessage().qualifier("listRooms").data(request);
     clientSdk.sendText(message);
-    return (RoomInfoList) clientSdk.pollResponse();
+    return (ListRoomsResponse) clientSdk.pollResponse();
   }
 
   @Override
-  public RoomMemberList getRoomMembers(GetRoomMembersRequest request) {
+  public GetRoomMembersResponse getRoomMembers(GetRoomMembersRequest request) {
     final var message = new ServiceMessage().qualifier("getRoomMembers").data(request);
     clientSdk.sendText(message);
-    return (RoomMemberList) clientSdk.pollResponse();
+    return (GetRoomMembersResponse) clientSdk.pollResponse();
   }
 }
