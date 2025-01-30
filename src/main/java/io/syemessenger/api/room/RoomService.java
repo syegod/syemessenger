@@ -88,12 +88,12 @@ public class RoomService {
       return;
     }
 
-    final var id = request.roomId();
-    if (id == null) {
-      sessionContext.sendError(400, "Missing or invalid: description");
+    final var roomId = request.roomId();
+    if (roomId == null) {
+      sessionContext.sendError(400, "Missing or invalid: roomId");
       return;
     }
-    final var room = roomRepository.findById(id).orElse(null);
+    final var room = roomRepository.findById(roomId).orElse(null);
     if (room == null) {
       sessionContext.sendError(404, "Room not found");
       return;

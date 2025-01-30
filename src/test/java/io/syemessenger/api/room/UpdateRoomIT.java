@@ -1,12 +1,9 @@
 package io.syemessenger.api.room;
 
-import static org.testcontainers.shaded.org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
-import static org.testcontainers.shaded.org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.testcontainers.shaded.org.apache.commons.lang3.RandomStringUtils.randomNumeric;
+import static org.testcontainers.shaded.org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
+import static org.testcontainers.shaded.org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
 
 import io.syemessenger.api.ClientCodec;
 import io.syemessenger.api.ClientSdk;
@@ -24,8 +21,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
-import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -44,6 +39,10 @@ public class UpdateRoomIT {
   static void beforeAll() {
     environment = new IntegrationEnvironment();
     environment.start();
+
+    accountInfo = createAccount();
+    accountInfo2 = createAccount();
+    existingRoomInfo = createRoom(accountInfo);
   }
 
   @AfterAll
@@ -58,9 +57,6 @@ public class UpdateRoomIT {
     clientSdk = new ClientSdk(clientCodec);
     accountSdk = new AccountSdkImpl(clientSdk);
     roomSdk = new RoomSdkImpl(clientSdk);
-    accountInfo = createAccount();
-    accountInfo2 = createAccount();
-    existingRoomInfo = createRoom(accountInfo);
   }
 
   @AfterEach
@@ -165,8 +161,7 @@ public class UpdateRoomIT {
                 .roomId(existingRoomInfo.id())
                 .description(randomAlphanumeric(201)),
             400,
-            "Missing or invalid: roomId")
-    );
+            "Missing or invalid: description"));
   }
 
   private static RoomInfo createRoom(AccountInfo accountInfo) {
@@ -180,12 +175,15 @@ public class UpdateRoomIT {
   }
 
   private static AccountInfo createAccount() {
-    String username = randomAlphanumeric(8, 65);
-    String email =
-        randomAlphanumeric(4) + "@" + randomAlphabetic(2, 10) + "." + randomAlphabetic(2, 10);
-    String password = "test12345";
+    try (final var client = new ClientSdk(clientCodec)) {
+      final var accountApi = new AccountSdkImpl(client);
+      String username = randomAlphanumeric(8, 65);
+      String email =
+          randomAlphanumeric(4) + "@" + randomAlphabetic(2, 10) + "." + randomAlphabetic(2, 10);
+      String password = "test12345";
 
-    return accountSdk.createAccount(
-        new CreateAccountRequest().username(username).email(email).password(password));
+      return accountApi.createAccount(
+          new CreateAccountRequest().username(username).email(email).password(password));
+    }
   }
 }
