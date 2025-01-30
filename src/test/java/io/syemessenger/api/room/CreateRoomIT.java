@@ -41,6 +41,9 @@ public class CreateRoomIT {
   static void beforeAll() {
     environment = new IntegrationEnvironment();
     environment.start();
+
+    accountInfo = createAccount();
+    existingRoomInfo = createRoom(accountInfo);
   }
 
   @AfterAll
@@ -55,8 +58,6 @@ public class CreateRoomIT {
     clientSdk = new ClientSdk(clientCodec);
     accountSdk = new AccountSdkImpl(clientSdk);
     roomSdk = new RoomSdkImpl(clientSdk);
-    accountInfo = createAccount();
-    existingRoomInfo = createRoom(accountInfo);
   }
 
   @AfterEach
@@ -170,12 +171,15 @@ public class CreateRoomIT {
   }
 
   private static AccountInfo createAccount() {
-    String username = randomAlphanumeric(8, 65);
-    String email =
-        randomAlphanumeric(4) + "@" + randomAlphabetic(2, 10) + "." + randomAlphabetic(2, 10);
-    String password = "test12345";
+    try (final var client = new ClientSdk(clientCodec)) {
+      final var accountApi = new AccountSdkImpl(client);
+      String username = randomAlphanumeric(8, 65);
+      String email =
+          randomAlphanumeric(4) + "@" + randomAlphabetic(2, 10) + "." + randomAlphabetic(2, 10);
+      String password = "test12345";
 
-    return accountSdk.createAccount(
-        new CreateAccountRequest().username(username).email(email).password(password));
+      return accountApi.createAccount(
+          new CreateAccountRequest().username(username).email(email).password(password));
+    }
   }
 }
