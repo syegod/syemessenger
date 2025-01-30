@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.StringJoiner;
 
 public class UnblockMembersRequest {
+
   private Long roomId;
   private List<Long> memberIds;
 

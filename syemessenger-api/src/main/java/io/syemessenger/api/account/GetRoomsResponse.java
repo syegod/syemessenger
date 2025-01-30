@@ -1,9 +1,10 @@
-package io.syemessenger.api.room;
+package io.syemessenger.api.account;
 
+import io.syemessenger.api.room.RoomInfo;
 import java.util.List;
 import java.util.StringJoiner;
 
-public class RoomInfoList {
+public class GetRoomsResponse {
 
   private List<RoomInfo> roomInfos;
   private Integer offset;
@@ -14,7 +15,7 @@ public class RoomInfoList {
     return roomInfos;
   }
 
-  public RoomInfoList roomInfos(List<RoomInfo> roomInfos) {
+  public GetRoomsResponse roomInfos(List<RoomInfo> roomInfos) {
     this.roomInfos = roomInfos;
     return this;
   }
@@ -23,7 +24,7 @@ public class RoomInfoList {
     return offset;
   }
 
-  public RoomInfoList offset(Integer offset) {
+  public GetRoomsResponse offset(Integer offset) {
     this.offset = offset;
     return this;
   }
@@ -32,7 +33,7 @@ public class RoomInfoList {
     return limit;
   }
 
-  public RoomInfoList limit(Integer limit) {
+  public GetRoomsResponse limit(Integer limit) {
     this.limit = limit;
     return this;
   }
@@ -41,14 +42,14 @@ public class RoomInfoList {
     return totalCount;
   }
 
-  public RoomInfoList totalCount(Integer totalCount) {
+  public GetRoomsResponse totalCount(Integer totalCount) {
     this.totalCount = totalCount;
     return this;
   }
 
   @Override
   public String toString() {
-    return new StringJoiner(", ", RoomInfoList.class.getSimpleName() + "[", "]")
+    return new StringJoiner(", ", GetRoomsResponse.class.getSimpleName() + "[", "]")
         .add("roomInfos=" + roomInfos)
         .add("offset=" + offset)
         .add("limit=" + limit)
