@@ -1,5 +1,3 @@
 package io.syemessenger.api.room;
 
-public class JoinRoomIT {
-
-}
+public class JoinRoomIT {}

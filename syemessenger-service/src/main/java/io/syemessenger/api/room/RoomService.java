@@ -1,7 +1,6 @@
 package io.syemessenger.api.room;
 
 import io.syemessenger.api.ServiceMessage;
-import io.syemessenger.api.account.repository.Account;
 import io.syemessenger.api.account.repository.AccountRepository;
 import io.syemessenger.api.room.repository.Room;
 import io.syemessenger.api.room.repository.RoomRepository;
@@ -9,7 +8,6 @@ import io.syemessenger.websocket.SessionContext;
 import jakarta.inject.Named;
 import java.time.Clock;
 import java.time.LocalDateTime;
-import java.util.Optional;
 import org.springframework.dao.DataAccessException;
 
 @Named
