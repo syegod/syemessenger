@@ -1,19 +1,15 @@
-package io.syemessenger.api;
+package io.syemessenger.api.room;
 
+import io.syemessenger.api.ServiceMessage;
+import io.syemessenger.api.account.repository.Account;
 import io.syemessenger.api.account.repository.AccountRepository;
-import io.syemessenger.api.room.BlockMembersRequest;
-import io.syemessenger.api.room.CreateRoomRequest;
-import io.syemessenger.api.room.ListRoomsRequest;
-import io.syemessenger.api.room.RemoveMembersRequest;
-import io.syemessenger.api.room.RoomInfo;
-import io.syemessenger.api.room.UnblockMembersRequest;
-import io.syemessenger.api.room.UpdateRoomRequest;
 import io.syemessenger.api.room.repository.Room;
 import io.syemessenger.api.room.repository.RoomRepository;
 import io.syemessenger.websocket.SessionContext;
 import jakarta.inject.Named;
 import java.time.Clock;
 import java.time.LocalDateTime;
+import java.util.Optional;
 import org.springframework.dao.DataAccessException;
 
 @Named
@@ -76,7 +72,48 @@ public class RoomService {
     }
   }
 
-  public void updateRoom(SessionContext sessionContext, UpdateRoomRequest request) {}
+  public void updateRoom(SessionContext sessionContext, UpdateRoomRequest request) {
+    if (!sessionContext.isLoggedIn()) {
+      sessionContext.sendError(401, "Not authenticated");
+      return;
+    }
+
+    final var description = request.description();
+    if (description == null) {
+      sessionContext.sendError(400, "Missing or invalid: description");
+      return;
+    }
+    if (description.length() < 8 || description.length() > 200) {
+      sessionContext.sendError(400, "Missing or invalid: description");
+      return;
+    }
+
+    final var id = request.roomId();
+    if (id == null) {
+      sessionContext.sendError(400, "Missing or invalid: description");
+      return;
+    }
+    final var room = roomRepository.findById(id).orElse(null);
+    if (room == null) {
+      sessionContext.sendError(404, "Room not found");
+      return;
+    }
+
+    if (!room.owner().id().equals(sessionContext.accountId())) {
+      sessionContext.sendError(403, "Not allowed");
+      return;
+    }
+
+    room.description(description);
+
+    try {
+      final var saved = roomRepository.save(room);
+      final var roomInfo = toRoomInfo(saved);
+      sessionContext.send(new ServiceMessage().qualifier("updateRoom").data(roomInfo));
+    } catch (Exception e) {
+      sessionContext.sendError(500, e.getMessage());
+    }
+  }
 
   public void getRoom(SessionContext sessionContext, Long id) {}
 

@@ -2,7 +2,7 @@ package io.syemessenger.websocket;
 
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import io.syemessenger.MessageCodec;
-import io.syemessenger.api.RoomService;
+import io.syemessenger.api.room.RoomService;
 import io.syemessenger.api.ServiceMessage;
 import io.syemessenger.api.account.AccountService;
 import io.syemessenger.api.account.CreateAccountRequest;

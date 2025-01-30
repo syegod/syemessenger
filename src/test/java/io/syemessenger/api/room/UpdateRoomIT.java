@@ -1,11 +1,12 @@
 package io.syemessenger.api.room;
 
+import static org.testcontainers.shaded.org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
+import static org.testcontainers.shaded.org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.testcontainers.shaded.org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
-import static org.testcontainers.shaded.org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
+import static org.testcontainers.shaded.org.apache.commons.lang3.RandomStringUtils.randomNumeric;
 
 import io.syemessenger.api.ClientCodec;
 import io.syemessenger.api.ClientSdk;
@@ -23,18 +24,20 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-public class CreateRoomIT {
-
+public class UpdateRoomIT {
   private static final ClientCodec clientCodec = ClientCodec.getInstance();
   private static IntegrationEnvironment environment;
   private static ClientSdk clientSdk;
   private static AccountSdk accountSdk;
   private static RoomSdk roomSdk;
   private static AccountInfo accountInfo;
+  private static AccountInfo accountInfo2;
   private static RoomInfo existingRoomInfo;
 
   @BeforeAll
@@ -56,6 +59,7 @@ public class CreateRoomIT {
     accountSdk = new AccountSdkImpl(clientSdk);
     roomSdk = new RoomSdkImpl(clientSdk);
     accountInfo = createAccount();
+    accountInfo2 = createAccount();
     existingRoomInfo = createRoom(accountInfo);
   }
 
@@ -67,39 +71,26 @@ public class CreateRoomIT {
   }
 
   @Test
-  void testCreateRoom() {
+  void testUpdateRoom() {
     accountSdk.login(
         new LoginAccountRequest().username(accountInfo.username()).password("test12345"));
 
-    final var name = randomAlphanumeric(20);
     final var description = randomAlphanumeric(20);
     final var roomInfo =
-        roomSdk.createRoom(new CreateRoomRequest().name(name).description(description));
+        roomSdk.updateRoom(
+            new UpdateRoomRequest().roomId(existingRoomInfo.id()).description(description));
 
-    assertTrue(roomInfo.id() > 0, "roomInfo.id: " + roomInfo.id());
+    assertEquals(existingRoomInfo.id(), roomInfo.id(), "roomInfo.id: " + roomInfo.id());
     assertEquals(accountInfo.username(), roomInfo.owner());
     assertEquals(description, roomInfo.description());
   }
 
   @Test
-  void testCreateRoomNoDescription() {
-    accountSdk.login(
-        new LoginAccountRequest().username(accountInfo.username()).password("test12345"));
-
-    final var name = randomAlphanumeric(20);
-    final var roomInfo = roomSdk.createRoom(new CreateRoomRequest().name(name));
-
-    assertTrue(roomInfo.id() > 0, "roomInfo.id: " + roomInfo.id());
-    assertEquals(accountInfo.username(), roomInfo.owner());
-    assertNull(roomInfo.description(), "roomInfo.description: " + roomInfo.description());
-  }
-
-  @Test
-  void testCreateRoomNotLoggedIn() {
+  void testUpdateRoomNotLoggedIn() {
     try {
-      final var name = randomAlphanumeric(20);
       final var description = randomAlphanumeric(20);
-      roomSdk.createRoom(new CreateRoomRequest().name(name).description(description));
+      roomSdk.updateRoom(
+          new UpdateRoomRequest().roomId(existingRoomInfo.id()).description(description));
       Assertions.fail("Expected exception");
     } catch (Exception ex) {
       assertInstanceOf(ServiceException.class, ex, "Exception: " + ex);
@@ -109,14 +100,32 @@ public class CreateRoomIT {
     }
   }
 
+  @Test
+  void testUpdateRoomNotOwner() {
+    try {
+      accountSdk.login(
+          new LoginAccountRequest().username(accountInfo2.username()).password("test12345"));
+      roomSdk.updateRoom(
+          new UpdateRoomRequest()
+              .roomId(existingRoomInfo.id())
+              .description(randomAlphanumeric(20)));
+      Assertions.fail("Expected exception");
+    } catch (Exception ex) {
+      assertInstanceOf(ServiceException.class, ex, "Exception: " + ex);
+      final var serviceException = (ServiceException) ex;
+      assertEquals(403, serviceException.errorCode());
+      assertEquals("Not allowed", serviceException.getMessage());
+    }
+  }
+
   @ParameterizedTest(name = "{0}")
-  @MethodSource(value = "testCreateRoomFailedMethodSource")
-  void testCreateRoomFailed(
-      String test, CreateRoomRequest request, int errorCode, String errorMessage) {
+  @MethodSource(value = "testUpdateRoomFailedMethodSource")
+  void testUpdateRoomFailed(
+      String test, UpdateRoomRequest request, int errorCode, String errorMessage) {
     accountSdk.login(
         new LoginAccountRequest().username(accountInfo.username()).password("test12345"));
     try {
-      roomSdk.createRoom(request);
+      roomSdk.updateRoom(request);
       Assertions.fail("Expected exception");
     } catch (Exception ex) {
       assertInstanceOf(ServiceException.class, ex, "Exception: " + ex);
@@ -126,37 +135,38 @@ public class CreateRoomIT {
     }
   }
 
-  static Stream<Arguments> testCreateRoomFailedMethodSource() {
+  static Stream<Arguments> testUpdateRoomFailedMethodSource() {
     return Stream.of(
         Arguments.of(
-            "Room name too short",
-            new CreateRoomRequest().name(randomAlphanumeric(7)).description(randomAlphanumeric(20)),
+            "No room id",
+            new UpdateRoomRequest().description(randomAlphanumeric(20)),
             400,
-            "Missing or invalid: name"),
+            "Missing or invalid: roomId"),
         Arguments.of(
-            "Room name too long",
-            new CreateRoomRequest()
-                .name(randomAlphanumeric(65))
-                .description(randomAlphanumeric(20)),
-            400,
-            "Missing or invalid: name"),
+            "Wrong room id",
+            new UpdateRoomRequest().roomId(100L).description(randomAlphanumeric(20)),
+            404,
+            "Room not found"),
         Arguments.of(
-            "No room name",
-            new CreateRoomRequest().description(randomAlphanumeric(20)),
-            400,
-            "Missing or invalid: name"),
-        Arguments.of(
-            "Room description too long",
-            new CreateRoomRequest()
-                .name(randomAlphanumeric(8, 65))
-                .description(randomAlphanumeric(201)),
+            "No description",
+            new UpdateRoomRequest().roomId(existingRoomInfo.id()),
             400,
             "Missing or invalid: description"),
         Arguments.of(
-            "Room name already exists",
-            new CreateRoomRequest().name(existingRoomInfo.name()),
+            "Description too short",
+            new UpdateRoomRequest()
+                .roomId(existingRoomInfo.id())
+                .description(randomAlphanumeric(5)),
             400,
-            "Cannot create room: already exists"));
+            "Missing or invalid: description"),
+        Arguments.of(
+            "Description too long",
+            new UpdateRoomRequest()
+                .roomId(existingRoomInfo.id())
+                .description(randomAlphanumeric(201)),
+            400,
+            "Missing or invalid: roomId")
+    );
   }
 
   private static RoomInfo createRoom(AccountInfo accountInfo) {
