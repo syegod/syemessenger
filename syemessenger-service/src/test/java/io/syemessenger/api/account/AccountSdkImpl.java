@@ -45,4 +45,11 @@ public class AccountSdkImpl implements AccountSdk {
     clientSdk.sendText(message);
     return (AccountViewInfo) clientSdk.pollResponse();
   }
+
+  @Override
+  public RoomList getRooms(GetRoomsRequest request) {
+    final var message = new ServiceMessage().qualifier("getRooms").data(request);
+    clientSdk.sendText(message);
+    return (RoomList) clientSdk.pollResponse();
+  }
 }

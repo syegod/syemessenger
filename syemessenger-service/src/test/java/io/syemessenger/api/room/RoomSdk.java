@@ -12,8 +12,6 @@ public interface RoomSdk {
 
   Long leaveRoom(Long id);
 
-  RoomMemberList getRoomMembers(Long id);
-
   Long removeRoomMembers(RemoveMembersRequest request);
 
   Long blockRoomMembers(BlockMembersRequest request);

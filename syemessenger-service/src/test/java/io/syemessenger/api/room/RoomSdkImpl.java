@@ -73,4 +73,11 @@ public class RoomSdkImpl implements RoomSdk {
     clientSdk.sendText(message);
     return (RoomInfoList) clientSdk.pollResponse();
   }
+
+  @Override
+  public RoomMemberList getRoomMembers(GetRoomMembersRequest request) {
+    final var message = new ServiceMessage().qualifier("getRoomMembers").data(request);
+    clientSdk.sendText(message);
+    return (RoomMemberList) clientSdk.pollResponse();
+  }
 }
