@@ -48,7 +48,7 @@ public class ClientSdk implements AutoCloseable {
         .thenRun(() -> System.out.println("WebSocket closed"));
   }
 
-  public Object pollResponse() {
+  private Object pollResponse() {
     final ServiceMessage response;
     try {
       response = messageQueue.poll(3, TimeUnit.SECONDS);
@@ -68,12 +68,16 @@ public class ClientSdk implements AutoCloseable {
     return data;
   }
 
-  public void sendText(ServiceMessage message) {
+  private void sendText(ServiceMessage message) {
     try {
       ws.sendText(objectMapper.writeValueAsString(message), true);
     } catch (JsonProcessingException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  public <T> T api(Class<T> clazz) {
+    // ...
   }
 
   private class WebSocketListener implements WebSocket.Listener {
