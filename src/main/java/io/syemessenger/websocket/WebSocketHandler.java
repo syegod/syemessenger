@@ -2,6 +2,8 @@ package io.syemessenger.websocket;
 
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import io.syemessenger.MessageCodec;
+import io.syemessenger.api.account.GetRoomsRequest;
+import io.syemessenger.api.room.GetRoomMembersRequest;
 import io.syemessenger.api.room.RoomService;
 import io.syemessenger.api.ServiceMessage;
 import io.syemessenger.api.account.AccountService;
@@ -92,6 +94,9 @@ public class WebSocketHandler {
         case "getSessionAccount":
           accountService.getSessionAccount(sessionContext);
           break;
+        case "getRooms":
+          accountService.getRooms(sessionContext, (GetRoomsRequest) request);
+          break;
         case "createRoom":
           roomService.createRoom(sessionContext, (CreateRoomRequest) request);
           break;
@@ -106,6 +111,9 @@ public class WebSocketHandler {
           break;
         case "leaveRoom":
           roomService.leaveRoom(sessionContext, (Long) request);
+          break;
+        case "getRoomMembers":
+          roomService.getRoomMembers(sessionContext, (GetRoomMembersRequest) request);
           break;
         case "removeRoomMembers":
           roomService.removeRoomMembers(sessionContext, (RemoveMembersRequest) request);

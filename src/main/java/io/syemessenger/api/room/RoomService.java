@@ -119,6 +119,8 @@ public class RoomService {
 
   public void joinRoom(SessionContext sessionContext, String name) {}
 
+  public void getRoomMembers(SessionContext sessionContext, GetRoomMembersRequest request) {}
+
   public void leaveRoom(SessionContext sessionContext, Long id) {}
 
   public void removeRoomMembers(SessionContext sessionContext, RemoveMembersRequest request) {}

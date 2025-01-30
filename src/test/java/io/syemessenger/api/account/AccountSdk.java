@@ -12,4 +12,5 @@ public interface AccountSdk {
 
   AccountViewInfo showAccount(Long id);
 
+  RoomList getRooms(GetRoomsRequest request);
 }

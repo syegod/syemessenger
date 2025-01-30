@@ -219,6 +219,8 @@ public class AccountService {
         new ServiceMessage().qualifier("showAccount").data(toAccountViewInfo(account)));
   }
 
+  public void getRooms(SessionContext sessionContext, GetRoomsRequest request) {}
+
   private static AccountInfo toAccountInfo(Account account) {
     return new AccountInfo()
         .id(account.id())

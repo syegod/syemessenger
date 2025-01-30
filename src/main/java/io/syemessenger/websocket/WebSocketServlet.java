@@ -2,6 +2,8 @@ package io.syemessenger.websocket;
 
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import io.syemessenger.MessageCodec;
+import io.syemessenger.api.account.GetRoomsRequest;
+import io.syemessenger.api.room.GetRoomMembersRequest;
 import io.syemessenger.api.room.RoomService;
 import io.syemessenger.api.account.AccountService;
 import io.syemessenger.api.account.CreateAccountRequest;
@@ -39,12 +41,14 @@ public class WebSocketServlet extends JettyWebSocketServlet {
               map.put("showAccount", Long.class);
               map.put("login", LoginAccountRequest.class);
               map.put("getSessionAccount", Void.class);
+              map.put("getRooms", GetRoomsRequest.class);
 
               map.put("createRoom", CreateRoomRequest.class);
               map.put("updateRoom", UpdateRoomRequest.class);
               map.put("getRoom", Long.class);
               map.put("joinRoom", String.class);
               map.put("leaveRoom", Long.class);
+              map.put("getRoomMembers", GetRoomMembersRequest.class);
               map.put("removeRoomMembers", RemoveMembersRequest.class);
               map.put("blockRoomMembers", BlockMembersRequest.class);
               map.put("unblockRoomMembers", UnblockMembersRequest.class);
