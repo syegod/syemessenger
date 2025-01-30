@@ -79,52 +79,52 @@ public class WebSocketHandler {
       final var request = messageCodec.decode(serviceMessage);
 
       switch (qualifier) {
-        case "createAccount":
+        case "v1/syemessenger/createAccount":
           accountService.createAccount(sessionContext, (CreateAccountRequest) request);
           break;
-        case "updateAccount":
+        case "v1/syemessenger/updateAccount":
           accountService.updateAccount(sessionContext, (UpdateAccountRequest) request);
           break;
-        case "showAccount":
+        case "v1/syemessenger/showAccount":
           accountService.showAccount(sessionContext, (Long) request);
           break;
-        case "login":
+        case "v1/syemessenger/login":
           accountService.login(sessionContext, (LoginAccountRequest) request);
           break;
-        case "getSessionAccount":
+        case "v1/syemessenger/getSessionAccount":
           accountService.getSessionAccount(sessionContext);
           break;
-        case "getRooms":
+        case "v1/syemessenger/getRooms":
           accountService.getRooms(sessionContext, (GetRoomsRequest) request);
           break;
-        case "createRoom":
+        case "v1/syemessenger/createRoom":
           roomService.createRoom(sessionContext, (CreateRoomRequest) request);
           break;
-        case "updateRoom":
+        case "v1/syemessenger/updateRoom":
           roomService.updateRoom(sessionContext, (UpdateRoomRequest) request);
           break;
-        case "getRoom":
+        case "v1/syemessenger/getRoom":
           roomService.getRoom(sessionContext, (Long) request);
           break;
-        case "joinRoom":
+        case "v1/syemessenger/joinRoom":
           roomService.joinRoom(sessionContext, (String) request);
           break;
-        case "leaveRoom":
+        case "v1/syemessenger/leaveRoom":
           roomService.leaveRoom(sessionContext, (Long) request);
           break;
-        case "getRoomMembers":
+        case "v1/syemessenger/getRoomMembers":
           roomService.getRoomMembers(sessionContext, (GetRoomMembersRequest) request);
           break;
-        case "removeRoomMembers":
+        case "v1/syemessenger/removeRoomMembers":
           roomService.removeRoomMembers(sessionContext, (RemoveMembersRequest) request);
           break;
-        case "blockRoomMembers":
+        case "v1/syemessenger/blockRoomMembers":
           roomService.blockRoomMembers(sessionContext, (BlockMembersRequest) request);
           break;
-        case "unblockRoomMembers":
+        case "v1/syemessenger/unblockRoomMembers":
           roomService.unblockRoomMembers(sessionContext, (UnblockMembersRequest) request);
           break;
-        case "listRooms":
+        case "v1/syemessenger/listRooms":
           roomService.listRooms(sessionContext, (ListRoomsRequest) request);
           break;
         default:

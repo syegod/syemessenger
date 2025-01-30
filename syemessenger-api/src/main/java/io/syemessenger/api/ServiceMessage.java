@@ -12,7 +12,7 @@ public class ServiceMessage {
   }
 
   public ServiceMessage qualifier(String qualifier) {
-    this.qualifier = qualifier;
+    this.qualifier = "v1/syemessenger/" + qualifier;
     return this;
   }
 

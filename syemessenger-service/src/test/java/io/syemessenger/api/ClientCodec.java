@@ -17,25 +17,25 @@ public class ClientCodec extends MessageCodec {
     super(
         JsonMappers.jsonMapper(),
         (map) -> {
-          map.put("createAccount", AccountInfo.class);
-          map.put("updateAccount", AccountInfo.class);
-          map.put("login", Long.class);
-          map.put("getSessionAccount", AccountInfo.class);
-          map.put("showAccount", AccountViewInfo.class);
-          map.put("getRooms", GetRoomsResponse.class);
+          map.put("v1/syemessenger/createAccount", AccountInfo.class);
+          map.put("v1/syemessenger/updateAccount", AccountInfo.class);
+          map.put("v1/syemessenger/login", Long.class);
+          map.put("v1/syemessenger/getSessionAccount", AccountInfo.class);
+          map.put("v1/syemessenger/showAccount", AccountViewInfo.class);
+          map.put("v1/syemessenger/getRooms", GetRoomsResponse.class);
 
-          map.put("createRoom", RoomInfo.class);
-          map.put("updateRoom", RoomInfo.class);
-          map.put("getRoom", RoomInfo.class);
-          map.put("joinRoom", Long.class);
-          map.put("leaveRoom", Long.class);
-          map.put("getRoomMembers", GetRoomMembersResponse.class);
-          map.put("removeRoomMembers", Long.class);
-          map.put("blockRoomMembers", Long.class);
-          map.put("unblockRoomMembers", Long.class);
-          map.put("listRooms", ListRoomsResponse.class);
+          map.put("v1/syemessenger/createRoom", RoomInfo.class);
+          map.put("v1/syemessenger/updateRoom", RoomInfo.class);
+          map.put("v1/syemessenger/getRoom", RoomInfo.class);
+          map.put("v1/syemessenger/joinRoom", Long.class);
+          map.put("v1/syemessenger/leaveRoom", Long.class);
+          map.put("v1/syemessenger/getRoomMembers", GetRoomMembersResponse.class);
+          map.put("v1/syemessenger/removeRoomMembers", Long.class);
+          map.put("v1/syemessenger/blockRoomMembers", Long.class);
+          map.put("v1/syemessenger/unblockRoomMembers", Long.class);
+          map.put("v1/syemessenger/listRooms", ListRoomsResponse.class);
 
-          map.put("error", ErrorData.class);
+          map.put("v1/syemessenger/error", ErrorData.class);
         });
   }
 

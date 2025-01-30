@@ -36,23 +36,23 @@ public class WebSocketServlet extends JettyWebSocketServlet {
         new MessageCodec(
             jsonMapper,
             map -> {
-              map.put("createAccount", CreateAccountRequest.class);
-              map.put("updateAccount", UpdateAccountRequest.class);
-              map.put("showAccount", Long.class);
-              map.put("login", LoginAccountRequest.class);
-              map.put("getSessionAccount", Void.class);
-              map.put("getRooms", GetRoomsRequest.class);
+              map.put("v1/syemessenger/createAccount", CreateAccountRequest.class);
+              map.put("v1/syemessenger/updateAccount", UpdateAccountRequest.class);
+              map.put("v1/syemessenger/showAccount", Long.class);
+              map.put("v1/syemessenger/login", LoginAccountRequest.class);
+              map.put("v1/syemessenger/getSessionAccount", Void.class);
+              map.put("v1/syemessenger/getRooms", GetRoomsRequest.class);
 
-              map.put("createRoom", CreateRoomRequest.class);
-              map.put("updateRoom", UpdateRoomRequest.class);
-              map.put("getRoom", Long.class);
-              map.put("joinRoom", String.class);
-              map.put("leaveRoom", Long.class);
-              map.put("getRoomMembers", GetRoomMembersRequest.class);
-              map.put("removeRoomMembers", RemoveMembersRequest.class);
-              map.put("blockRoomMembers", BlockMembersRequest.class);
-              map.put("unblockRoomMembers", UnblockMembersRequest.class);
-              map.put("listRooms", ListRoomsRequest.class);
+              map.put("v1/syemessenger/createRoom", CreateRoomRequest.class);
+              map.put("v1/syemessenger/updateRoom", UpdateRoomRequest.class);
+              map.put("v1/syemessenger/getRoom", Long.class);
+              map.put("v1/syemessenger/joinRoom", String.class);
+              map.put("v1/syemessenger/leaveRoom", Long.class);
+              map.put("v1/syemessenger/getRoomMembers", GetRoomMembersRequest.class);
+              map.put("v1/syemessenger/removeRoomMembers", RemoveMembersRequest.class);
+              map.put("v1/syemessenger/blockRoomMembers", BlockMembersRequest.class);
+              map.put("v1/syemessenger/unblockRoomMembers", UnblockMembersRequest.class);
+              map.put("v1/syemessenger/listRooms", ListRoomsRequest.class);
             });
   }
 
