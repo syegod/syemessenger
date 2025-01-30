@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import io.syemessenger.JsonMappers;
 import io.syemessenger.MessageCodec;
+import java.lang.reflect.Proxy;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.WebSocket;
@@ -76,8 +77,22 @@ public class ClientSdk implements AutoCloseable {
     }
   }
 
-  public <T> T api(Class<T> clazz) {
-    // ...
+  public <T> T api(Class<T> api) {
+    if (!api.isInterface()) {
+      throw new IllegalArgumentException("Must be interface: " + api);
+    }
+    //noinspection unchecked
+    return (T)
+        Proxy.newProxyInstance(
+            api.getClassLoader(),
+            new Class[] {api},
+            (proxy, method, args) -> {
+              final var request = args != null ? args[0] : null;
+              final var name = method.getName();
+              final var message = new ServiceMessage().qualifier(name).data(request);
+              sendText(message);
+              return pollResponse();
+            });
   }
 
   private class WebSocketListener implements WebSocket.Listener {

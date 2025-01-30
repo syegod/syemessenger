@@ -44,14 +44,14 @@ public class CreateAccountIT {
   @Test
   void testCreateAccount() {
     try (ClientSdk clientSdk = new ClientSdk(clientCodec)) {
-      AccountSdk sdk = new AccountSdkImpl(clientSdk);
+      final var api = clientSdk.api(AccountSdk.class);
       String username = randomAlphanumeric(8, 65);
       String email =
           randomAlphanumeric(4) + "@" + randomAlphabetic(2, 10) + "." + randomAlphabetic(2, 10);
       String password = randomAlphanumeric(8, 65);
 
       final AccountInfo accountInfo =
-          sdk.createAccount(
+          api.createAccount(
               new CreateAccountRequest().username(username).email(email).password(password));
       assertEquals(username, accountInfo.username());
       assertEquals(email, accountInfo.email());
@@ -65,8 +65,8 @@ public class CreateAccountIT {
   void testCreateAccountFailed(
       String test, CreateAccountRequest request, int errorCode, String errorMessage) {
     try (ClientSdk clientSdk = new ClientSdk(clientCodec)) {
-      AccountSdk sdk = new AccountSdkImpl(clientSdk);
-      sdk.createAccount(request);
+      final var api = clientSdk.api(AccountSdk.class);
+      api.createAccount(request);
       Assertions.fail("Expected exception");
     } catch (Exception ex) {
       assertInstanceOf(ServiceException.class, ex, "Exception: " + ex);
@@ -241,14 +241,15 @@ public class CreateAccountIT {
 
   static AccountInfo createExistingAccount() {
     try (ClientSdk clientSdk = new ClientSdk(clientCodec)) {
-      AccountSdk sdk = new AccountSdkImpl(clientSdk);
-      String username = randomAlphanumeric(8, 65);
-      String email =
+      final var username = randomAlphanumeric(8, 65);
+      final var email =
           randomAlphanumeric(4) + "@" + randomAlphabetic(2, 10) + "." + randomAlphabetic(2, 10);
-      String password = randomAlphanumeric(8, 65);
+      final var password = randomAlphanumeric(8, 65);
 
-      return sdk.createAccount(
-          new CreateAccountRequest().username(username).email(email).password(password));
+      return clientSdk
+          .api(AccountSdk.class)
+          .createAccount(
+              new CreateAccountRequest().username(username).email(email).password(password));
     }
   }
 }

@@ -42,12 +42,13 @@ public class LoginIT {
   @Test
   void testLoginByUsername() {
     try (ClientSdk clientSdk = new ClientSdk(clientCodec)) {
-      AccountSdk sdk = new AccountSdkImpl(clientSdk);
       final var accountId =
-          sdk.login(
-              new LoginAccountRequest()
-                  .username(existingAccountInfo.username())
-                  .password("test12345"));
+          clientSdk
+              .api(AccountSdk.class)
+              .login(
+                  new LoginAccountRequest()
+                      .username(existingAccountInfo.username())
+                      .password("test12345"));
 
       assertEquals(existingAccountInfo.id(), accountId, "accountId");
     }
@@ -56,10 +57,13 @@ public class LoginIT {
   @Test
   void testLoginByEmail() {
     try (ClientSdk clientSdk = new ClientSdk(clientCodec)) {
-      AccountSdk sdk = new AccountSdkImpl(clientSdk);
       final var accountId =
-          sdk.login(
-              new LoginAccountRequest().email(existingAccountInfo.email()).password("test12345"));
+          clientSdk
+              .api(AccountSdk.class)
+              .login(
+                  new LoginAccountRequest()
+                      .email(existingAccountInfo.email())
+                      .password("test12345"));
 
       assertEquals(existingAccountInfo.id(), accountId, "accountId");
     }
@@ -70,8 +74,7 @@ public class LoginIT {
   void testLoginFailed(
       String test, LoginAccountRequest request, int errorCode, String errorMessage) {
     try (ClientSdk clientSdk = new ClientSdk(clientCodec)) {
-      AccountSdk sdk = new AccountSdkImpl(clientSdk);
-      sdk.login(request);
+      clientSdk.api(AccountSdk.class).login(request);
       Assertions.fail("Expected exception");
     } catch (Exception ex) {
       assertInstanceOf(ServiceException.class, ex, "Exception: " + ex);
@@ -119,14 +122,15 @@ public class LoginIT {
 
   static AccountInfo createExistingAccount() {
     try (ClientSdk clientSdk = new ClientSdk(clientCodec)) {
-      AccountSdk sdk = new AccountSdkImpl(clientSdk);
       String username = randomAlphanumeric(8, 65);
       String email =
           randomAlphanumeric(4) + "@" + randomAlphabetic(2, 10) + "." + randomAlphabetic(2, 10);
       String password = "test12345";
 
-      return sdk.createAccount(
-          new CreateAccountRequest().username(username).email(email).password(password));
+      return clientSdk
+          .api(AccountSdk.class)
+          .createAccount(
+              new CreateAccountRequest().username(username).email(email).password(password));
     }
   }
 }

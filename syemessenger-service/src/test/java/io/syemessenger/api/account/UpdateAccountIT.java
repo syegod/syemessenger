@@ -44,19 +44,19 @@ public class UpdateAccountIT {
   @Test
   void testUpdateAccount() {
     try (ClientSdk clientSdk = new ClientSdk(clientCodec)) {
-      AccountSdk sdk = new AccountSdkImpl(clientSdk);
+      final var api = clientSdk.api(AccountSdk.class);
       final var username = randomAlphanumeric(8, 65);
       final var email = "example1@gmail.com";
       final var password = randomAlphanumeric(8, 65);
 
       final var account =
-          sdk.createAccount(
+          api.createAccount(
               new CreateAccountRequest().username(username).email(email).password(password));
 
-      sdk.login(new LoginAccountRequest().username(account.username()).password(password));
+      api.login(new LoginAccountRequest().username(account.username()).password(password));
 
       final var accountInfo =
-          sdk.updateAccount(new UpdateAccountRequest().username(username).email(email));
+          api.updateAccount(new UpdateAccountRequest().username(username).email(email));
 
       assertEquals(account.id(), accountInfo.id(), "accountInfo.id: " + accountInfo.id());
       assertEquals(username, accountInfo.username());
@@ -67,10 +67,10 @@ public class UpdateAccountIT {
   @Test
   void testUpdateAccountNotLoggedIn() {
     try (ClientSdk clientSdk = new ClientSdk(clientCodec)) {
-      AccountSdk sdk = new AccountSdkImpl(clientSdk);
+      final var api = clientSdk.api(AccountSdk.class);
       final var username = randomAlphanumeric(8, 65);
       final var email = "example@gmail.com";
-      sdk.updateAccount(new UpdateAccountRequest().username(username).email(email));
+      api.updateAccount(new UpdateAccountRequest().username(username).email(email));
       Assertions.fail("Expected exception");
     } catch (Exception ex) {
       assertInstanceOf(ServiceException.class, ex, "Exception: " + ex);
@@ -85,10 +85,10 @@ public class UpdateAccountIT {
   void testUpdateAccountFailed(
       String test, UpdateAccountRequest request, int errorCode, String errorMessage) {
     try (ClientSdk clientSdk = new ClientSdk(clientCodec)) {
-      AccountSdk sdk = new AccountSdkImpl(clientSdk);
-      sdk.login(
+      final var api = clientSdk.api(AccountSdk.class);
+      api.login(
           new LoginAccountRequest().username(existingAccountInfo.username()).password("test12345"));
-      sdk.updateAccount(request);
+      api.updateAccount(request);
       Assertions.fail("Expected exception");
     } catch (Exception ex) {
       assertInstanceOf(ServiceException.class, ex, "Exception: " + ex);
@@ -149,14 +149,15 @@ public class UpdateAccountIT {
 
   static AccountInfo createExistingAccount() {
     try (ClientSdk clientSdk = new ClientSdk(clientCodec)) {
-      AccountSdk sdk = new AccountSdkImpl(clientSdk);
       String username = randomAlphanumeric(8, 65);
       String email =
           randomAlphanumeric(4) + "@" + randomAlphabetic(2, 10) + "." + randomAlphabetic(2, 10);
       String password = "test12345";
 
-      return sdk.createAccount(
-          new CreateAccountRequest().username(username).email(email).password(password));
+      return clientSdk
+          .api(AccountSdk.class)
+          .createAccount(
+              new CreateAccountRequest().username(username).email(email).password(password));
     }
   }
 }

@@ -37,10 +37,10 @@ public class GetSessionAccountIT {
   @Test
   void testGetSessionAccount() {
     try (ClientSdk clientSdk = new ClientSdk(clientCodec)) {
-      AccountSdk sdk = new AccountSdkImpl(clientSdk);
-      sdk.login(
+      AccountSdk api = clientSdk.api(AccountSdk.class);
+      api.login(
           new LoginAccountRequest().username(existingAccountInfo.username()).password("test12345"));
-      final var accountInfo = sdk.getSessionAccount();
+      final var accountInfo = api.getSessionAccount();
       assertEquals(existingAccountInfo.id(), accountInfo.id());
       assertEquals(existingAccountInfo.username(), accountInfo.username());
       assertEquals(existingAccountInfo.email(), accountInfo.email());
@@ -50,8 +50,8 @@ public class GetSessionAccountIT {
   @Test
   void testGetSessionAccountNotLoggedIn() {
     try (ClientSdk clientSdk = new ClientSdk(clientCodec)) {
-      AccountSdk sdk = new AccountSdkImpl(clientSdk);
-      sdk.getSessionAccount();
+      final var api = clientSdk.api(AccountSdk.class);
+      api.getSessionAccount();
       Assertions.fail("Expected exception");
     } catch (Exception ex) {
       assertInstanceOf(ServiceException.class, ex, "Exception: " + ex);
@@ -63,13 +63,13 @@ public class GetSessionAccountIT {
 
   static AccountInfo createExistingAccount() {
     try (ClientSdk clientSdk = new ClientSdk(clientCodec)) {
-      AccountSdk sdk = new AccountSdkImpl(clientSdk);
+      final var api = clientSdk.api(AccountSdk.class);
       String username = randomAlphanumeric(8, 65);
       String email =
           randomAlphanumeric(4) + "@" + randomAlphabetic(2, 10) + "." + randomAlphabetic(2, 10);
       String password = "test12345";
 
-      return sdk.createAccount(
+      return api.createAccount(
           new CreateAccountRequest().username(username).email(email).password(password));
     }
   }

@@ -10,7 +10,6 @@ import io.syemessenger.api.ClientSdk;
 import io.syemessenger.api.ServiceException;
 import io.syemessenger.api.account.AccountInfo;
 import io.syemessenger.api.account.AccountSdk;
-import io.syemessenger.api.account.AccountSdkImpl;
 import io.syemessenger.api.account.CreateAccountRequest;
 import io.syemessenger.api.account.LoginAccountRequest;
 import io.syemessenger.environment.IntegrationEnvironment;
@@ -55,8 +54,8 @@ public class UpdateRoomIT {
   @BeforeEach
   void beforeEach() {
     clientSdk = new ClientSdk(clientCodec);
-    accountSdk = new AccountSdkImpl(clientSdk);
-    roomSdk = new RoomSdkImpl(clientSdk);
+    accountSdk = clientSdk.api(AccountSdk.class);
+    roomSdk = clientSdk.api(RoomSdk.class);
   }
 
   @AfterEach
@@ -166,24 +165,26 @@ public class UpdateRoomIT {
 
   private static RoomInfo createRoom(AccountInfo accountInfo) {
     try (final var client = new ClientSdk(clientCodec)) {
-      final var accountApi = new AccountSdkImpl(client);
-      accountApi.login(
-          new LoginAccountRequest().username(accountInfo.username()).password("test12345"));
-      final var roomApi = new RoomSdkImpl(client);
-      return roomApi.createRoom(new CreateRoomRequest().name(randomAlphanumeric(8, 65)));
+      client
+          .api(AccountSdk.class)
+          .login(new LoginAccountRequest().username(accountInfo.username()).password("test12345"));
+      return client
+          .api(RoomSdk.class)
+          .createRoom(new CreateRoomRequest().name(randomAlphanumeric(8, 65)));
     }
   }
 
   private static AccountInfo createAccount() {
     try (final var client = new ClientSdk(clientCodec)) {
-      final var accountApi = new AccountSdkImpl(client);
       String username = randomAlphanumeric(8, 65);
       String email =
           randomAlphanumeric(4) + "@" + randomAlphabetic(2, 10) + "." + randomAlphabetic(2, 10);
       String password = "test12345";
 
-      return accountApi.createAccount(
-          new CreateAccountRequest().username(username).email(email).password(password));
+      return client
+          .api(AccountSdk.class)
+          .createAccount(
+              new CreateAccountRequest().username(username).email(email).password(password));
     }
   }
 }

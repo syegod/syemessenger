@@ -37,10 +37,10 @@ public class ShowAccountIT {
   @Test
   void testShowAccount() {
     try (ClientSdk clientSdk = new ClientSdk(clientCodec)) {
-      AccountSdk sdk = new AccountSdkImpl(clientSdk);
-      sdk.login(
+      final var api = clientSdk.api(AccountSdk.class);
+      api.login(
           new LoginAccountRequest().username(existingAccountInfo.username()).password("test12345"));
-      final var publicAccountInfo = sdk.showAccount(existingAccountInfo.id());
+      final var publicAccountInfo = api.showAccount(existingAccountInfo.id());
       Assertions.assertEquals(existingAccountInfo.username(), publicAccountInfo.username());
     }
   }
@@ -48,8 +48,8 @@ public class ShowAccountIT {
   @Test
   void testShowAccountNotLoggedIn() {
     try (ClientSdk clientSdk = new ClientSdk(clientCodec)) {
-      AccountSdk sdk = new AccountSdkImpl(clientSdk);
-      sdk.showAccount(existingAccountInfo.id());
+      final var api = clientSdk.api(AccountSdk.class);
+      api.showAccount(existingAccountInfo.id());
       Assertions.fail("Expected exception");
     } catch (Exception ex) {
       assertInstanceOf(ServiceException.class, ex, "Exception: " + ex);
@@ -61,13 +61,14 @@ public class ShowAccountIT {
 
   static AccountInfo createExistingAccount() {
     try (ClientSdk clientSdk = new ClientSdk(clientCodec)) {
-      AccountSdk sdk = new AccountSdkImpl(clientSdk);
       String username = randomAlphanumeric(8, 65);
       String email = "test@gmail.com";
       String password = "test12345";
 
-      return sdk.createAccount(
-          new CreateAccountRequest().username(username).email(email).password(password));
+      return clientSdk
+          .api(AccountSdk.class)
+          .createAccount(
+              new CreateAccountRequest().username(username).email(email).password(password));
     }
   }
 }
