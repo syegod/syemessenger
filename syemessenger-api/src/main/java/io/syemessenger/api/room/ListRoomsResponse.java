@@ -8,7 +8,7 @@ public class ListRoomsResponse {
   private List<RoomInfo> roomInfos;
   private Integer offset;
   private Integer limit;
-  private Integer totalCount;
+  private Long totalCount;
 
   public List<RoomInfo> roomInfos() {
     return roomInfos;
@@ -37,11 +37,11 @@ public class ListRoomsResponse {
     return this;
   }
 
-  public Integer totalCount() {
+  public Long totalCount() {
     return totalCount;
   }
 
-  public ListRoomsResponse totalCount(Integer totalCount) {
+  public ListRoomsResponse totalCount(Long totalCount) {
     this.totalCount = totalCount;
     return this;
   }

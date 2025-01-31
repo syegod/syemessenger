@@ -9,7 +9,7 @@ public class GetRoomsResponse {
   private List<RoomInfo> roomInfos;
   private Integer offset;
   private Integer limit;
-  private Integer totalCount;
+  private Long totalCount;
 
   public List<RoomInfo> roomInfos() {
     return roomInfos;
@@ -38,11 +38,11 @@ public class GetRoomsResponse {
     return this;
   }
 
-  public Integer totalCount() {
+  public Long totalCount() {
     return totalCount;
   }
 
-  public GetRoomsResponse totalCount(Integer totalCount) {
+  public GetRoomsResponse totalCount(Long totalCount) {
     this.totalCount = totalCount;
     return this;
   }

@@ -208,8 +208,8 @@ public class AccountService {
       return;
     }
 
-    sessionContext.send(new ServiceMessage().qualifier("getAccount").data(
-        AccountMappers.toAccountInfo(account)));
+    sessionContext.send(
+        new ServiceMessage().qualifier("getAccount").data(AccountMappers.toAccountInfo(account)));
   }
 
   public void getRooms(SessionContext sessionContext, GetRoomsRequest request) {
@@ -241,7 +241,7 @@ public class AccountService {
             .roomInfos(roomInfos)
             .offset(offset)
             .limit(limit)
-            .totalCount((int) roomPage.getTotalElements());
+            .totalCount(roomPage.getTotalElements());
 
     sessionContext.send(new ServiceMessage().qualifier("getRooms").data(getRoomsResponse));
   }

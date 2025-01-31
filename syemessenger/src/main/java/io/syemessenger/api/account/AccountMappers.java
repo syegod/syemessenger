@@ -6,7 +6,6 @@ public class AccountMappers {
 
   private AccountMappers() {}
 
-
   public static AccountInfo toAccountInfo(Account account) {
     return new AccountInfo()
         .id(account.id())
