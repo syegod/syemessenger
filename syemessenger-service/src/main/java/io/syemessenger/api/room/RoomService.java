@@ -130,14 +130,37 @@ public class RoomService {
       return;
     }
 
-    sessionContext.send(new ServiceMessage().qualifier("getRoom").data(RoomMappers.toRoomInfo(room)));
+    sessionContext.send(
+        new ServiceMessage().qualifier("getRoom").data(RoomMappers.toRoomInfo(room)));
   }
 
-  public void joinRoom(SessionContext sessionContext, String name) {}
+  public void joinRoom(SessionContext sessionContext, String name) {
+    if (!sessionContext.isLoggedIn()) {
+      sessionContext.sendError(401, "Not authenticated");
+      return;
+    }
 
-  public void getRoomMembers(SessionContext sessionContext, GetRoomMembersRequest request) {
+    if (name == null) {
+      sessionContext.sendError(400, "Missing or invalid: name");
+      return;
+    }
+    if (name.isBlank()) {
+      sessionContext.sendError(400, "Missing or invalid: name");
+      return;
+    }
 
+    final var room = roomRepository.findByName(name);
+    if (room == null) {
+      sessionContext.sendError(404, "Room not found");
+      return;
+    }
+
+    roomRepository.saveRoomMember(room.id(), sessionContext.accountId());
+
+    sessionContext.send(new ServiceMessage().qualifier("joinRoom").data(room.id()));
   }
+
+  public void getRoomMembers(SessionContext sessionContext, GetRoomMembersRequest request) {}
 
   public void leaveRoom(SessionContext sessionContext, Long id) {}
 
@@ -148,5 +171,4 @@ public class RoomService {
   public void unblockRoomMembers(SessionContext sessionContext, UnblockMembersRequest request) {}
 
   public void listRooms(SessionContext sessionContext, ListRoomsRequest request) {}
-
 }

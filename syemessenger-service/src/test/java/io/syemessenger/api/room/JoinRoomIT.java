@@ -2,6 +2,7 @@ package io.syemessenger.api.room;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.testcontainers.shaded.org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.testcontainers.shaded.org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
 
@@ -11,16 +12,21 @@ import io.syemessenger.api.ServiceException;
 import io.syemessenger.api.account.AccountInfo;
 import io.syemessenger.api.account.AccountSdk;
 import io.syemessenger.api.account.CreateAccountRequest;
+import io.syemessenger.api.account.GetRoomsRequest;
 import io.syemessenger.api.account.LoginAccountRequest;
 import io.syemessenger.environment.IntegrationEnvironment;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
-public class GetRoomIT {
+public class JoinRoomIT {
   private static final ClientCodec clientCodec = ClientCodec.getInstance();
   private static IntegrationEnvironment environment;
   private static ClientSdk clientSdk;
@@ -59,21 +65,29 @@ public class GetRoomIT {
   }
 
   @Test
-  void testGetRoom() {
+  void testJoinRoom() {
     accountSdk.login(
         new LoginAccountRequest().username(existingAccountInfo.username()).password("test12345"));
-    final var roomInfo = roomSdk.getRoom(existingRoomInfo.id());
-
-    assertEquals(existingRoomInfo.id(), roomInfo.id());
-    assertEquals(existingRoomInfo.name(), roomInfo.name());
-    assertEquals(existingRoomInfo.description(), roomInfo.description());
-    //TODO: check for owner, createdAt, updatedAt
+    roomSdk.joinRoom(existingRoomInfo.name());
+    final var roomsResponse = accountSdk.getRooms(new GetRoomsRequest());
+    Assertions.assertNotNull(roomsResponse.roomInfos(), "roomInfos");
+    assertEquals(1, roomsResponse.roomInfos().size());
+    assertEquals(existingRoomInfo.id(), roomsResponse.roomInfos().getFirst().id());
+    assertEquals(existingRoomInfo.name(), roomsResponse.roomInfos().getFirst().name());
+    assertEquals(
+        existingRoomInfo.description(), roomsResponse.roomInfos().getFirst().description());
+    assertEquals(existingRoomInfo.owner(), roomsResponse.roomInfos().getFirst().owner());
+    // TODO: fix time
+    //    assertEquals(existingRoomInfo.createdAt(),
+    // roomsResponse.roomInfos().getFirst().createdAt());
+    //    assertEquals(existingRoomInfo.updatedAt(),
+    // roomsResponse.roomInfos().getFirst().updatedAt());
   }
 
   @Test
-  void testGetRoomNotLoggedIn() {
+  void testJoinRoomNotLoggedIn() {
     try {
-      roomSdk.getRoom(existingRoomInfo.id());
+      roomSdk.joinRoom(existingRoomInfo.name());
       Assertions.fail("Expected exception");
     } catch (Exception ex) {
       assertInstanceOf(ServiceException.class, ex, "Exception: " + ex);
@@ -81,6 +95,29 @@ public class GetRoomIT {
       assertEquals(401, serviceException.errorCode());
       assertEquals("Not authenticated", serviceException.getMessage());
     }
+  }
+
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("testJoinRoomFailedMethodSource")
+  void testJoinRoomFailed(String test, String name, int errorCode, String errorMessage) {
+    accountSdk.login(
+        new LoginAccountRequest().username(existingAccountInfo.username()).password("test12345"));
+    try {
+      roomSdk.joinRoom(name);
+      fail("Expected exception");
+    } catch (Exception ex) {
+      assertInstanceOf(ServiceException.class, ex, "Exception: " + ex);
+      final var serviceException = (ServiceException) ex;
+      assertEquals(errorCode, serviceException.errorCode(), "errorCode");
+      assertEquals(errorMessage, serviceException.getMessage(), "errorMessage");
+    }
+  }
+
+  static Stream<Arguments> testJoinRoomFailedMethodSource() {
+    return Stream.of(
+        Arguments.of("Room name blank", "", 400, "Missing or invalid: name"),
+        Arguments.of("Null room name", null, 400, "Missing or invalid: name"),
+        Arguments.of("Wrong room name", randomAlphanumeric(20), 404, "Room not found"));
   }
 
   private static RoomInfo createRoom(AccountInfo accountInfo) {
