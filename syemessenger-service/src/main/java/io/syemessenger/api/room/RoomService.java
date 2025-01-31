@@ -113,7 +113,25 @@ public class RoomService {
     }
   }
 
-  public void getRoom(SessionContext sessionContext, Long id) {}
+  public void getRoom(SessionContext sessionContext, Long id) {
+    if (!sessionContext.isLoggedIn()) {
+      sessionContext.sendError(401, "Not authenticated");
+      return;
+    }
+
+    if (id == null) {
+      sessionContext.sendError(401, "Not authenticated");
+      return;
+    }
+
+    final var room = roomRepository.findById(id).orElse(null);
+    if (room == null) {
+      sessionContext.sendError(404, "Room not found");
+      return;
+    }
+
+    sessionContext.send(new ServiceMessage().qualifier("getRoom").data(toRoomInfo(room)));
+  }
 
   public void joinRoom(SessionContext sessionContext, String name) {}
 
