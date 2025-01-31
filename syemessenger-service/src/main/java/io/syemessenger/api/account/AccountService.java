@@ -1,8 +1,11 @@
 package io.syemessenger.api.account;
 
+import io.syemessenger.api.Pageables;
+import io.syemessenger.api.room.RoomMappers;
 import io.syemessenger.api.ServiceMessage;
 import io.syemessenger.api.account.repository.Account;
 import io.syemessenger.api.account.repository.AccountRepository;
+import io.syemessenger.api.room.repository.RoomRepository;
 import io.syemessenger.websocket.SessionContext;
 import jakarta.inject.Named;
 import java.time.Clock;
@@ -14,12 +17,14 @@ import org.springframework.dao.DataAccessException;
 public class AccountService {
 
   private final AccountRepository accountRepository;
+  private final RoomRepository roomRepository;
 
   private static final Pattern EMAIL_PATTERN =
       Pattern.compile("^[a-zA-Z0-9_!#$%&'*+/=?`{|}~^.-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
 
-  public AccountService(AccountRepository accountRepository) {
+  public AccountService(AccountRepository accountRepository, RoomRepository roomRepository) {
     this.accountRepository = accountRepository;
+    this.roomRepository = roomRepository;
   }
 
   public void createAccount(SessionContext sessionContext, CreateAccountRequest request) {
@@ -71,7 +76,7 @@ public class AccountService {
             .updatedAt(now);
     try {
       final var saved = accountRepository.save(account);
-      final var accountInfo = toAccountInfo(saved);
+      final var accountInfo = AccountMappers.toAccountInfo(saved);
       sessionContext.send(new ServiceMessage().qualifier("createAccount").data(accountInfo));
     } catch (DataAccessException e) {
       if (e.getMessage().contains("duplicate key value violates unique constraint")) {
@@ -137,7 +142,7 @@ public class AccountService {
 
       final var updated =
           accountRepository.save(account.updatedAt(LocalDateTime.now(Clock.systemUTC())));
-      final var accountInfo = toAccountInfo(updated);
+      final var accountInfo = AccountMappers.toAccountInfo(updated);
 
       sessionContext.send(new ServiceMessage().qualifier("updateAccount").data(accountInfo));
     } catch (DataAccessException e) {
@@ -203,22 +208,42 @@ public class AccountService {
       return;
     }
 
-    sessionContext.send(new ServiceMessage().qualifier("getAccount").data(toAccountInfo(account)));
+    sessionContext.send(new ServiceMessage().qualifier("getAccount").data(
+        AccountMappers.toAccountInfo(account)));
   }
 
-  public void getRooms(SessionContext sessionContext, GetRoomsRequest request) {}
+  public void getRooms(SessionContext sessionContext, GetRoomsRequest request) {
+    if (!sessionContext.isLoggedIn()) {
+      sessionContext.sendError(401, "Not authenticated");
+      return;
+    }
 
-  private static AccountInfo toAccountInfo(Account account) {
-    return new AccountInfo()
-        .id(account.id())
-        .username(account.username())
-        .email(account.email())
-        .createdAt(account.createdAt())
-        .updatedAt(account.updatedAt());
-  }
+    final var offset = request.offset();
+    if (offset != null && offset < 0) {
+      sessionContext.sendError(400, "Missing or invalid: offset");
+      return;
+    }
 
-  private static AccountViewInfo toAccountViewInfo(Account account) {
-    return new AccountViewInfo().id(account.id()).username(account.username());
+    final var limit = request.limit();
+    if (limit != null && (limit < 0 || limit > 50)) {
+      sessionContext.sendError(400, "Missing or invalid: limit");
+      return;
+    }
+
+    final var roomPage =
+        roomRepository.findByAccountId(
+            sessionContext.accountId(), Pageables.toPageable(offset, limit, request.orderBy()));
+
+    final var roomInfos = roomPage.getContent().stream().map(RoomMappers::toRoomInfo).toList();
+
+    final var getRoomsResponse =
+        new GetRoomsResponse()
+            .roomInfos(roomInfos)
+            .offset(offset)
+            .limit(limit)
+            .totalCount((int) roomPage.getTotalElements());
+
+    sessionContext.send(new ServiceMessage().qualifier("getRooms").data(getRoomsResponse));
   }
 
   private static boolean isEmailValid(String email) {

@@ -57,7 +57,7 @@ public class RoomService {
 
     try {
       final var saved = roomRepository.save(room);
-      final var roomInfo = toRoomInfo(saved);
+      final var roomInfo = RoomMappers.toRoomInfo(saved);
       sessionContext.send(new ServiceMessage().qualifier("createRoom").data(roomInfo));
     } catch (DataAccessException e) {
       if (e.getMessage().contains("duplicate key value violates unique constraint")) {
@@ -106,7 +106,7 @@ public class RoomService {
 
     try {
       final var saved = roomRepository.save(room);
-      final var roomInfo = toRoomInfo(saved);
+      final var roomInfo = RoomMappers.toRoomInfo(saved);
       sessionContext.send(new ServiceMessage().qualifier("updateRoom").data(roomInfo));
     } catch (Exception e) {
       sessionContext.sendError(500, e.getMessage());
@@ -130,12 +130,14 @@ public class RoomService {
       return;
     }
 
-    sessionContext.send(new ServiceMessage().qualifier("getRoom").data(toRoomInfo(room)));
+    sessionContext.send(new ServiceMessage().qualifier("getRoom").data(RoomMappers.toRoomInfo(room)));
   }
 
   public void joinRoom(SessionContext sessionContext, String name) {}
 
-  public void getRoomMembers(SessionContext sessionContext, GetRoomMembersRequest request) {}
+  public void getRoomMembers(SessionContext sessionContext, GetRoomMembersRequest request) {
+
+  }
 
   public void leaveRoom(SessionContext sessionContext, Long id) {}
 
@@ -147,13 +149,4 @@ public class RoomService {
 
   public void listRooms(SessionContext sessionContext, ListRoomsRequest request) {}
 
-  private static RoomInfo toRoomInfo(Room room) {
-    return new RoomInfo()
-        .id(room.id())
-        .name(room.name())
-        .owner(room.owner().username())
-        .description(room.description())
-        .createdAt(room.createdAt())
-        .updatedAt(room.updatedAt());
-  }
 }
