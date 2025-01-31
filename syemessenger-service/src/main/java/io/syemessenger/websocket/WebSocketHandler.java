@@ -85,14 +85,11 @@ public class WebSocketHandler {
         case "v1/syemessenger/updateAccount":
           accountService.updateAccount(sessionContext, (UpdateAccountRequest) request);
           break;
-        case "v1/syemessenger/showAccount":
-          accountService.showAccount(sessionContext, (Long) request);
+        case "v1/syemessenger/getAccount":
+          accountService.getAccount(sessionContext, (Long) request);
           break;
         case "v1/syemessenger/login":
           accountService.login(sessionContext, (LoginAccountRequest) request);
-          break;
-        case "v1/syemessenger/getSessionAccount":
-          accountService.getSessionAccount(sessionContext);
           break;
         case "v1/syemessenger/getRooms":
           accountService.getRooms(sessionContext, (GetRoomsRequest) request);

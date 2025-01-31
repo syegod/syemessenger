@@ -20,8 +20,7 @@ public class ClientCodec extends MessageCodec {
           map.put("v1/syemessenger/createAccount", AccountInfo.class);
           map.put("v1/syemessenger/updateAccount", AccountInfo.class);
           map.put("v1/syemessenger/login", Long.class);
-          map.put("v1/syemessenger/getSessionAccount", AccountInfo.class);
-          map.put("v1/syemessenger/showAccount", AccountViewInfo.class);
+          map.put("v1/syemessenger/getAccount", AccountInfo.class);
           map.put("v1/syemessenger/getRooms", GetRoomsResponse.class);
 
           map.put("v1/syemessenger/createRoom", RoomInfo.class);

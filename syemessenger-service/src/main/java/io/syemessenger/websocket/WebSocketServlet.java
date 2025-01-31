@@ -38,9 +38,8 @@ public class WebSocketServlet extends JettyWebSocketServlet {
             map -> {
               map.put("v1/syemessenger/createAccount", CreateAccountRequest.class);
               map.put("v1/syemessenger/updateAccount", UpdateAccountRequest.class);
-              map.put("v1/syemessenger/showAccount", Long.class);
+              map.put("v1/syemessenger/getAccount", Long.class);
               map.put("v1/syemessenger/login", LoginAccountRequest.class);
-              map.put("v1/syemessenger/getSessionAccount", Void.class);
               map.put("v1/syemessenger/getRooms", GetRoomsRequest.class);
 
               map.put("v1/syemessenger/createRoom", CreateRoomRequest.class);

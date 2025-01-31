@@ -8,9 +8,7 @@ public interface AccountSdk {
 
   Long login(LoginAccountRequest request);
 
-  AccountInfo getSessionAccount();
-
-  AccountViewInfo showAccount(Long id);
+  AccountInfo getAccount(Long id);
 
   GetRoomsResponse getRooms(GetRoomsRequest request);
 }

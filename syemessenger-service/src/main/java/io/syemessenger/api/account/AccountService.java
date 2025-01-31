@@ -184,39 +184,26 @@ public class AccountService {
     sessionContext.send(new ServiceMessage().qualifier("login").data(account.id()));
   }
 
-  public void getSessionAccount(SessionContext sessionContext) {
+  public void getAccount(SessionContext sessionContext, Long id) {
     if (!sessionContext.isLoggedIn()) {
       sessionContext.sendError(401, "Not authenticated");
       return;
     }
 
-    final Account account = accountRepository.findById(sessionContext.accountId()).orElse(null);
-    if (account == null) {
-      sessionContext.sendError(404, "Account not found");
-      return;
-    }
-
-    sessionContext.send(
-        new ServiceMessage().qualifier("getSessionAccount").data(toAccountInfo(account)));
-  }
-
-  public void showAccount(SessionContext sessionContext, Long id) {
-    if (!sessionContext.isLoggedIn()) {
-      sessionContext.sendError(401, "Not authenticated");
-      return;
-    }
+    Account account;
 
     if (id == null) {
-      sessionContext.sendError(404, "Account not found");
-      return;
+      account = accountRepository.findById(sessionContext.accountId()).orElse(null);
+    } else {
+      account = accountRepository.findById(id).orElse(null);
     }
-    final var account = accountRepository.findById(id).orElse(null);
+
     if (account == null) {
       sessionContext.sendError(404, "Account not found");
       return;
     }
-    sessionContext.send(
-        new ServiceMessage().qualifier("showAccount").data(toAccountViewInfo(account)));
+
+    sessionContext.send(new ServiceMessage().qualifier("getAccount").data(toAccountInfo(account)));
   }
 
   public void getRooms(SessionContext sessionContext, GetRoomsRequest request) {}
