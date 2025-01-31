@@ -21,15 +21,14 @@ public class ClientSdk implements AutoCloseable {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(ClientSdk.class);
 
-  private final MessageCodec messageCodec;
+  private final MessageCodec messageCodec = ClientCodec.getInstance();
 
   private final WebSocket ws;
   private final JsonMapper objectMapper = JsonMappers.jsonMapper();
   private final BlockingQueue<ServiceMessage> messageQueue = new ArrayBlockingQueue<>(64);
   private final CountDownLatch latch = new CountDownLatch(1);
 
-  public ClientSdk(MessageCodec messageCodec) {
-    this.messageCodec = messageCodec;
+  public ClientSdk() {
     HttpClient client = HttpClient.newHttpClient();
     WebSocket.Builder builder = client.newWebSocketBuilder();
 

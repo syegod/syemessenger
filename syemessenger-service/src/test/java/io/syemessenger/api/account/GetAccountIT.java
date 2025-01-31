@@ -1,96 +1,74 @@
 package io.syemessenger.api.account;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.testcontainers.shaded.org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
-import static org.testcontainers.shaded.org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
+import static io.syemessenger.api.ErrorAssertions.assertError;
+import static io.syemessenger.api.account.AccountAssertions.assertAccount;
+import static io.syemessenger.api.account.AccountAssertions.createAccount;
+import static org.junit.jupiter.api.Assertions.fail;
 
-import io.syemessenger.api.ClientCodec;
 import io.syemessenger.api.ClientSdk;
-import io.syemessenger.api.ServiceException;
+import io.syemessenger.environment.CloseHelper;
 import io.syemessenger.environment.IntegrationEnvironment;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 public class GetAccountIT {
 
-  private static final ClientCodec clientCodec = ClientCodec.getInstance();
   private static IntegrationEnvironment environment;
-  private static ClientSdk clientSdk;
-  private static AccountSdk accountSdk;
-  private static AccountInfo existingAccountInfo;
-  private static AccountInfo existingAccountInfo2;
+
+  private ClientSdk clientSdk;
+  private AccountSdk accountSdk;
+  private AccountInfo existingAccountInfo;
+  private AccountInfo anotherAccountInfo;
 
   @BeforeAll
   static void beforeAll() {
     environment = new IntegrationEnvironment();
     environment.start();
-
   }
 
   @AfterAll
   static void afterAll() {
-    if (environment != null) {
-      environment.close();
-    }
+    CloseHelper.close(environment);
   }
 
   @BeforeEach
   void beforeEach() {
-    clientSdk = new ClientSdk(clientCodec);
+    clientSdk = new ClientSdk();
     accountSdk = clientSdk.api(AccountSdk.class);
-    existingAccountInfo = createExistingAccount();
-    existingAccountInfo2 = createExistingAccount();
+    existingAccountInfo = createAccount();
+    anotherAccountInfo = createAccount();
   }
 
-  @Test
-  void testGetAccount() {
-    accountSdk.login(
-        new LoginAccountRequest().username(existingAccountInfo.username()).password("test12345"));
-    final var accountInfo = accountSdk.getAccount(existingAccountInfo2.id());
-    assertEquals(existingAccountInfo2.id(), accountInfo.id());
-    assertEquals(existingAccountInfo2.username(), accountInfo.username());
-    assertEquals(existingAccountInfo2.email(), accountInfo.email());
-  }
-
-  @Test
-  void testGetAccountOwn() {
-    accountSdk.login(
-        new LoginAccountRequest().username(existingAccountInfo.username()).password("test12345"));
-    final var accountInfo = accountSdk.getAccount(null);
-    assertEquals(existingAccountInfo.id(), accountInfo.id());
-    assertEquals(existingAccountInfo.username(), accountInfo.username());
-    assertEquals(existingAccountInfo.email(), accountInfo.email());
+  @AfterEach
+  void afterEach() {
+    CloseHelper.close(clientSdk);
   }
 
   @Test
   void testGetAccountNotLoggedIn() {
-    try (ClientSdk clientSdk = new ClientSdk(clientCodec)) {
-      final var api = clientSdk.api(AccountSdk.class);
-      api.getAccount(existingAccountInfo.id());
-      Assertions.fail("Expected exception");
+    try {
+      accountSdk.getAccount(existingAccountInfo.id());
+      fail("Expected exception");
     } catch (Exception ex) {
-      assertInstanceOf(ServiceException.class, ex, "Exception: " + ex);
-      final var serviceException = (ServiceException) ex;
-      assertEquals(401, serviceException.errorCode());
-      assertEquals("Not authenticated", serviceException.getMessage());
+      assertError(ex, 401, "Not authenticated");
     }
   }
 
-  static AccountInfo createExistingAccount() {
-    try (ClientSdk clientSdk = new ClientSdk(clientCodec)) {
-      final var username = randomAlphanumeric(8, 65);
-      final var email =
-          randomAlphanumeric(4) + "@" + randomAlphabetic(2, 10) + "." + randomAlphabetic(2, 10);
-      final var password = "test12345";
+  @Test
+  void testGetForeignAccount() {
+    accountSdk.login(
+        new LoginAccountRequest().username(existingAccountInfo.username()).password("test12345"));
+    final var id = anotherAccountInfo.id();
+    assertAccount(anotherAccountInfo, accountSdk.getAccount(id));
+  }
 
-      return clientSdk
-          .api(AccountSdk.class)
-          .createAccount(
-              new CreateAccountRequest().username(username).email(email).password(password));
-    }
+  @Test
+  void testGetOwnAccount() {
+    accountSdk.login(
+        new LoginAccountRequest().username(existingAccountInfo.username()).password("test12345"));
+    assertAccount(existingAccountInfo, accountSdk.getAccount(null));
   }
 }

@@ -1,19 +1,19 @@
 package io.syemessenger.api.account;
 
+import static io.syemessenger.api.ErrorAssertions.assertError;
+import static io.syemessenger.api.account.AccountAssertions.createAccount;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.testcontainers.shaded.org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.testcontainers.shaded.org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
 
-import io.syemessenger.api.ClientCodec;
 import io.syemessenger.api.ClientSdk;
-import io.syemessenger.api.ServiceException;
+import io.syemessenger.environment.CloseHelper;
 import io.syemessenger.environment.IntegrationEnvironment;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -22,7 +22,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 public class CreateAccountIT {
 
-  private static final ClientCodec clientCodec = ClientCodec.getInstance();
   private static IntegrationEnvironment environment;
   private static AccountInfo existingAccountInfo;
 
@@ -31,52 +30,27 @@ public class CreateAccountIT {
     environment = new IntegrationEnvironment();
     environment.start();
 
-    existingAccountInfo = createExistingAccount();
+    existingAccountInfo = createAccount();
   }
 
   @AfterAll
   static void afterAll() {
-    if (environment != null) {
-      environment.close();
-    }
-  }
-
-  @Test
-  void testCreateAccount() {
-    try (ClientSdk clientSdk = new ClientSdk(clientCodec)) {
-      final var api = clientSdk.api(AccountSdk.class);
-      String username = randomAlphanumeric(8, 65);
-      String email =
-          randomAlphanumeric(4) + "@" + randomAlphabetic(2, 10) + "." + randomAlphabetic(2, 10);
-      String password = randomAlphanumeric(8, 65);
-
-      final AccountInfo accountInfo =
-          api.createAccount(
-              new CreateAccountRequest().username(username).email(email).password(password));
-      assertEquals(username, accountInfo.username());
-      assertEquals(email, accountInfo.email());
-      assertNotNull(accountInfo.createdAt());
-      assertTrue(accountInfo.id() > 0, "accountInfo.id: " + accountInfo.id());
-    }
+    CloseHelper.close(environment);
   }
 
   @ParameterizedTest(name = "{0}")
   @MethodSource(value = "failedAccountMethodSource")
   void testCreateAccountFailed(
       String test, CreateAccountRequest request, int errorCode, String errorMessage) {
-    try (ClientSdk clientSdk = new ClientSdk(clientCodec)) {
-      final var api = clientSdk.api(AccountSdk.class);
-      api.createAccount(request);
-      Assertions.fail("Expected exception");
+    try (ClientSdk clientSdk = new ClientSdk()) {
+      clientSdk.api(AccountSdk.class).createAccount(request);
+      fail("Expected exception");
     } catch (Exception ex) {
-      assertInstanceOf(ServiceException.class, ex, "Exception: " + ex);
-      final var serviceException = (ServiceException) ex;
-      assertEquals(errorCode, serviceException.errorCode());
-      assertEquals(errorMessage, serviceException.getMessage());
+      assertError(ex, errorCode, errorMessage);
     }
   }
 
-  static Stream<Arguments> failedAccountMethodSource() {
+  private static Stream<Arguments> failedAccountMethodSource() {
     return Stream.of(
         Arguments.of(
             "All parameters are empty strings",
@@ -180,76 +154,25 @@ public class CreateAccountIT {
                 .email(existingAccountInfo.email())
                 .password(randomAlphanumeric(8, 65)),
             400,
-            "Cannot create account: already exists")
-
-        //        TODO: Move to successful scenarios
-        //        // Boundary test: Username at minimum length
-        //        Arguments.of(
-        //            new CreateAccountRequest()
-        //                .username("usrnam")
-        //                .email("testuser@gmail.com")
-        //                .password("password123"),
-        //            400,
-        //            "Invalid credentials"), // Assuming other invalid criteria
-        //
-        //        // Boundary test: Username at maximum length
-        //        Arguments.of(
-        //            new CreateAccountRequest()
-        //                .username("thirtycharusernameexactlyyayy")
-        //                .email("testuser@gmail.com")
-        //                .password("password123"),
-        //            400,
-        //            "Invalid credentials"), // Assuming other invalid criteria
-        //
-        //        // Boundary test: Email at minimum length
-        //        Arguments.of(
-        //            new CreateAccountRequest()
-        //                .username("validuser")
-        //                .email("test@domain.com")
-        //                .password("password123"),
-        //            400,
-        //            "Invalid credentials"), // Assuming other invalid criteria
-        //
-        //        // Boundary test: Email at maximum length
-        //        Arguments.of(
-        //            new CreateAccountRequest()
-        //                .username("validuser")
-        //                .email("averylongemailaddresswithmaximum50charactrs@ex.com")
-        //                .password("password123"),
-        //            400,
-        //            "Invalid credentials"), // Assuming other invalid criteria
-        //
-        //        // Boundary test: Password at minimum length
-        //        Arguments.of(
-        //            new CreateAccountRequest()
-        //                .username("validuser")
-        //                .email("testuser@gmail.com")
-        //                .password("passw6"),
-        //            400,
-        //            "Invalid credentials"), // Assuming other invalid criteria
-        //
-        //        // Boundary test: Password at maximum length
-        //        Arguments.of(
-        //            new CreateAccountRequest()
-        //                .username("validuser")
-        //                .email("testuser@gmail.com")
-        //                .password("thisis25characterslongxx"),
-        //            400,
-        //            "Invalid credentials") // Assuming other invalid criteria
-        );
+            "Cannot create account: already exists"));
   }
 
-  static AccountInfo createExistingAccount() {
-    try (ClientSdk clientSdk = new ClientSdk(clientCodec)) {
-      final var username = randomAlphanumeric(8, 65);
-      final var email =
+  @Test
+  void testCreateAccount() {
+    try (ClientSdk clientSdk = new ClientSdk()) {
+      final var api = clientSdk.api(AccountSdk.class);
+      String username = randomAlphanumeric(8, 65);
+      String email =
           randomAlphanumeric(4) + "@" + randomAlphabetic(2, 10) + "." + randomAlphabetic(2, 10);
-      final var password = randomAlphanumeric(8, 65);
+      String password = randomAlphanumeric(8, 65);
 
-      return clientSdk
-          .api(AccountSdk.class)
-          .createAccount(
+      final AccountInfo accountInfo =
+          api.createAccount(
               new CreateAccountRequest().username(username).email(email).password(password));
+      assertEquals(username, accountInfo.username(), "username");
+      assertEquals(email, accountInfo.email(), "email");
+      assertNotNull(accountInfo.createdAt(), "createdAt");
+      assertTrue(accountInfo.id() > 0, "accountInfo.id: " + accountInfo.id());
     }
   }
 }

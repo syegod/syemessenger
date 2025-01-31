@@ -1,17 +1,16 @@
 package io.syemessenger.api.account;
 
+import static io.syemessenger.api.ErrorAssertions.assertError;
+import static io.syemessenger.api.account.AccountAssertions.createAccount;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.testcontainers.shaded.org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.testcontainers.shaded.org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
 
-import io.syemessenger.api.ClientCodec;
 import io.syemessenger.api.ClientSdk;
-import io.syemessenger.api.ServiceException;
+import io.syemessenger.environment.CloseHelper;
 import io.syemessenger.environment.IntegrationEnvironment;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -20,7 +19,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 public class LoginIT {
 
-  private static final ClientCodec clientCodec = ClientCodec.getInstance();
   private static IntegrationEnvironment environment;
   private static AccountInfo existingAccountInfo;
 
@@ -29,62 +27,27 @@ public class LoginIT {
     environment = new IntegrationEnvironment();
     environment.start();
 
-    existingAccountInfo = createExistingAccount();
+    existingAccountInfo = createAccount();
   }
 
   @AfterAll
   static void afterAll() {
-    if (environment != null) {
-      environment.close();
-    }
-  }
-
-  @Test
-  void testLoginByUsername() {
-    try (ClientSdk clientSdk = new ClientSdk(clientCodec)) {
-      final var accountId =
-          clientSdk
-              .api(AccountSdk.class)
-              .login(
-                  new LoginAccountRequest()
-                      .username(existingAccountInfo.username())
-                      .password("test12345"));
-
-      assertEquals(existingAccountInfo.id(), accountId, "accountId");
-    }
-  }
-
-  @Test
-  void testLoginByEmail() {
-    try (ClientSdk clientSdk = new ClientSdk(clientCodec)) {
-      final var accountId =
-          clientSdk
-              .api(AccountSdk.class)
-              .login(
-                  new LoginAccountRequest()
-                      .email(existingAccountInfo.email())
-                      .password("test12345"));
-
-      assertEquals(existingAccountInfo.id(), accountId, "accountId");
-    }
+    CloseHelper.close(environment);
   }
 
   @ParameterizedTest(name = "{0}")
   @MethodSource(value = "testLoginFailedMethodSource")
   void testLoginFailed(
       String test, LoginAccountRequest request, int errorCode, String errorMessage) {
-    try (ClientSdk clientSdk = new ClientSdk(clientCodec)) {
+    try (ClientSdk clientSdk = new ClientSdk()) {
       clientSdk.api(AccountSdk.class).login(request);
-      Assertions.fail("Expected exception");
+      fail("Expected exception");
     } catch (Exception ex) {
-      assertInstanceOf(ServiceException.class, ex, "Exception: " + ex);
-      final var serviceException = (ServiceException) ex;
-      assertEquals(errorCode, serviceException.errorCode());
-      assertEquals(errorMessage, serviceException.getMessage());
+      assertError(ex, errorCode, errorMessage);
     }
   }
 
-  static Stream<Arguments> testLoginFailedMethodSource() {
+  private static Stream<Arguments> testLoginFailedMethodSource() {
     return Stream.of(
         Arguments.of(
             "Login to non-existing account",
@@ -120,17 +83,33 @@ public class LoginIT {
             "Login failed"));
   }
 
-  static AccountInfo createExistingAccount() {
-    try (ClientSdk clientSdk = new ClientSdk(clientCodec)) {
-      String username = randomAlphanumeric(8, 65);
-      String email =
-          randomAlphanumeric(4) + "@" + randomAlphabetic(2, 10) + "." + randomAlphabetic(2, 10);
-      String password = "test12345";
+  @Test
+  void testLoginByUsername() {
+    try (ClientSdk clientSdk = new ClientSdk()) {
+      final var accountId =
+          clientSdk
+              .api(AccountSdk.class)
+              .login(
+                  new LoginAccountRequest()
+                      .username(existingAccountInfo.username())
+                      .password("test12345"));
 
-      return clientSdk
-          .api(AccountSdk.class)
-          .createAccount(
-              new CreateAccountRequest().username(username).email(email).password(password));
+      assertEquals(existingAccountInfo.id(), accountId, "accountId");
+    }
+  }
+
+  @Test
+  void testLoginByEmail() {
+    try (ClientSdk clientSdk = new ClientSdk()) {
+      final var accountId =
+          clientSdk
+              .api(AccountSdk.class)
+              .login(
+                  new LoginAccountRequest()
+                      .email(existingAccountInfo.email())
+                      .password("test12345"));
+
+      assertEquals(existingAccountInfo.id(), accountId, "accountId");
     }
   }
 }

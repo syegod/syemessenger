@@ -4,7 +4,7 @@ import io.syemessenger.ServiceBootstrap;
 import io.syemessenger.ServiceConfig;
 import org.testcontainers.containers.PostgreSQLContainer;
 
-public class IntegrationEnvironment {
+public class IntegrationEnvironment implements AutoCloseable {
 
   private PostgreSQLContainer postgres;
   private ServiceBootstrap serviceBootstrap;

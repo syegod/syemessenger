@@ -1,22 +1,21 @@
 package io.syemessenger.api.room;
 
+import static io.syemessenger.api.ErrorAssertions.assertError;
+import static io.syemessenger.api.account.AccountAssertions.createAccount;
+import static io.syemessenger.api.room.RoomAssertions.createRoom;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.testcontainers.shaded.org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.testcontainers.shaded.org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
 
-import io.syemessenger.api.ClientCodec;
 import io.syemessenger.api.ClientSdk;
-import io.syemessenger.api.ServiceException;
 import io.syemessenger.api.account.AccountInfo;
 import io.syemessenger.api.account.AccountSdk;
-import io.syemessenger.api.account.CreateAccountRequest;
 import io.syemessenger.api.account.LoginAccountRequest;
+import io.syemessenger.environment.CloseHelper;
 import io.syemessenger.environment.IntegrationEnvironment;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,59 +24,41 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 public class UpdateRoomIT {
-  private static final ClientCodec clientCodec = ClientCodec.getInstance();
+
   private static IntegrationEnvironment environment;
-  private static ClientSdk clientSdk;
-  private static AccountSdk accountSdk;
-  private static RoomSdk roomSdk;
-  private static AccountInfo accountInfo;
+  private static AccountInfo accountInfo1;
   private static AccountInfo accountInfo2;
   private static RoomInfo existingRoomInfo;
+
+  private ClientSdk clientSdk;
+  private AccountSdk accountSdk;
+  private RoomSdk roomSdk;
 
   @BeforeAll
   static void beforeAll() {
     environment = new IntegrationEnvironment();
     environment.start();
 
-    accountInfo = createAccount();
+    accountInfo1 = createAccount();
     accountInfo2 = createAccount();
-    existingRoomInfo = createRoom(accountInfo);
+    existingRoomInfo = createRoom(accountInfo1);
   }
 
   @AfterAll
   static void afterAll() {
-    if (environment != null) {
-      environment.close();
-    }
+    CloseHelper.close(environment);
   }
 
   @BeforeEach
   void beforeEach() {
-    clientSdk = new ClientSdk(clientCodec);
+    clientSdk = new ClientSdk();
     accountSdk = clientSdk.api(AccountSdk.class);
     roomSdk = clientSdk.api(RoomSdk.class);
   }
 
   @AfterEach
   void afterEach() {
-    if (clientSdk != null) {
-      clientSdk.close();
-    }
-  }
-
-  @Test
-  void testUpdateRoom() {
-    accountSdk.login(
-        new LoginAccountRequest().username(accountInfo.username()).password("test12345"));
-
-    final var description = randomAlphanumeric(20);
-    final var roomInfo =
-        roomSdk.updateRoom(
-            new UpdateRoomRequest().roomId(existingRoomInfo.id()).description(description));
-
-    assertEquals(existingRoomInfo.id(), roomInfo.id(), "roomInfo.id: " + roomInfo.id());
-    assertEquals(accountInfo.username(), roomInfo.owner());
-    assertEquals(description, roomInfo.description());
+    CloseHelper.close(clientSdk);
   }
 
   @Test
@@ -86,12 +67,9 @@ public class UpdateRoomIT {
       final var description = randomAlphanumeric(20);
       roomSdk.updateRoom(
           new UpdateRoomRequest().roomId(existingRoomInfo.id()).description(description));
-      Assertions.fail("Expected exception");
+      fail("Expected exception");
     } catch (Exception ex) {
-      assertInstanceOf(ServiceException.class, ex, "Exception: " + ex);
-      final var serviceException = (ServiceException) ex;
-      assertEquals(401, serviceException.errorCode());
-      assertEquals("Not authenticated", serviceException.getMessage());
+      assertError(ex, 401, "Not authenticated");
     }
   }
 
@@ -104,12 +82,9 @@ public class UpdateRoomIT {
           new UpdateRoomRequest()
               .roomId(existingRoomInfo.id())
               .description(randomAlphanumeric(20)));
-      Assertions.fail("Expected exception");
+      fail("Expected exception");
     } catch (Exception ex) {
-      assertInstanceOf(ServiceException.class, ex, "Exception: " + ex);
-      final var serviceException = (ServiceException) ex;
-      assertEquals(403, serviceException.errorCode());
-      assertEquals("Not allowed", serviceException.getMessage());
+      assertError(ex, 403, "Not allowed");
     }
   }
 
@@ -118,19 +93,16 @@ public class UpdateRoomIT {
   void testUpdateRoomFailed(
       String test, UpdateRoomRequest request, int errorCode, String errorMessage) {
     accountSdk.login(
-        new LoginAccountRequest().username(accountInfo.username()).password("test12345"));
+        new LoginAccountRequest().username(accountInfo1.username()).password("test12345"));
     try {
       roomSdk.updateRoom(request);
-      Assertions.fail("Expected exception");
+      fail("Expected exception");
     } catch (Exception ex) {
-      assertInstanceOf(ServiceException.class, ex, "Exception: " + ex);
-      final var serviceException = (ServiceException) ex;
-      assertEquals(errorCode, serviceException.errorCode(), "errorCode");
-      assertEquals(errorMessage, serviceException.getMessage(), "errorMessage");
+      assertError(ex, errorCode, errorMessage);
     }
   }
 
-  static Stream<Arguments> testUpdateRoomFailedMethodSource() {
+  private static Stream<Arguments> testUpdateRoomFailedMethodSource() {
     return Stream.of(
         Arguments.of(
             "No room id",
@@ -163,28 +135,18 @@ public class UpdateRoomIT {
             "Missing or invalid: description"));
   }
 
-  private static RoomInfo createRoom(AccountInfo accountInfo) {
-    try (final var client = new ClientSdk(clientCodec)) {
-      client
-          .api(AccountSdk.class)
-          .login(new LoginAccountRequest().username(accountInfo.username()).password("test12345"));
-      return client
-          .api(RoomSdk.class)
-          .createRoom(new CreateRoomRequest().name(randomAlphanumeric(8, 65)));
-    }
-  }
+  @Test
+  void testUpdateRoom() {
+    accountSdk.login(
+        new LoginAccountRequest().username(accountInfo1.username()).password("test12345"));
 
-  private static AccountInfo createAccount() {
-    try (final var client = new ClientSdk(clientCodec)) {
-      String username = randomAlphanumeric(8, 65);
-      String email =
-          randomAlphanumeric(4) + "@" + randomAlphabetic(2, 10) + "." + randomAlphabetic(2, 10);
-      String password = "test12345";
+    final var description = randomAlphanumeric(20);
+    final var roomInfo =
+        roomSdk.updateRoom(
+            new UpdateRoomRequest().roomId(existingRoomInfo.id()).description(description));
 
-      return client
-          .api(AccountSdk.class)
-          .createAccount(
-              new CreateAccountRequest().username(username).email(email).password(password));
-    }
+    assertEquals(existingRoomInfo.id(), roomInfo.id(), "roomInfo.id: " + roomInfo.id());
+    assertEquals(accountInfo1.username(), roomInfo.owner());
+    assertEquals(description, roomInfo.description());
   }
 }
