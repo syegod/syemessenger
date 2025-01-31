@@ -14,6 +14,7 @@ import io.syemessenger.api.account.CreateAccountRequest;
 import io.syemessenger.api.account.LoginAccountRequest;
 import io.syemessenger.environment.IntegrationEnvironment;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -48,6 +49,13 @@ public class GetRoomIT {
     roomSdk = clientSdk.api(RoomSdk.class);
     existingAccountInfo = createExistingAccount();
     existingRoomInfo = createRoom(existingAccountInfo);
+  }
+
+  @AfterEach
+  void afterEach() {
+    if (clientSdk != null) {
+      clientSdk.close();
+    }
   }
 
   @Test
