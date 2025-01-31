@@ -11,6 +11,7 @@ import io.syemessenger.api.account.UpdateAccountRequest;
 import io.syemessenger.api.room.BlockMembersRequest;
 import io.syemessenger.api.room.CreateRoomRequest;
 import io.syemessenger.api.room.GetRoomMembersRequest;
+import io.syemessenger.api.room.ListRoomsRequest;
 import io.syemessenger.api.room.RemoveMembersRequest;
 import io.syemessenger.api.room.RoomService;
 import io.syemessenger.api.room.UnblockMembersRequest;
@@ -121,7 +122,7 @@ public class WebSocketHandler {
           roomService.unblockRoomMembers(sessionContext, (UnblockMembersRequest) request);
           break;
         case "v1/syemessenger/listRooms":
-          roomService.listRooms(sessionContext, (io.syemessenger.api.room.ListRoomsRequest) request);
+          roomService.listRooms(sessionContext, (ListRoomsRequest) request);
           break;
         default:
           throw new IllegalArgumentException("Wrong request: " + request);
