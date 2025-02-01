@@ -3,8 +3,8 @@ package io.syemessenger.api.room;
 import static io.syemessenger.api.ErrorAssertions.assertError;
 import static io.syemessenger.api.account.AccountAssertions.createAccount;
 import static io.syemessenger.environment.AssertionUtils.assertCollections;
-import static io.syemessenger.environment.AssertionUtils.getFields;
 import static io.syemessenger.environment.AssertionUtils.toComparator;
+import static io.syemessenger.environment.CounterUtils.nextLong;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -119,11 +119,11 @@ public class ListRoomsIT {
     final var expectedRoomInfos =
         IntStream.range(0, n)
             .mapToObj(
-                value ->
-                    roomSdk.createRoom(
-                        new CreateRoomRequest()
-                            .name("room@" + value)
-                            .description("description@" + value)))
+                v -> {
+                  final var l = nextLong();
+                  return roomSdk.createRoom(
+                      new CreateRoomRequest().name("room@" + l).description("description@" + l));
+                })
             .filter(
                 roomInfo -> {
                   if (k != null) {
@@ -132,9 +132,9 @@ public class ListRoomsIT {
                     return true;
                   }
                 })
+            .sorted(comparator)
             .skip(offset)
             .limit(limit)
-            .sorted(comparator)
             .toList();
 
     final var response = roomSdk.listRooms(request);
@@ -145,9 +145,9 @@ public class ListRoomsIT {
   private static Stream<Arguments> testListRoomsMethodSource() {
     final var builder = Stream.<Arguments>builder();
 
-    final String[] keywords = {"room@", "description@", null};
+    final String[] fields = {"id", "name"};
     final Direction[] directions = {Direction.ASC, Direction.DESC, null};
-    final String[] fields = getFields(RoomInfo.class);
+    final String[] keywords = {"room@", "description@", null};
     final OffsetLimit[] offsetLimits = {
       new OffsetLimit(null, null),
       new OffsetLimit(null, 5),
