@@ -15,14 +15,11 @@ import io.syemessenger.api.account.AccountInfo;
 import io.syemessenger.api.account.AccountSdk;
 import io.syemessenger.api.account.LoginAccountRequest;
 import io.syemessenger.environment.CloseHelper;
-import io.syemessenger.environment.IntegrationEnvironment;
 import io.syemessenger.environment.OffsetLimit;
 import java.util.Comparator;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -31,23 +28,10 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 public class ListRoomsIT {
 
-  private static IntegrationEnvironment environment;
-
   private ClientSdk clientSdk;
   private AccountSdk accountSdk;
   private RoomSdk roomSdk;
   private AccountInfo accountInfo;
-
-  @BeforeAll
-  static void beforeAll() {
-    environment = new IntegrationEnvironment();
-    environment.start();
-  }
-
-  @AfterAll
-  static void afterAll() {
-    CloseHelper.close(environment);
-  }
 
   @BeforeEach
   void beforeEach() {
