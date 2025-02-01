@@ -19,22 +19,13 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 public class UpdateAccountIT {
 
-  private static IntegrationEnvironment environment;
   private static AccountInfo existingAccountInfo;
   private static AccountInfo anotherAccountInfo;
 
   @BeforeAll
   static void beforeAll() {
-    environment = new IntegrationEnvironment();
-    environment.start();
-
     existingAccountInfo = createAccount();
     anotherAccountInfo = createAccount();
-  }
-
-  @AfterAll
-  static void afterAll() {
-    CloseHelper.close(environment);
   }
 
   @Test

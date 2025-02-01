@@ -24,7 +24,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 public class GetRoomsIT {
 
-  private static IntegrationEnvironment environment;
 
   private ClientSdk clientSdk;
   private AccountSdk accountSdk;
@@ -32,17 +31,7 @@ public class GetRoomsIT {
   private AccountInfo existingAccountInfo;
   private RoomInfo existingRoomInfo;
 
-  @BeforeAll
-  static void beforeAll() {
-    environment = new IntegrationEnvironment();
-    environment.start();
-  }
-
-  @AfterAll
-  static void afterAll() {
-    CloseHelper.close(environment);
-  }
-
+ 
   @BeforeEach
   void beforeEach() {
     clientSdk = new ClientSdk();

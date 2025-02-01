@@ -16,23 +16,11 @@ import org.junit.jupiter.api.Test;
 
 public class GetAccountIT {
 
-  private static IntegrationEnvironment environment;
 
   private ClientSdk clientSdk;
   private AccountSdk accountSdk;
   private AccountInfo existingAccountInfo;
   private AccountInfo anotherAccountInfo;
-
-  @BeforeAll
-  static void beforeAll() {
-    environment = new IntegrationEnvironment();
-    environment.start();
-  }
-
-  @AfterAll
-  static void afterAll() {
-    CloseHelper.close(environment);
-  }
 
   @BeforeEach
   void beforeEach() {
