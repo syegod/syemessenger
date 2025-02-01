@@ -195,13 +195,11 @@ public class AccountService {
       return;
     }
 
-    Account account;
-
     if (id == null) {
-      account = accountRepository.findById(sessionContext.accountId()).orElse(null);
-    } else {
-      account = accountRepository.findById(id).orElse(null);
+      sessionContext.sendError(400, "Missing or invalid: id");
+      return;
     }
+    final var account = accountRepository.findById(id).orElse(null);
 
     if (account == null) {
       sessionContext.sendError(404, "Account not found");

@@ -55,8 +55,8 @@ public class GetAccountIT {
 
   @Test
   void testGetOwnAccount() {
-    accountSdk.login(
+    final var accountId = accountSdk.login(
         new LoginAccountRequest().username(existingAccountInfo.username()).password("test12345"));
-    assertAccount(existingAccountInfo, accountSdk.getAccount(null));
+    assertAccount(existingAccountInfo, accountSdk.getAccount(accountId));
   }
 }

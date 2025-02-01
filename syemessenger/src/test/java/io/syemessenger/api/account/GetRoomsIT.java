@@ -24,14 +24,12 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 public class GetRoomsIT {
 
-
   private ClientSdk clientSdk;
   private AccountSdk accountSdk;
   private RoomSdk roomSdk;
   private AccountInfo existingAccountInfo;
   private RoomInfo existingRoomInfo;
 
- 
   @BeforeEach
   void beforeEach() {
     clientSdk = new ClientSdk();
@@ -48,7 +46,12 @@ public class GetRoomsIT {
 
   @Test
   void testGetRoomsNotLoggedIn() {
-    fail("Implement");
+    try {
+      accountSdk.getRooms(new GetRoomsRequest());
+      fail("Expected exception");
+    } catch (Exception ex) {
+      assertError(ex, 401, "Not authenticated");
+    }
   }
 
   @ParameterizedTest(name = "{0}")
