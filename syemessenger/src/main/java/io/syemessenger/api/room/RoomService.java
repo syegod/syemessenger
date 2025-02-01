@@ -8,6 +8,9 @@ import io.syemessenger.websocket.SessionContext;
 import jakarta.inject.Named;
 import java.time.Clock;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.List;
+import java.util.Optional;
 import org.springframework.dao.DataAccessException;
 
 @Named
@@ -51,7 +54,7 @@ public class RoomService {
       return;
     }
 
-    final var now = LocalDateTime.now(Clock.systemUTC());
+    final var now = LocalDateTime.now(Clock.systemUTC()).truncatedTo(ChronoUnit.MILLIS);
     final var room =
         new Room().name(name).description(description).owner(account).createdAt(now).updatedAt(now);
 
@@ -189,14 +192,58 @@ public class RoomService {
     }
 
     try {
-      roomRepository.deleteRoomMember(id, sessionContext.accountId());
-      sessionContext.send(new ServiceMessage().qualifier("leaveRoom").data(id));
+      if (room.owner().id().equals(sessionContext.accountId())) {
+        roomRepository.deleteById(id);
+        sessionContext.send(new ServiceMessage().qualifier("leaveRoom").data(id));
+      } else {
+        roomRepository.deleteRoomMember(id, sessionContext.accountId());
+        sessionContext.send(new ServiceMessage().qualifier("leaveRoom").data(id));
+      }
     } catch (Exception e) {
       sessionContext.sendError(500, e.getMessage());
     }
   }
 
-  public void removeRoomMembers(SessionContext sessionContext, RemoveMembersRequest request) {}
+  public void removeRoomMembers(SessionContext sessionContext, RemoveMembersRequest request) {
+    if (!sessionContext.isLoggedIn()) {
+      sessionContext.sendError(401, "Not authenticated");
+      return;
+    }
+
+    final var roomId = request.roomId();
+    if (roomId == null) {
+      sessionContext.sendError(400, "Missing or invalid: roomId");
+      return;
+    }
+
+    final var memberIds = request.memberIds();
+    if (memberIds == null) {
+      sessionContext.sendError(400, "Missing or invalid: memberIds");
+      return;
+    }
+    if (memberIds.isEmpty()) {
+      sessionContext.sendError(400, "Missing or invalid: memberIds");
+      return;
+    }
+
+    final var room = roomRepository.findById(roomId).orElse(null);
+    if (room == null) {
+      sessionContext.sendError(404, "Room not found");
+      return;
+    }
+
+    if (room.owner().id().equals(sessionContext.accountId())) {
+      sessionContext.sendError(400, "Cannot remove room owner");
+      return;
+    }
+
+    try {
+      roomRepository.deleteRoomMembers(roomId, memberIds);
+      sessionContext.send(new ServiceMessage().qualifier("removeRoomMembers").data(roomId));
+    } catch (Exception e) {
+      sessionContext.sendError(500, e.getMessage());
+    }
+  }
 
   public void blockRoomMembers(SessionContext sessionContext, BlockMembersRequest request) {}
 

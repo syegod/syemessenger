@@ -28,6 +28,7 @@ public class GetRoomsIT {
   private AccountSdk accountSdk;
   private RoomSdk roomSdk;
   private AccountInfo existingAccountInfo;
+  private AccountInfo anotherAccountInfo;
   private RoomInfo existingRoomInfo;
 
   @BeforeEach
@@ -36,6 +37,7 @@ public class GetRoomsIT {
     accountSdk = clientSdk.api(AccountSdk.class);
     roomSdk = clientSdk.api(RoomSdk.class);
     existingAccountInfo = createAccount();
+    anotherAccountInfo = createAccount();
     existingRoomInfo = createRoom(existingAccountInfo);
   }
 
@@ -91,16 +93,15 @@ public class GetRoomsIT {
   void testGetRooms() {
     accountSdk.login(
         new LoginAccountRequest().username(existingAccountInfo.username()).password("test12345"));
-    roomSdk.joinRoom(existingRoomInfo.name());
     final var rooms = accountSdk.getRooms(new GetRoomsRequest());
-    assertEquals(1, rooms.roomInfos().size());
+    assertEquals(1, rooms.totalCount());
     assertRoom(existingRoomInfo, rooms.roomInfos().getFirst());
   }
 
   @Test
   void testGetRoomsEmpty() {
     accountSdk.login(
-        new LoginAccountRequest().username(existingAccountInfo.username()).password("test12345"));
+        new LoginAccountRequest().username(anotherAccountInfo.username()).password("test12345"));
     final var rooms = accountSdk.getRooms(new GetRoomsRequest());
     assertEquals(0, rooms.roomInfos().size());
   }

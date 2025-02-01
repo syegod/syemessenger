@@ -16,6 +16,7 @@ import io.syemessenger.api.account.GetRoomsRequest;
 import io.syemessenger.api.account.LoginAccountRequest;
 import io.syemessenger.environment.CloseHelper;
 import io.syemessenger.environment.IntegrationEnvironment;
+import java.util.List;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -89,6 +90,38 @@ public class JoinRoomIT {
       fail("Expected exception");
     } catch (Exception ex) {
       assertError(ex, 400, "Cannot join room: already joined");
+    }
+  }
+
+  @Test
+  void testJoinRoomRepeat() {
+    accountSdk.login(
+        new LoginAccountRequest().username(anotherAccountInfo.username()).password("test12345"));
+    roomSdk.joinRoom(existingRoomInfo.name());
+    try {
+      roomSdk.joinRoom(existingRoomInfo.name());
+      fail("Expected exception");
+    } catch (Exception ex) {
+      assertError(ex, 400, "Cannot join room: already joined");
+    }
+  }
+
+  @Test
+  void testJoinRoomBlocked() {
+    accountSdk.login(
+        new LoginAccountRequest().username(existingAccountInfo.username()).password("test12345"));
+    roomSdk.blockRoomMembers(
+        new BlockMembersRequest()
+            .roomId(existingRoomInfo.id())
+            .memberIds(List.of(anotherAccountInfo.id())));
+    accountSdk.login(
+        new LoginAccountRequest().username(anotherAccountInfo.username()).password("test12345"));
+
+    try {
+      roomSdk.joinRoom(existingRoomInfo.name());
+      fail("Expected exception");
+    } catch (Exception ex) {
+      assertError(ex, 400, "Cannot join room: blocked");
     }
   }
 

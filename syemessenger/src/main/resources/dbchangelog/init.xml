@@ -40,10 +40,11 @@
   <changeSet id="4" author="Oleh Vysochyn">
     <createTable tableName="room_members">
       <column name="room_id" type="bigint">
-        <constraints nullable="false" foreignKeyName="fk_room_members_room" references="rooms(id)"/>
+        <constraints nullable="false" foreignKeyName="fk_room_members_room" deleteCascade="true"
+          references="rooms(id)"/>
       </column>
       <column name="account_id" type="bigint">
-        <constraints nullable="false" foreignKeyName="fk_room_members_account"
+        <constraints nullable="false" foreignKeyName="fk_room_members_account" deleteCascade="true"
           references="accounts(id)"/>
       </column>
     </createTable>

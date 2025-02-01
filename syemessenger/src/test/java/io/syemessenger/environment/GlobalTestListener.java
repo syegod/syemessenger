@@ -1,6 +1,7 @@
 package io.syemessenger.environment;
 
 import org.junit.platform.launcher.TestExecutionListener;
+import org.junit.platform.launcher.TestIdentifier;
 import org.junit.platform.launcher.TestPlan;
 
 public class GlobalTestListener implements TestExecutionListener {
@@ -18,5 +19,10 @@ public class GlobalTestListener implements TestExecutionListener {
     if (integrationEnvironment != null) {
       integrationEnvironment.close();
     }
+  }
+
+  @Override
+  public void executionStarted(TestIdentifier testIdentifier) {
+    TestExecutionListener.super.executionStarted(testIdentifier);
   }
 }

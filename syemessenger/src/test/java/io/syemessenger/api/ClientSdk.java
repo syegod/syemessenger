@@ -9,6 +9,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.WebSocket;
 import java.net.http.WebSocket.Listener;
+import java.util.Optional;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletionStage;
@@ -86,12 +87,25 @@ public class ClientSdk implements AutoCloseable {
             api.getClassLoader(),
             new Class[] {api},
             (proxy, method, args) -> {
+              Object check = toStringOrEqualsOrHashCode(method.getName(), api, args);
+              if (check != null) {
+                return check;
+              }
               final var request = args != null ? args[0] : null;
               final var name = method.getName();
               final var message = new ServiceMessage().qualifier(name).data(request);
               sendText(message);
               return pollResponse();
             });
+  }
+
+  private Object toStringOrEqualsOrHashCode(String method, Class<?> api, Object... args) {
+    return switch (method) {
+      case "toString" -> api.toString();
+      case "equals" -> api.equals(args[0]);
+      case "hashCode" -> api.hashCode();
+      default -> null;
+    };
   }
 
   private class WebSocketListener implements WebSocket.Listener {
