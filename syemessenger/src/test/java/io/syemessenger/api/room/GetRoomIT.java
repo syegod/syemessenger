@@ -20,24 +20,12 @@ import org.junit.jupiter.api.Test;
 
 public class GetRoomIT {
 
-  private static IntegrationEnvironment environment;
 
   private ClientSdk clientSdk;
   private AccountSdk accountSdk;
   private RoomSdk roomSdk;
   private AccountInfo existingAccountInfo;
   private RoomInfo existingRoomInfo;
-
-  @BeforeAll
-  static void beforeAll() {
-    environment = new IntegrationEnvironment();
-    environment.start();
-  }
-
-  @AfterAll
-  static void afterAll() {
-    CloseHelper.close(environment);
-  }
 
   @BeforeEach
   void beforeEach() {

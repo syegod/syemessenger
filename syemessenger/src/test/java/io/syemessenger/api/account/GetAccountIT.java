@@ -16,23 +16,11 @@ import org.junit.jupiter.api.Test;
 
 public class GetAccountIT {
 
-  private static IntegrationEnvironment environment;
 
   private ClientSdk clientSdk;
   private AccountSdk accountSdk;
   private AccountInfo existingAccountInfo;
   private AccountInfo anotherAccountInfo;
-
-  @BeforeAll
-  static void beforeAll() {
-    environment = new IntegrationEnvironment();
-    environment.start();
-  }
-
-  @AfterAll
-  static void afterAll() {
-    CloseHelper.close(environment);
-  }
 
   @BeforeEach
   void beforeEach() {
@@ -67,8 +55,8 @@ public class GetAccountIT {
 
   @Test
   void testGetOwnAccount() {
-    accountSdk.login(
+    final var accountId = accountSdk.login(
         new LoginAccountRequest().username(existingAccountInfo.username()).password("test12345"));
-    assertAccount(existingAccountInfo, accountSdk.getAccount(null));
+    assertAccount(existingAccountInfo, accountSdk.getAccount(accountId));
   }
 }

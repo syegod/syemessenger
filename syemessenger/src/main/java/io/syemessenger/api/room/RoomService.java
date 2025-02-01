@@ -1,6 +1,7 @@
 package io.syemessenger.api.room;
 
 import io.syemessenger.api.ServiceMessage;
+import io.syemessenger.api.account.repository.Account;
 import io.syemessenger.api.account.repository.AccountRepository;
 import io.syemessenger.api.room.repository.Room;
 import io.syemessenger.api.room.repository.RoomRepository;
@@ -8,6 +9,9 @@ import io.syemessenger.websocket.SessionContext;
 import jakarta.inject.Named;
 import java.time.Clock;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.List;
+import java.util.Optional;
 import org.springframework.dao.DataAccessException;
 
 @Named
@@ -51,12 +55,13 @@ public class RoomService {
       return;
     }
 
-    final var now = LocalDateTime.now(Clock.systemUTC());
+    final var now = LocalDateTime.now(Clock.systemUTC()).truncatedTo(ChronoUnit.MILLIS);
     final var room =
         new Room().name(name).description(description).owner(account).createdAt(now).updatedAt(now);
 
     try {
       final var saved = roomRepository.save(room);
+      roomRepository.saveRoomMember(saved.id(), account.id());
       final var roomInfo = RoomMappers.toRoomInfo(saved);
       sessionContext.send(new ServiceMessage().qualifier("createRoom").data(roomInfo));
     } catch (DataAccessException e) {
@@ -155,20 +160,108 @@ public class RoomService {
       return;
     }
 
-    roomRepository.saveRoomMember(room.id(), sessionContext.accountId());
+    try {
+      roomRepository.saveRoomMember(room.id(), sessionContext.accountId());
+    } catch (DataAccessException e) {
+      if (e.getMessage().contains("duplicate key value violates unique constraint")) {
+        sessionContext.sendError(400, "Cannot join room: already joined");
+      } else {
+        sessionContext.sendError(400, "Cannot create room");
+      }
+    } catch (Exception e) {
+      sessionContext.sendError(500, e.getMessage());
+    }
 
     sessionContext.send(new ServiceMessage().qualifier("joinRoom").data(room.id()));
   }
 
-  public void getRoomMembers(SessionContext sessionContext, GetRoomMembersRequest request) {}
+  public void leaveRoom(SessionContext sessionContext, Long id) {
+    if (!sessionContext.isLoggedIn()) {
+      sessionContext.sendError(401, "Not authenticated");
+      return;
+    }
 
-  public void leaveRoom(SessionContext sessionContext, Long id) {}
+    if (id == null) {
+      sessionContext.sendError(400, "Missing or invalid: id");
+      return;
+    }
 
-  public void removeRoomMembers(SessionContext sessionContext, RemoveMembersRequest request) {}
+    final var room = roomRepository.findById(id).orElse(null);
+    if (room == null) {
+      sessionContext.sendError(404, "Room not found");
+      return;
+    }
+
+    final var roomMember = roomRepository.findRoomMember(id, sessionContext.accountId());
+    if (roomMember == null) {
+      sessionContext.sendError(400, "Cannot leave room: not joined");
+      return;
+    }
+
+    try {
+      if (room.owner().id().equals(sessionContext.accountId())) {
+        roomRepository.deleteById(id);
+        sessionContext.send(new ServiceMessage().qualifier("leaveRoom").data(id));
+      } else {
+        roomRepository.deleteRoomMember(id, sessionContext.accountId());
+        sessionContext.send(new ServiceMessage().qualifier("leaveRoom").data(id));
+      }
+    } catch (Exception e) {
+      sessionContext.sendError(500, e.getMessage());
+    }
+  }
+
+  public void removeRoomMembers(SessionContext sessionContext, RemoveMembersRequest request) {
+    if (!sessionContext.isLoggedIn()) {
+      sessionContext.sendError(401, "Not authenticated");
+      return;
+    }
+
+    final var roomId = request.roomId();
+    if (roomId == null) {
+      sessionContext.sendError(400, "Missing or invalid: roomId");
+      return;
+    }
+
+    final var memberIds = request.memberIds();
+    if (memberIds == null) {
+      sessionContext.sendError(400, "Missing or invalid: memberIds");
+      return;
+    }
+    if (memberIds.isEmpty()) {
+      sessionContext.sendError(400, "Missing or invalid: memberIds");
+      return;
+    }
+
+    final var room = roomRepository.findById(roomId).orElse(null);
+    if (room == null) {
+      sessionContext.sendError(404, "Room not found");
+      return;
+    }
+
+    if (!sessionContext.accountId().equals(room.owner().id())) {
+      sessionContext.sendError(403, "Not room owner");
+      return;
+    }
+
+    if (memberIds.contains(room.owner().id())) {
+      sessionContext.sendError(400, "Cannot remove room owner");
+      return;
+    }
+
+    try {
+      roomRepository.deleteRoomMembers(roomId, memberIds);
+      sessionContext.send(new ServiceMessage().qualifier("removeRoomMembers").data(roomId));
+    } catch (Exception e) {
+      sessionContext.sendError(500, e.getMessage());
+    }
+  }
 
   public void blockRoomMembers(SessionContext sessionContext, BlockMembersRequest request) {}
 
   public void unblockRoomMembers(SessionContext sessionContext, UnblockMembersRequest request) {}
 
   public void listRooms(SessionContext sessionContext, ListRoomsRequest request) {}
+
+  public void getRoomMembers(SessionContext sessionContext, GetRoomMembersRequest request) {}
 }

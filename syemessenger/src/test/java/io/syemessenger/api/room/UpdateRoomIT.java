@@ -25,7 +25,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 public class UpdateRoomIT {
 
-  private static IntegrationEnvironment environment;
   private static AccountInfo accountInfo1;
   private static AccountInfo accountInfo2;
   private static RoomInfo existingRoomInfo;
@@ -36,17 +35,9 @@ public class UpdateRoomIT {
 
   @BeforeAll
   static void beforeAll() {
-    environment = new IntegrationEnvironment();
-    environment.start();
-
     accountInfo1 = createAccount();
     accountInfo2 = createAccount();
     existingRoomInfo = createRoom(accountInfo1);
-  }
-
-  @AfterAll
-  static void afterAll() {
-    CloseHelper.close(environment);
   }
 
   @BeforeEach

@@ -2,59 +2,57 @@ package io.syemessenger.api.room;
 
 import static io.syemessenger.api.ErrorAssertions.assertError;
 import static io.syemessenger.api.account.AccountAssertions.createAccount;
-import static io.syemessenger.api.room.RoomAssertions.assertRoom;
 import static io.syemessenger.api.room.RoomAssertions.createRoom;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.fail;
-import static org.testcontainers.shaded.org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
 
 import io.syemessenger.api.ClientSdk;
 import io.syemessenger.api.account.AccountInfo;
 import io.syemessenger.api.account.AccountSdk;
 import io.syemessenger.api.account.GetRoomsRequest;
 import io.syemessenger.api.account.LoginAccountRequest;
-import io.syemessenger.environment.CloseHelper;
-import io.syemessenger.environment.IntegrationEnvironment;
 import java.util.List;
 import java.util.stream.Stream;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-public class JoinRoomIT {
+public class LeaveRoomIT {
 
   private ClientSdk clientSdk;
   private AccountSdk accountSdk;
   private RoomSdk roomSdk;
   private AccountInfo existingAccountInfo;
-  private RoomInfo existingRoomInfo;
   private AccountInfo anotherAccountInfo;
+  private RoomInfo existingRoomInfo;
 
   @BeforeEach
   void beforeEach() {
     clientSdk = new ClientSdk();
     accountSdk = clientSdk.api(AccountSdk.class);
     roomSdk = clientSdk.api(RoomSdk.class);
+
     existingAccountInfo = createAccount();
     anotherAccountInfo = createAccount();
+
     existingRoomInfo = createRoom(existingAccountInfo);
   }
 
   @AfterEach
   void afterEach() {
-    CloseHelper.close(clientSdk);
+    if (clientSdk != null) {
+      clientSdk.close();
+    }
   }
 
   @Test
-  void testJoinRoomNotLoggedIn() {
+  void testLeaveRoomNotLoggedIn() {
     try {
-      roomSdk.joinRoom(existingRoomInfo.name());
+      roomSdk.leaveRoom(existingRoomInfo.id());
       fail("Expected exception");
     } catch (Exception ex) {
       assertError(ex, 401, "Not authenticated");
@@ -62,78 +60,94 @@ public class JoinRoomIT {
   }
 
   @ParameterizedTest(name = "{0}")
-  @MethodSource("testJoinRoomFailedMethodSource")
-  void testJoinRoomFailed(String test, String name, int errorCode, String errorMessage) {
+  @MethodSource("testLeaveRoomFailedMethodSource")
+  void testLeaveRoomFailed(String test, Long id, int errorCode, String errorMessage) {
     accountSdk.login(
-        new LoginAccountRequest().username(existingAccountInfo.username()).password("test12345"));
+        new LoginAccountRequest().username(anotherAccountInfo.username()).password("test12345"));
+    roomSdk.joinRoom(existingRoomInfo.name());
     try {
-      roomSdk.joinRoom(name);
+      roomSdk.leaveRoom(id);
       fail("Expected exception");
     } catch (Exception ex) {
       assertError(ex, errorCode, errorMessage);
     }
   }
 
-  private static Stream<Arguments> testJoinRoomFailedMethodSource() {
+  static Stream<Arguments> testLeaveRoomFailedMethodSource() {
     return Stream.of(
-        Arguments.of("Room name blank", "", 400, "Missing or invalid: name"),
-        Arguments.of("Null room name", null, 400, "Missing or invalid: name"),
-        Arguments.of("Wrong room name", randomAlphanumeric(20), 404, "Room not found"));
+        Arguments.of("No id", null, 400, "Missing or invalid: id"),
+        Arguments.of("Wrong id", 123L, 404, "Room not found"));
   }
 
   @Test
-  void testJoinOwnRoom() {
-    try {
-      accountSdk.login(
-          new LoginAccountRequest().username(existingAccountInfo.username()).password("test12345"));
-      roomSdk.joinRoom(existingRoomInfo.name());
-      fail("Expected exception");
-    } catch (Exception ex) {
-      assertError(ex, 400, "Cannot join room: already joined");
-    }
-  }
-
-  @Test
-  void testJoinRoomRepeat() {
-    accountSdk.login(
-        new LoginAccountRequest().username(anotherAccountInfo.username()).password("test12345"));
-    roomSdk.joinRoom(existingRoomInfo.name());
-    try {
-      roomSdk.joinRoom(existingRoomInfo.name());
-      fail("Expected exception");
-    } catch (Exception ex) {
-      assertError(ex, 400, "Cannot join room: already joined");
-    }
-  }
-
-  @Test
-  void testJoinRoomBlocked() {
+  void testLeaveOwnRoom() {
     accountSdk.login(
         new LoginAccountRequest().username(existingAccountInfo.username()).password("test12345"));
+    roomSdk.leaveRoom(existingRoomInfo.id());
+    final var roomsResponse = accountSdk.getRooms(new GetRoomsRequest());
+    assertEquals(0, roomsResponse.totalCount());
+  }
+
+  @Test
+  void testLeaveRoomNotJoined() {
+    accountSdk.login(
+        new LoginAccountRequest().username(anotherAccountInfo.username()).password("test12345"));
+    try {
+      roomSdk.leaveRoom(existingRoomInfo.id());
+      fail("Expected exception");
+    } catch (Exception ex) {
+      assertError(ex, 400, "Cannot leave room: not joined");
+    }
+  }
+
+  @Test
+  void testLeaveRoomBlocked() {
+    accountSdk.login(
+        new LoginAccountRequest().username(anotherAccountInfo.username()).password("test12345"));
+
+    roomSdk.joinRoom(existingRoomInfo.name());
+
+    accountSdk.login(
+        new LoginAccountRequest().username(existingAccountInfo.username()).password("test12345"));
+
     roomSdk.blockRoomMembers(
         new BlockMembersRequest()
             .roomId(existingRoomInfo.id())
             .memberIds(List.of(anotherAccountInfo.id())));
+
     accountSdk.login(
         new LoginAccountRequest().username(anotherAccountInfo.username()).password("test12345"));
 
     try {
-      roomSdk.joinRoom(existingRoomInfo.name());
+      roomSdk.leaveRoom(existingRoomInfo.id());
       fail("Expected exception");
     } catch (Exception ex) {
-      assertError(ex, 400, "Cannot join room: blocked");
+      assertError(ex, 400, "Cannot leave room: not joined");
     }
   }
 
   @Test
-  void testJoinRoom() {
+  void testLeaveRoomRepeat() {
     accountSdk.login(
         new LoginAccountRequest().username(anotherAccountInfo.username()).password("test12345"));
     roomSdk.joinRoom(existingRoomInfo.name());
+    roomSdk.leaveRoom(existingRoomInfo.id());
+    try {
+      roomSdk.leaveRoom(existingRoomInfo.id());
+      fail("Expected exception");
+    } catch (Exception ex) {
+      assertError(ex, 400, "Cannot leave room: not joined");
+    }
+  }
+
+  @Test
+  void testLeaveRoom() {
+    accountSdk.login(
+        new LoginAccountRequest().username(anotherAccountInfo.username()).password("test12345"));
+    roomSdk.joinRoom(existingRoomInfo.name());
+    roomSdk.leaveRoom(existingRoomInfo.id());
     final var roomsResponse = accountSdk.getRooms(new GetRoomsRequest());
     assertNotNull(roomsResponse.roomInfos(), "roomInfos");
-    assertEquals(1, roomsResponse.roomInfos().size());
-    final var roomInfo = roomsResponse.roomInfos().getFirst();
-    assertRoom(existingRoomInfo, roomInfo);
+    assertEquals(0, roomsResponse.roomInfos().size());
   }
 }

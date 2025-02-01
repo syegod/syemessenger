@@ -37,5 +37,8 @@ public class AccountAssertions {
     assertEquals(expected.id(), actual.id(), "actual.id");
     assertEquals(expected.username(), actual.username(), "actual.username");
     assertEquals(expected.email(), actual.email(), "actual.email");
+    assertEquals(expected.createdAt(), actual.createdAt(), "actual.createdAt");
+    // TODO: how to handle updatedAt
+    //    assertEquals(expected.updatedAt(), actual.updatedAt(), "actual.updatedAt");
   }
 }
