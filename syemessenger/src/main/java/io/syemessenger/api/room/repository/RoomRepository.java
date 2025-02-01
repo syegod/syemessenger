@@ -19,4 +19,8 @@ public interface RoomRepository extends CrudRepository<Room, Long> {
   void saveRoomMember(Long roomId, Long accountId);
 
   Room findByName(String name);
+
+  @Modifying
+  @NativeQuery("DELETE FROM room_members rm WHERE rm.room_id = ?1 AND rm.account_id = ?2")
+  void deleteRoomMember(Long roomId, Long accountId);
 }
