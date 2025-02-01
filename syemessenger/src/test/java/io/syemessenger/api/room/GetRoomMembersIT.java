@@ -2,6 +2,8 @@ package io.syemessenger.api.room;
 
 import static io.syemessenger.api.ErrorAssertions.assertError;
 import static io.syemessenger.api.account.AccountAssertions.createAccount;
+import static io.syemessenger.api.room.RoomAssertions.createRoom;
+import static io.syemessenger.api.room.RoomAssertions.joinRoom;
 import static io.syemessenger.environment.AssertionUtils.assertCollections;
 import static io.syemessenger.environment.AssertionUtils.getFields;
 import static io.syemessenger.environment.AssertionUtils.toComparator;
@@ -12,13 +14,15 @@ import static org.junit.jupiter.api.Assertions.fail;
 import io.syemessenger.api.ClientSdk;
 import io.syemessenger.api.OrderBy;
 import io.syemessenger.api.OrderBy.Direction;
+import io.syemessenger.api.account.AccountAssertions;
 import io.syemessenger.api.account.AccountInfo;
 import io.syemessenger.api.account.AccountSdk;
+import io.syemessenger.api.account.GetRoomsRequest;
 import io.syemessenger.api.account.LoginAccountRequest;
 import io.syemessenger.environment.CloseHelper;
 import io.syemessenger.environment.OffsetLimit;
+import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -27,7 +31,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-public class ListRoomsIT {
+public class GetRoomMembersIT {
 
   private ClientSdk clientSdk;
   private AccountSdk accountSdk;
@@ -48,9 +52,9 @@ public class ListRoomsIT {
   }
 
   @Test
-  void testListRoomsNotLoggedIn() {
+  void testGetRoomMembersNotLoggedIn() {
     try {
-      roomSdk.listRooms(new ListRoomsRequest());
+      roomSdk.getRoomMembers(new GetRoomMembersRequest());
       fail("Expected exception");
     } catch (Exception ex) {
       assertError(ex, 401, "Not authenticated");
@@ -58,79 +62,75 @@ public class ListRoomsIT {
   }
 
   @ParameterizedTest(name = "{0}")
-  @MethodSource("testListRoomsFailedMethodSource")
-  void testListRoomsFailed(
-      String test, ListRoomsRequest request, int errorCode, String errorMessage) {
+  @MethodSource("testGetRoomMembersFailedMethodSource")
+  void testGetRoomMembersFailed(
+      String test, GetRoomMembersRequest request, int errorCode, String errorMessage) {
     accountSdk.login(
         new LoginAccountRequest().username(accountInfo.username()).password("test12345"));
     try {
-      roomSdk.listRooms(request);
+      roomSdk.getRoomMembers(request);
       fail("Expected exception");
     } catch (Exception ex) {
       assertError(ex, errorCode, errorMessage);
     }
   }
 
-  private static Stream<Arguments> testListRoomsFailedMethodSource() {
+  private static Stream<Arguments> testGetRoomMembersFailedMethodSource() {
     return Stream.of(
         Arguments.of(
+            "Missing roomId",
+            new GetRoomMembersRequest().roomId(null),
+            400,
+            "Missing or invalid: roomId"),
+        Arguments.of(
             "Offset is negative",
-            new ListRoomsRequest().offset(-50),
+            new GetRoomMembersRequest().offset(-50),
             400,
             "Missing or invalid: offset"),
         Arguments.of(
             "Limit is negative",
-            new ListRoomsRequest().limit(-50),
+            new GetRoomMembersRequest().limit(-50),
             400,
             "Missing or invalid: limit"),
         Arguments.of(
             "Limit is over than max",
-            new ListRoomsRequest().limit(60),
+            new GetRoomMembersRequest().limit(60),
             400,
             "Missing or invalid: limit"));
   }
 
   @ParameterizedTest(name = "{0}")
-  @MethodSource("testListRoomsMethodSource")
-  void testListRooms(String test, ListRoomsRequest request, Comparator<Object> comparator) {
+  @MethodSource("testGetRoomMembersMethodSource")
+  void testListRooms(String test, GetRoomMembersRequest request, Comparator<Object> comparator) {
     final int n = 25;
-    final var k = request.keyword();
+    final var roomId = request.roomId();
     final var offset = request.offset() != null ? request.offset() : 0;
     final var limit = request.limit() != null ? request.limit() : 50;
 
     accountSdk.login(
         new LoginAccountRequest().username(accountInfo.username()).password("test12345"));
 
-    final var expectedRoomInfos =
-        IntStream.range(0, n)
-            .mapToObj(
-                v -> {
-                  final var l = nextLong();
-                  return roomSdk.createRoom(
-                      new CreateRoomRequest().name("room@" + l).description("description@" + l));
-                })
-            .filter(
-                roomInfo -> {
-                  if (k != null) {
-                    return roomInfo.name().contains(k) || roomInfo.description().contains(k);
-                  } else {
-                    return true;
-                  }
-                })
-            .sorted(comparator)
-            .skip(offset)
-            .limit(limit)
-            .toList();
+    final var roomInfo = createRoom(accountInfo);
+    final var roomMembers = new ArrayList<AccountInfo>();
+    for (int i = 0; i < n; i++) {
+      final var account = createAccount(r -> r.username("username@" + nextLong()));
+      joinRoom(roomInfo.name(), account.username());
+      roomMembers.add(account);
+    }
 
-    final var response = roomSdk.listRooms(request);
-    assertEquals(expectedRoomInfos.size(), response.totalCount(), "totalCount");
-    assertCollections(expectedRoomInfos, response.roomInfos(), RoomAssertions::assertRoom);
+    final var expectedRoomMembers =
+        roomMembers.stream().sorted(comparator).skip(offset).limit(limit).toList();
+
+    final var response = roomSdk.getRoomMembers(request.roomId(roomId));
+    assertEquals(expectedRoomMembers.size(), response.totalCount(), "totalCount");
+    assertCollections(
+        expectedRoomMembers, response.accountInfos(), AccountAssertions::assertAccount);
   }
 
-  private static Stream<Arguments> testListRoomsMethodSource() {
+  private static Stream<Arguments> testGetRoomMembersMethodSource() {
     final var builder = Stream.<Arguments>builder();
 
-    final String[] fields = getFields(RoomInfo.class);
+    final String[] fields = getFields(AccountInfo.class);
     final Direction[] directions = {Direction.ASC, Direction.DESC, null};
 
     // Sort by fields
@@ -141,20 +141,9 @@ public class ListRoomsIT {
         builder.add(
             Arguments.of(
                 "Field: " + field + ", direction: " + direction,
-                new ListRoomsRequest().orderBy(orderBy),
+                new GetRoomsRequest().orderBy(orderBy),
                 toComparator(orderBy)));
       }
-    }
-
-    // Filter by keyword
-
-    final String[] keywords = {"room@", "description@", null};
-    for (String keyword : keywords) {
-      builder.add(
-          Arguments.of(
-              "Keyword: " + keyword,
-              new ListRoomsRequest().keyword(keyword),
-              Comparator.<RoomInfo, Long>comparing(RoomInfo::id)));
     }
 
     // Pagination
@@ -165,7 +154,7 @@ public class ListRoomsIT {
       new OffsetLimit(10, null),
       new OffsetLimit(5, 10),
       new OffsetLimit(10, 5),
-      new OffsetLimit(20, 10)
+      new OffsetLimit(20, 10),
     };
 
     for (OffsetLimit offsetLimit : offsetLimits) {
@@ -174,8 +163,8 @@ public class ListRoomsIT {
       builder.add(
           Arguments.of(
               "Offset: " + offset + ", limit: " + limit,
-              new ListRoomsRequest().offset(offset).limit(limit),
-              Comparator.<RoomInfo, Long>comparing(RoomInfo::id)));
+              new GetRoomsRequest().offset(offset).limit(limit),
+              Comparator.<AccountInfo, Long>comparing(AccountInfo::id)));
     }
 
     return builder.build();

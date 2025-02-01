@@ -1,6 +1,7 @@
 package io.syemessenger.api.account;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.testcontainers.shaded.org.apache.commons.lang3.RandomStringUtils.randomAlphabetic;
 import static org.testcontainers.shaded.org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
 
@@ -38,7 +39,6 @@ public class AccountAssertions {
     assertEquals(expected.username(), actual.username(), "actual.username");
     assertEquals(expected.email(), actual.email(), "actual.email");
     assertEquals(expected.createdAt(), actual.createdAt(), "actual.createdAt");
-    // TODO: how to handle updatedAt
-    //    assertEquals(expected.updatedAt(), actual.updatedAt(), "actual.updatedAt");
+    assertNotNull(actual.updatedAt(), "updatedAt");
   }
 }
