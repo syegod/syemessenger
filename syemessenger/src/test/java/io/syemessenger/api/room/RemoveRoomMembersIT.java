@@ -125,6 +125,23 @@ public class RemoveRoomMembersIT {
   }
 
   @Test
+  void testRemoveRoomMembersNotOwner() {
+    accountSdk.login(
+        new LoginAccountRequest().username(anotherAccountInfo.username()).password("test12345"));
+
+    roomSdk.joinRoom(existingRoomInfo.name());
+
+    try {
+      roomSdk.removeRoomMembers(
+          new RemoveMembersRequest()
+              .roomId(existingRoomInfo.id())
+              .memberIds(List.of(anotherAccountInfo.id())));
+    } catch (Exception ex) {
+      assertError(ex, 403, "Not room owner");
+    }
+  }
+
+  @Test
   void testRemoveRoomMembers() {
     accountSdk.login(
         new LoginAccountRequest().username(anotherAccountInfo.username()).password("test12345"));

@@ -1,12 +1,12 @@
 package io.syemessenger.api.room.repository;
 
+import io.syemessenger.api.account.repository.Account;
 import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.NativeQuery;
 import org.springframework.data.repository.CrudRepository;
-import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 @Transactional
@@ -29,4 +29,9 @@ public interface RoomRepository extends CrudRepository<Room, Long> {
   @Modifying
   @NativeQuery("DELETE FROM room_members rm WHERE rm.room_id = ?1 AND rm.account_id IN ?2")
   void deleteRoomMembers(Long roomId, List<Long> memberIds);
+
+  @NativeQuery(
+      "SELECT * FROM accounts a JOIN room_members rm "
+          + "ON rm.account_id = a.id WHERE rm.room_id = ?1 AND rm.account_id = ?2")
+  Account findRoomMember(Long roomId, Long accountId);
 }

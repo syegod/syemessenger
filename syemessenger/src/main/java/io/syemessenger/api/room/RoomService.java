@@ -1,6 +1,7 @@
 package io.syemessenger.api.room;
 
 import io.syemessenger.api.ServiceMessage;
+import io.syemessenger.api.account.repository.Account;
 import io.syemessenger.api.account.repository.AccountRepository;
 import io.syemessenger.api.room.repository.Room;
 import io.syemessenger.api.room.repository.RoomRepository;
@@ -191,6 +192,12 @@ public class RoomService {
       return;
     }
 
+    final var roomMember = roomRepository.findRoomMember(id, sessionContext.accountId());
+    if (roomMember == null) {
+      sessionContext.sendError(400, "Cannot leave room: not joined");
+      return;
+    }
+
     try {
       if (room.owner().id().equals(sessionContext.accountId())) {
         roomRepository.deleteById(id);
@@ -232,7 +239,12 @@ public class RoomService {
       return;
     }
 
-    if (room.owner().id().equals(sessionContext.accountId())) {
+    if (!sessionContext.accountId().equals(room.owner().id())) {
+      sessionContext.sendError(403, "Not room owner");
+      return;
+    }
+
+    if (memberIds.contains(room.owner().id())) {
       sessionContext.sendError(400, "Cannot remove room owner");
       return;
     }
