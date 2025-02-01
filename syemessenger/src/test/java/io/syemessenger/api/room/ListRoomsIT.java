@@ -162,13 +162,24 @@ public class ListRoomsIT {
         final var comparator = toComparator(orderBy);
         for (String keyword : keywords) {
           for (OffsetLimit offsetLimit : offsetLimits) {
+            final var offset = offsetLimit.offset();
+            final var limit = offsetLimit.limit();
             builder.add(
                 Arguments.of(
-                    "test",
+                    "Field: "
+                        + field
+                        + ", direction: "
+                        + direction
+                        + ", keyword: "
+                        + keyword
+                        + ", offset: "
+                        + offset
+                        + ", limit: "
+                        + limit,
                     new ListRoomsRequest()
                         .keyword(keyword)
-                        .offset(offsetLimit.offset())
-                        .limit(offsetLimit.limit())
+                        .offset(offset)
+                        .limit(limit)
                         .orderBy(orderBy),
                     comparator));
           }
