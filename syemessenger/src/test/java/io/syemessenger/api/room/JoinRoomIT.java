@@ -28,12 +28,12 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 public class JoinRoomIT {
 
-
   private ClientSdk clientSdk;
   private AccountSdk accountSdk;
   private RoomSdk roomSdk;
   private AccountInfo existingAccountInfo;
   private RoomInfo existingRoomInfo;
+  private AccountInfo anotherAccountInfo;
 
   @BeforeEach
   void beforeEach() {
@@ -41,6 +41,7 @@ public class JoinRoomIT {
     accountSdk = clientSdk.api(AccountSdk.class);
     roomSdk = clientSdk.api(RoomSdk.class);
     existingAccountInfo = createAccount();
+    anotherAccountInfo = createAccount();
     existingRoomInfo = createRoom(existingAccountInfo);
   }
 
@@ -80,9 +81,21 @@ public class JoinRoomIT {
   }
 
   @Test
+  void testJoinOwnRoom() {
+    try {
+      accountSdk.login(
+          new LoginAccountRequest().username(existingAccountInfo.username()).password("test12345"));
+      roomSdk.joinRoom(existingRoomInfo.name());
+      fail("Expected exception");
+    } catch (Exception ex) {
+      assertError(ex, 400, "Cannot join room: already joined");
+    }
+  }
+
+  @Test
   void testJoinRoom() {
     accountSdk.login(
-        new LoginAccountRequest().username(existingAccountInfo.username()).password("test12345"));
+        new LoginAccountRequest().username(anotherAccountInfo.username()).password("test12345"));
     roomSdk.joinRoom(existingRoomInfo.name());
     final var roomsResponse = accountSdk.getRooms(new GetRoomsRequest());
     assertNotNull(roomsResponse.roomInfos(), "roomInfos");

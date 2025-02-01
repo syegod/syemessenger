@@ -57,6 +57,7 @@ public class RoomService {
 
     try {
       final var saved = roomRepository.save(room);
+      roomRepository.saveRoomMember(saved.id(), account.id());
       final var roomInfo = RoomMappers.toRoomInfo(saved);
       sessionContext.send(new ServiceMessage().qualifier("createRoom").data(roomInfo));
     } catch (DataAccessException e) {
@@ -155,7 +156,17 @@ public class RoomService {
       return;
     }
 
-    roomRepository.saveRoomMember(room.id(), sessionContext.accountId());
+    try {
+      roomRepository.saveRoomMember(room.id(), sessionContext.accountId());
+    } catch (DataAccessException e) {
+      if (e.getMessage().contains("duplicate key value violates unique constraint")) {
+        sessionContext.sendError(400, "Cannot join room: already joined");
+      } else {
+        sessionContext.sendError(400, "Cannot create room");
+      }
+    } catch (Exception e) {
+      sessionContext.sendError(500, e.getMessage());
+    }
 
     sessionContext.send(new ServiceMessage().qualifier("joinRoom").data(room.id()));
   }
