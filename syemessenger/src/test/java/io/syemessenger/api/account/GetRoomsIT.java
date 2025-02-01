@@ -24,24 +24,12 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 public class GetRoomsIT {
 
-  private static IntegrationEnvironment environment;
-
   private ClientSdk clientSdk;
   private AccountSdk accountSdk;
   private RoomSdk roomSdk;
   private AccountInfo existingAccountInfo;
+  private AccountInfo anotherAccountInfo;
   private RoomInfo existingRoomInfo;
-
-  @BeforeAll
-  static void beforeAll() {
-    environment = new IntegrationEnvironment();
-    environment.start();
-  }
-
-  @AfterAll
-  static void afterAll() {
-    CloseHelper.close(environment);
-  }
 
   @BeforeEach
   void beforeEach() {
@@ -49,6 +37,7 @@ public class GetRoomsIT {
     accountSdk = clientSdk.api(AccountSdk.class);
     roomSdk = clientSdk.api(RoomSdk.class);
     existingAccountInfo = createAccount();
+    anotherAccountInfo = createAccount();
     existingRoomInfo = createRoom(existingAccountInfo);
   }
 
@@ -59,7 +48,12 @@ public class GetRoomsIT {
 
   @Test
   void testGetRoomsNotLoggedIn() {
-    fail("Implement");
+    try {
+      accountSdk.getRooms(new GetRoomsRequest());
+      fail("Expected exception");
+    } catch (Exception ex) {
+      assertError(ex, 401, "Not authenticated");
+    }
   }
 
   @ParameterizedTest(name = "{0}")
@@ -99,16 +93,15 @@ public class GetRoomsIT {
   void testGetRooms() {
     accountSdk.login(
         new LoginAccountRequest().username(existingAccountInfo.username()).password("test12345"));
-    roomSdk.joinRoom(existingRoomInfo.name());
     final var rooms = accountSdk.getRooms(new GetRoomsRequest());
-    assertEquals(1, rooms.roomInfos().size());
+    assertEquals(1, rooms.totalCount());
     assertRoom(existingRoomInfo, rooms.roomInfos().getFirst());
   }
 
   @Test
   void testGetRoomsEmpty() {
     accountSdk.login(
-        new LoginAccountRequest().username(existingAccountInfo.username()).password("test12345"));
+        new LoginAccountRequest().username(anotherAccountInfo.username()).password("test12345"));
     final var rooms = accountSdk.getRooms(new GetRoomsRequest());
     assertEquals(0, rooms.roomInfos().size());
   }

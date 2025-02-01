@@ -22,20 +22,11 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 public class CreateAccountIT {
 
-  private static IntegrationEnvironment environment;
   private static AccountInfo existingAccountInfo;
 
   @BeforeAll
   static void beforeAll() {
-    environment = new IntegrationEnvironment();
-    environment.start();
-
     existingAccountInfo = createAccount();
-  }
-
-  @AfterAll
-  static void afterAll() {
-    CloseHelper.close(environment);
   }
 
   @ParameterizedTest(name = "{0}")

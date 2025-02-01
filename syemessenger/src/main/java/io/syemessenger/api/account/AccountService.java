@@ -10,6 +10,7 @@ import io.syemessenger.websocket.SessionContext;
 import jakarta.inject.Named;
 import java.time.Clock;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.regex.Pattern;
 import org.springframework.dao.DataAccessException;
 
@@ -63,7 +64,7 @@ public class AccountService {
       return;
     }
 
-    final var now = LocalDateTime.now(Clock.systemUTC());
+    final var now = LocalDateTime.now(Clock.systemUTC()).truncatedTo(ChronoUnit.MILLIS);
 
     final var hashedPassword = PasswordHashing.hash(password);
 
@@ -195,13 +196,11 @@ public class AccountService {
       return;
     }
 
-    Account account;
-
     if (id == null) {
-      account = accountRepository.findById(sessionContext.accountId()).orElse(null);
-    } else {
-      account = accountRepository.findById(id).orElse(null);
+      sessionContext.sendError(400, "Missing or invalid: id");
+      return;
     }
+    final var account = accountRepository.findById(id).orElse(null);
 
     if (account == null) {
       sessionContext.sendError(404, "Account not found");
