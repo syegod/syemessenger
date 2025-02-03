@@ -23,6 +23,15 @@ public class RoomAssertions {
     }
   }
 
+  public static void joinRoom(String name, final String username) {
+    try (final var client = new ClientSdk()) {
+      client
+          .api(AccountSdk.class)
+          .login(new LoginAccountRequest().username(username).password("test12345"));
+      client.api(RoomSdk.class).joinRoom(name);
+    }
+  }
+
   public static void assertRoom(RoomInfo expected, RoomInfo actual) {
     assertEquals(expected.id(), actual.id(), "actual.id");
     assertEquals(expected.name(), actual.name(), "actual.name");
