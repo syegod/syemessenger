@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -36,14 +37,20 @@ public class GetRoomMembersIT {
   private ClientSdk clientSdk;
   private AccountSdk accountSdk;
   private RoomSdk roomSdk;
-  private AccountInfo accountInfo;
+  private static AccountInfo accountInfo;
+  private static RoomInfo existingRoomInfo;
+
+  @BeforeAll
+  static void beforeAll() {
+    accountInfo = createAccount();
+    existingRoomInfo = createRoom(accountInfo);
+  }
 
   @BeforeEach
   void beforeEach() {
     clientSdk = new ClientSdk();
     accountSdk = clientSdk.api(AccountSdk.class);
     roomSdk = clientSdk.api(RoomSdk.class);
-    accountInfo = createAccount();
   }
 
   @AfterEach
@@ -84,26 +91,26 @@ public class GetRoomMembersIT {
             "Missing or invalid: roomId"),
         Arguments.of(
             "Offset is negative",
-            new GetRoomMembersRequest().offset(-50),
+            new GetRoomMembersRequest().roomId(existingRoomInfo.id()).offset(-50),
             400,
             "Missing or invalid: offset"),
         Arguments.of(
             "Limit is negative",
-            new GetRoomMembersRequest().limit(-50),
+            new GetRoomMembersRequest().roomId(existingRoomInfo.id()).limit(-50),
             400,
             "Missing or invalid: limit"),
         Arguments.of(
             "Limit is over than max",
-            new GetRoomMembersRequest().limit(60),
+            new GetRoomMembersRequest().roomId(existingRoomInfo.id()).limit(60),
             400,
             "Missing or invalid: limit"));
   }
 
   @ParameterizedTest(name = "{0}")
   @MethodSource("testGetRoomMembersMethodSource")
-  void testListRooms(String test, GetRoomMembersRequest request, Comparator<Object> comparator) {
+  void testGetRoomMembers(
+      String test, GetRoomMembersRequest request, Comparator<Object> comparator) {
     final int n = 25;
-    final var roomId = request.roomId();
     final var offset = request.offset() != null ? request.offset() : 0;
     final var limit = request.limit() != null ? request.limit() : 50;
 
@@ -111,7 +118,9 @@ public class GetRoomMembersIT {
         new LoginAccountRequest().username(accountInfo.username()).password("test12345"));
 
     final var roomInfo = createRoom(accountInfo);
+    request.roomId(roomInfo.id());
     final var roomMembers = new ArrayList<AccountInfo>();
+    roomMembers.add(accountInfo);
     for (int i = 0; i < n; i++) {
       final var account = createAccount(r -> r.username("username@" + nextLong()));
       joinRoom(roomInfo.name(), account.username());
@@ -121,7 +130,7 @@ public class GetRoomMembersIT {
     final var expectedRoomMembers =
         roomMembers.stream().sorted(comparator).skip(offset).limit(limit).toList();
 
-    final var response = roomSdk.getRoomMembers(request.roomId(roomId));
+    final var response = roomSdk.getRoomMembers(request);
     assertEquals(expectedRoomMembers.size(), response.totalCount(), "totalCount");
     assertCollections(
         expectedRoomMembers, response.accountInfos(), AccountAssertions::assertAccount);
@@ -134,20 +143,18 @@ public class GetRoomMembersIT {
     final Direction[] directions = {Direction.ASC, Direction.DESC, null};
 
     // Sort by fields
-
     for (String field : fields) {
       for (Direction direction : directions) {
         final var orderBy = new OrderBy().field(field).direction(direction);
         builder.add(
             Arguments.of(
                 "Field: " + field + ", direction: " + direction,
-                new GetRoomsRequest().orderBy(orderBy),
+                new GetRoomMembersRequest().orderBy(orderBy),
                 toComparator(orderBy)));
       }
     }
 
     // Pagination
-
     final OffsetLimit[] offsetLimits = {
       new OffsetLimit(null, null),
       new OffsetLimit(null, 5),
@@ -163,7 +170,7 @@ public class GetRoomMembersIT {
       builder.add(
           Arguments.of(
               "Offset: " + offset + ", limit: " + limit,
-              new GetRoomsRequest().offset(offset).limit(limit),
+              new GetRoomMembersRequest().offset(offset).limit(limit),
               Comparator.<AccountInfo, Long>comparing(AccountInfo::id)));
     }
 

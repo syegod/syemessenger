@@ -1,6 +1,8 @@
 package io.syemessenger.api.account.repository;
 
+import io.syemessenger.LocalDateTimeConverter;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -23,9 +25,11 @@ public class Account {
   private String passwordHash;
 
   @Column(name = "created_at")
+  @Convert(converter = LocalDateTimeConverter.class)
   private LocalDateTime createdAt;
 
   @Column(name = "updated_at")
+  @Convert(converter = LocalDateTimeConverter.class)
   private LocalDateTime updatedAt;
 
   public Long id() {

@@ -1,12 +1,17 @@
 package io.syemessenger.api.room.repository;
 
 import io.syemessenger.api.account.repository.Account;
+
 import java.util.List;
+
+import jakarta.persistence.Tuple;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.NativeQuery;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
+import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
 
 @Transactional
@@ -34,4 +39,25 @@ public interface RoomRepository extends CrudRepository<Room, Long> {
       "SELECT * FROM accounts a JOIN room_members rm "
           + "ON rm.account_id = a.id WHERE rm.room_id = ?1 AND rm.account_id = ?2")
   Account findRoomMember(Long roomId, Long accountId);
+
+  // SELECT
+  //    u.*,
+  //    COUNT(*) OVER() AS total_count
+  // FROM user u
+  // WHERE name LIKE :searchName
+  // ORDER BY u.id ASC
+  // LIMIT :limit OFFSET :offset
+
+  @NativeQuery(
+      value =
+          "SELECT a.*, COUNT(*) OVER() as total_count "
+              + "FROM accounts a JOIN room_members rm ON rm.account_id = a.id "
+              + "WHERE rm.room_id = :roomId "
+              + "ORDER BY :orderBy "
+              + "OFFSET :offset LIMIT :limit")
+  List<Tuple> findRoomMembers(
+      @Param("roomId") Long roomId,
+      @Param("offset") Integer offset,
+      @Param("limit") Integer limit,
+      @Param("orderBy") String orderBy);
 }

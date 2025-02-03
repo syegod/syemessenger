@@ -1,6 +1,10 @@
 package io.syemessenger.api.room;
 
+import io.syemessenger.api.OrderBy;
+import io.syemessenger.api.Pageables;
 import io.syemessenger.api.ServiceMessage;
+import io.syemessenger.api.account.AccountInfo;
+import io.syemessenger.api.account.AccountMappers;
 import io.syemessenger.api.account.repository.Account;
 import io.syemessenger.api.account.repository.AccountRepository;
 import io.syemessenger.api.room.repository.Room;
@@ -10,9 +14,14 @@ import jakarta.inject.Named;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
+
 import org.springframework.dao.DataAccessException;
+
+import static io.syemessenger.api.Pageables.getEntity;
+import static io.syemessenger.api.Pageables.getTotalCount;
+import static io.syemessenger.api.Pageables.toSort;
 
 @Named
 public class RoomService {
@@ -263,5 +272,50 @@ public class RoomService {
 
   public void listRooms(SessionContext sessionContext, ListRoomsRequest request) {}
 
-  public void getRoomMembers(SessionContext sessionContext, GetRoomMembersRequest request) {}
+  public void getRoomMembers(SessionContext sessionContext, GetRoomMembersRequest request) {
+    if (!sessionContext.isLoggedIn()) {
+      sessionContext.sendError(401, "Not authenticated");
+      return;
+    }
+
+    Long roomId = request.roomId();
+    if (roomId == null) {
+      sessionContext.sendError(400, "Missing or invalid: roomId");
+      return;
+    }
+
+    final var offset = request.offset();
+    if (offset != null && offset < 0) {
+      sessionContext.sendError(400, "Missing or invalid: offset");
+      return;
+    }
+
+    final var limit = request.limit();
+    if (limit != null && (limit < 0 || limit > 50)) {
+      sessionContext.sendError(400, "Missing or invalid: limit");
+      return;
+    }
+
+    final var orderBy = toSort(request.orderBy());
+    final var tuples =
+        roomRepository.findRoomMembers(
+            request.roomId(), offset, limit, orderBy.field() + " " + orderBy.direction().name());
+
+    final var accountInfos =
+        tuples.stream()
+            .map(e -> getEntity(e, Account.class))
+            .map(AccountMappers::toAccountInfo)
+            .toList();
+
+    final var totalCount = tuples.isEmpty() ? 0 : getTotalCount(tuples.getFirst());
+
+    GetRoomMembersResponse response =
+        new GetRoomMembersResponse()
+            .accountInfos(accountInfos)
+            .offset(offset)
+            .limit(limit)
+            .totalCount(totalCount);
+
+    sessionContext.send(new ServiceMessage().qualifier("getRoomMembers").data(response));
+  }
 }

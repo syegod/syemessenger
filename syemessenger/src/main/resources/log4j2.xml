@@ -17,6 +17,8 @@
     <Logger name="com.github" level="info"/>
     <Logger name="org.hibernate.engine.jdbc.spi" level="warn"/>
     <Logger name="org.hibernate.resource.transaction.backend.jdbc.internal" level="warn"/>
+    <logger name="org.hibernate.SQL" level="DEBUG"/>
+    <logger name="org.hibernate.type.descriptor.sql.BasicBinder" level="TRACE"/>
 
     <Root level="${env:logLevel:-DEBUG}">
       <AppenderRef ref="${env:logAppender:-STDOUT}"/>
