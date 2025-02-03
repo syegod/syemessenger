@@ -41,18 +41,8 @@ public class AppConfiguration {
     vendorAdapter.setShowSql(true);
     vendorAdapter.setDatabase(Database.POSTGRESQL);
 
-    Properties jpaProperties = new Properties();
-
-    jpaProperties.setProperty("hibernate.show_sql", "true");
-    jpaProperties.setProperty("hibernate.format_sql", "true");
-
-    jpaProperties.setProperty("org.hibernate.SQL", "DEBUG");
-
-    jpaProperties.setProperty("org.hibernate.type.descriptor.sql.BasicBinder", "TRACE");
-
     LocalContainerEntityManagerFactoryBean factory = new LocalContainerEntityManagerFactoryBean();
     factory.setJpaVendorAdapter(vendorAdapter);
-    factory.setJpaProperties(jpaProperties);
     factory.setPackagesToScan("io.syemessenger");
     factory.setDataSource(dataSource);
     return factory;

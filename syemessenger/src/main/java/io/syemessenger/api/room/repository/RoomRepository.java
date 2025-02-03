@@ -50,14 +50,7 @@ public interface RoomRepository extends CrudRepository<Room, Long> {
 
   @NativeQuery(
       value =
-          "SELECT a.*, COUNT(*) OVER() as total_count "
-              + "FROM accounts a JOIN room_members rm ON rm.account_id = a.id "
-              + "WHERE rm.room_id = :roomId "
-              + "ORDER BY :orderBy "
-              + "OFFSET :offset LIMIT :limit")
-  List<Tuple> findRoomMembers(
-      @Param("roomId") Long roomId,
-      @Param("offset") Integer offset,
-      @Param("limit") Integer limit,
-      @Param("orderBy") String orderBy);
+          "SELECT * FROM accounts a JOIN room_members rm ON rm.account_id = a.id "
+              + "WHERE rm.room_id = :roomId")
+  Page<Account> findRoomMembers(@Param("roomId") Long roomId, Pageable pageable);
 }

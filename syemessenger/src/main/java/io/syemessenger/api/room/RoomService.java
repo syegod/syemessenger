@@ -1,11 +1,9 @@
 package io.syemessenger.api.room;
 
-import io.syemessenger.api.OrderBy;
-import io.syemessenger.api.Pageables;
+import static io.syemessenger.api.Pageables.toPageable;
+
 import io.syemessenger.api.ServiceMessage;
-import io.syemessenger.api.account.AccountInfo;
 import io.syemessenger.api.account.AccountMappers;
-import io.syemessenger.api.account.repository.Account;
 import io.syemessenger.api.account.repository.AccountRepository;
 import io.syemessenger.api.room.repository.Room;
 import io.syemessenger.api.room.repository.RoomRepository;
@@ -14,14 +12,7 @@ import jakarta.inject.Named;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.List;
-
 import org.springframework.dao.DataAccessException;
-
-import static io.syemessenger.api.Pageables.getEntity;
-import static io.syemessenger.api.Pageables.getTotalCount;
-import static io.syemessenger.api.Pageables.toSort;
 
 @Named
 public class RoomService {
@@ -296,25 +287,19 @@ public class RoomService {
       return;
     }
 
-    final var orderBy = toSort(request.orderBy());
-    final var tuples =
+    final var pages =
         roomRepository.findRoomMembers(
-            request.roomId(), offset, limit, orderBy.field() + " " + orderBy.direction().name());
+            request.roomId(), toPageable(offset, limit, request.orderBy()));
 
     final var accountInfos =
-        tuples.stream()
-            .map(e -> getEntity(e, Account.class))
-            .map(AccountMappers::toAccountInfo)
-            .toList();
-
-    final var totalCount = tuples.isEmpty() ? 0 : getTotalCount(tuples.getFirst());
+        pages.getContent().stream().map(AccountMappers::toAccountInfo).toList();
 
     GetRoomMembersResponse response =
         new GetRoomMembersResponse()
             .accountInfos(accountInfos)
             .offset(offset)
             .limit(limit)
-            .totalCount(totalCount);
+            .totalCount(pages.getTotalElements());
 
     sessionContext.send(new ServiceMessage().qualifier("getRoomMembers").data(response));
   }
