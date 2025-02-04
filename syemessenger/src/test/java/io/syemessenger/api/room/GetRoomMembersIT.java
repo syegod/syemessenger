@@ -29,7 +29,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 @ExtendWith(IntegrationEnvironmentExtension.class)
@@ -52,57 +51,52 @@ public class GetRoomMembersIT {
 
   @ParameterizedTest(name = "{0}")
   @MethodSource("testGetRoomMembersFailedMethodSource")
-  void testGetRoomMembersFailed(
-      String test,
-      GetRoomMembersRequest request,
-      int errorCode,
-      String errorMessage,
-      ClientSdk clientSdk,
-      AccountInfo accountInfo) {
+  void testGetRoomMembersFailed(FailedArgs args, ClientSdk clientSdk, AccountInfo accountInfo) {
     clientSdk
         .api(AccountSdk.class)
         .login(new LoginAccountRequest().username(accountInfo.username()).password("test12345"));
     try {
-      clientSdk.api(RoomSdk.class).getRoomMembers(request);
+      clientSdk.api(RoomSdk.class).getRoomMembers(args.request);
       fail("Expected exception");
     } catch (Exception ex) {
-      assertError(ex, errorCode, errorMessage);
+      assertError(ex, args.errorCode, args.errorMessage);
     }
   }
 
-  private static Stream<Arguments> testGetRoomMembersFailedMethodSource() {
+  // TODO: make ParameterizedTest to output test name
+  private record FailedArgs(
+      String test, GetRoomMembersRequest request, int errorCode, String errorMessage) {}
+
+  private static Stream<?> testGetRoomMembersFailedMethodSource() {
     return Stream.of(
-        Arguments.of(
+        new FailedArgs(
             "Missing roomId",
             new GetRoomMembersRequest().roomId(null),
             400,
             "Missing or invalid: roomId"),
-        Arguments.of(
+        new FailedArgs(
             "Offset is negative",
             new GetRoomMembersRequest().roomId(10L).offset(-50),
             400,
             "Missing or invalid: offset"),
-        Arguments.of(
+        new FailedArgs(
             "Limit is negative",
             new GetRoomMembersRequest().roomId(10L).limit(-50),
             400,
             "Missing or invalid: limit"),
-        Arguments.of(
+        new FailedArgs(
             "Limit is over than max",
             new GetRoomMembersRequest().roomId(10L).limit(60),
             400,
             "Missing or invalid: limit"));
   }
 
+  @SuppressWarnings("unchecked")
   @ParameterizedTest(name = "{0}")
   @MethodSource("testGetRoomMembersMethodSource")
-  void testGetRoomMembers(
-      String test,
-      GetRoomMembersRequest request,
-      Comparator<Object> comparator,
-      ClientSdk clientSdk,
-      AccountInfo accountInfo) {
+  void testGetRoomMembers(SuccessArgs args, ClientSdk clientSdk, AccountInfo accountInfo) {
     final int n = 25;
+    final var request = args.request;
     final var offset = request.offset() != null ? request.offset() : 0;
     final var limit = request.limit() != null ? request.limit() : 50;
 
@@ -121,27 +115,29 @@ public class GetRoomMembersIT {
     }
 
     final var expectedRoomMembers =
-        roomMembers.stream().sorted(comparator).skip(offset).limit(limit).toList();
+        roomMembers.stream().sorted(args.comparator).skip(offset).limit(limit).toList();
 
     final var response = clientSdk.api(RoomSdk.class).getRoomMembers(request);
-    // TODO: figure out what is expected total count
     assertEquals(roomMembers.size(), response.totalCount(), "totalCount");
     assertCollections(
         expectedRoomMembers, response.accountInfos(), AccountAssertions::assertAccount);
   }
 
-  private static Stream<Arguments> testGetRoomMembersMethodSource() {
-    final var builder = Stream.<Arguments>builder();
+  private record SuccessArgs(String test, GetRoomMembersRequest request, Comparator comparator) {}
+
+  private static Stream<?> testGetRoomMembersMethodSource() {
+    final var builder = Stream.<SuccessArgs>builder();
 
     final String[] fields = getFields(AccountInfo.class);
     final Direction[] directions = {Direction.ASC, Direction.DESC, null};
 
     // Sort by fields
+
     for (String field : fields) {
       for (Direction direction : directions) {
         final var orderBy = new OrderBy().field(field).direction(direction);
         builder.add(
-            Arguments.of(
+            new SuccessArgs(
                 "Field: " + field + ", direction: " + direction,
                 new GetRoomMembersRequest().orderBy(orderBy),
                 toComparator(orderBy)));
@@ -149,6 +145,7 @@ public class GetRoomMembersIT {
     }
 
     // Pagination
+
     final OffsetLimit[] offsetLimits = {
       new OffsetLimit(null, null),
       new OffsetLimit(null, 5),
@@ -162,7 +159,7 @@ public class GetRoomMembersIT {
       final var offset = offsetLimit.offset();
       final var limit = offsetLimit.limit();
       builder.add(
-          Arguments.of(
+          new SuccessArgs(
               "Offset: " + offset + ", limit: " + limit,
               new GetRoomMembersRequest().offset(offset).limit(limit),
               Comparator.<AccountInfo, Long>comparing(AccountInfo::id)));
