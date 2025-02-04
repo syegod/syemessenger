@@ -1,7 +1,6 @@
 package io.syemessenger.api.room;
 
 import static io.syemessenger.api.ErrorAssertions.assertError;
-import static io.syemessenger.api.account.AccountAssertions.createAccount;
 import static io.syemessenger.api.room.RoomAssertions.createRoom;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -13,52 +12,32 @@ import io.syemessenger.api.ClientSdk;
 import io.syemessenger.api.account.AccountInfo;
 import io.syemessenger.api.account.AccountSdk;
 import io.syemessenger.api.account.LoginAccountRequest;
-import io.syemessenger.environment.CloseHelper;
 import io.syemessenger.environment.IntegrationEnvironmentExtension;
 import java.util.stream.Stream;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 @ExtendWith(IntegrationEnvironmentExtension.class)
 public class CreateRoomIT {
 
-  private static AccountInfo accountInfo;
   private static RoomInfo existingRoomInfo;
 
-  private ClientSdk clientSdk;
-  private AccountSdk accountSdk;
-  private RoomSdk roomSdk;
-
   @BeforeAll
-  static void beforeAll() {
-    accountInfo = createAccount();
+  static void beforeAll(AccountInfo accountInfo) {
     existingRoomInfo = createRoom(accountInfo);
   }
 
-  @BeforeEach
-  void beforeEach() {
-    clientSdk = new ClientSdk();
-    accountSdk = clientSdk.api(AccountSdk.class);
-    roomSdk = clientSdk.api(RoomSdk.class);
-  }
-
-  @AfterEach
-  void afterEach() {
-    CloseHelper.close(clientSdk);
-  }
-
   @Test
-  void testCreateRoomNotLoggedIn() {
+  void testCreateRoomNotLoggedIn(ClientSdk clientSdk) {
     try {
       final var name = randomAlphanumeric(20);
       final var description = randomAlphanumeric(20);
-      roomSdk.createRoom(new CreateRoomRequest().name(name).description(description));
+      clientSdk
+          .api(RoomSdk.class)
+          .createRoom(new CreateRoomRequest().name(name).description(description));
       fail("Expected exception");
     } catch (Exception ex) {
       assertError(ex, 401, "Not authenticated");
@@ -66,12 +45,14 @@ public class CreateRoomIT {
   }
 
   @Test
-  void testCreateRoomNoDescription() {
-    accountSdk.login(
-        new LoginAccountRequest().username(accountInfo.username()).password("test12345"));
+  void testCreateRoomNoDescription(ClientSdk clientSdk, AccountInfo accountInfo) {
+    clientSdk
+        .api(AccountSdk.class)
+        .login(new LoginAccountRequest().username(accountInfo.username()).password("test12345"));
 
     final var name = randomAlphanumeric(20);
-    final var roomInfo = roomSdk.createRoom(new CreateRoomRequest().name(name));
+    final var roomInfo =
+        clientSdk.api(RoomSdk.class).createRoom(new CreateRoomRequest().name(name));
 
     assertTrue(roomInfo.id() > 0, "roomInfo.id: " + roomInfo.id());
     assertEquals(accountInfo.username(), roomInfo.owner());
@@ -80,45 +61,48 @@ public class CreateRoomIT {
 
   @ParameterizedTest(name = "{0}")
   @MethodSource(value = "testCreateRoomFailedMethodSource")
-  void testCreateRoomFailed(
-      String test, CreateRoomRequest request, int errorCode, String errorMessage) {
-    accountSdk.login(
-        new LoginAccountRequest().username(accountInfo.username()).password("test12345"));
+  void testCreateRoomFailed(FailedArgs args, ClientSdk clientSdk, AccountInfo accountInfo) {
+    clientSdk
+        .api(AccountSdk.class)
+        .login(new LoginAccountRequest().username(accountInfo.username()).password("test12345"));
     try {
-      roomSdk.createRoom(request);
+      clientSdk.api(RoomSdk.class).createRoom(args.request);
       fail("Expected exception");
     } catch (Exception ex) {
-      assertError(ex, errorCode, errorMessage);
+      assertError(ex, args.errorCode, args.errorMessage);
     }
   }
 
-  private static Stream<Arguments> testCreateRoomFailedMethodSource() {
+  private record FailedArgs(
+      String test, CreateRoomRequest request, int errorCode, String errorMessage) {}
+
+  private static Stream<?> testCreateRoomFailedMethodSource() {
     return Stream.of(
-        Arguments.of(
+        new FailedArgs(
             "Room name too short",
             new CreateRoomRequest().name(randomAlphanumeric(7)).description(randomAlphanumeric(20)),
             400,
             "Missing or invalid: name"),
-        Arguments.of(
+        new FailedArgs(
             "Room name too long",
             new CreateRoomRequest()
                 .name(randomAlphanumeric(65))
                 .description(randomAlphanumeric(20)),
             400,
             "Missing or invalid: name"),
-        Arguments.of(
+        new FailedArgs(
             "No room name",
             new CreateRoomRequest().description(randomAlphanumeric(20)),
             400,
             "Missing or invalid: name"),
-        Arguments.of(
+        new FailedArgs(
             "Room description too long",
             new CreateRoomRequest()
                 .name(randomAlphanumeric(8, 65))
                 .description(randomAlphanumeric(201)),
             400,
             "Missing or invalid: description"),
-        Arguments.of(
+        new FailedArgs(
             "Room name already exists",
             new CreateRoomRequest().name(existingRoomInfo.name()),
             400,
@@ -126,14 +110,17 @@ public class CreateRoomIT {
   }
 
   @Test
-  void testCreateRoom() {
-    accountSdk.login(
-        new LoginAccountRequest().username(accountInfo.username()).password("test12345"));
+  void testCreateRoom(ClientSdk clientSdk, AccountInfo accountInfo) {
+    clientSdk
+        .api(AccountSdk.class)
+        .login(new LoginAccountRequest().username(accountInfo.username()).password("test12345"));
 
     final var name = randomAlphanumeric(20);
     final var description = randomAlphanumeric(20);
     final var roomInfo =
-        roomSdk.createRoom(new CreateRoomRequest().name(name).description(description));
+        clientSdk
+            .api(RoomSdk.class)
+            .createRoom(new CreateRoomRequest().name(name).description(description));
 
     assertTrue(roomInfo.id() > 0, "roomInfo.id: " + roomInfo.id());
     assertEquals(accountInfo.username(), roomInfo.owner());
