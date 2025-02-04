@@ -8,14 +8,16 @@ import static org.junit.jupiter.api.Assertions.fail;
 import io.syemessenger.api.ClientSdk;
 import io.syemessenger.environment.CloseHelper;
 import io.syemessenger.environment.IntegrationEnvironment;
+import io.syemessenger.environment.IntegrationEnvironmentExtension;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
+@ExtendWith(IntegrationEnvironmentExtension.class)
 public class GetAccountIT {
-
 
   private ClientSdk clientSdk;
   private AccountSdk accountSdk;
@@ -55,8 +57,11 @@ public class GetAccountIT {
 
   @Test
   void testGetOwnAccount() {
-    final var accountId = accountSdk.login(
-        new LoginAccountRequest().username(existingAccountInfo.username()).password("test12345"));
+    final var accountId =
+        accountSdk.login(
+            new LoginAccountRequest()
+                .username(existingAccountInfo.username())
+                .password("test12345"));
     assertAccount(existingAccountInfo, accountSdk.getAccount(accountId));
   }
 }

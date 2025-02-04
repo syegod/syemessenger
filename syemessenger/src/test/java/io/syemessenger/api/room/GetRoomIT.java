@@ -12,14 +12,16 @@ import io.syemessenger.api.account.AccountSdk;
 import io.syemessenger.api.account.LoginAccountRequest;
 import io.syemessenger.environment.CloseHelper;
 import io.syemessenger.environment.IntegrationEnvironment;
+import io.syemessenger.environment.IntegrationEnvironmentExtension;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
+@ExtendWith(IntegrationEnvironmentExtension.class)
 public class GetRoomIT {
-
 
   private ClientSdk clientSdk;
   private AccountSdk accountSdk;

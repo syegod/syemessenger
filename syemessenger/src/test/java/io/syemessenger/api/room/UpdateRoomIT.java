@@ -12,17 +12,18 @@ import io.syemessenger.api.account.AccountInfo;
 import io.syemessenger.api.account.AccountSdk;
 import io.syemessenger.api.account.LoginAccountRequest;
 import io.syemessenger.environment.CloseHelper;
-import io.syemessenger.environment.IntegrationEnvironment;
+import io.syemessenger.environment.IntegrationEnvironmentExtension;
 import java.util.stream.Stream;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+@ExtendWith(IntegrationEnvironmentExtension.class)
 public class UpdateRoomIT {
 
   private static AccountInfo accountInfo1;

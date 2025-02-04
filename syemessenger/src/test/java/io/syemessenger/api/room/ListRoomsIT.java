@@ -16,6 +16,7 @@ import io.syemessenger.api.account.AccountInfo;
 import io.syemessenger.api.account.AccountSdk;
 import io.syemessenger.api.account.LoginAccountRequest;
 import io.syemessenger.environment.CloseHelper;
+import io.syemessenger.environment.IntegrationEnvironmentExtension;
 import io.syemessenger.environment.OffsetLimit;
 import java.util.Comparator;
 import java.util.stream.IntStream;
@@ -23,10 +24,12 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+@ExtendWith(IntegrationEnvironmentExtension.class)
 public class ListRoomsIT {
 
   private ClientSdk clientSdk;
@@ -120,8 +123,7 @@ public class ListRoomsIT {
             .sorted(comparator)
             .toList();
 
-    final var expectedRoomInfos = roomInfos.stream().skip(offset)
-        .limit(limit).toList();
+    final var expectedRoomInfos = roomInfos.stream().skip(offset).limit(limit).toList();
 
     final var response = roomSdk.listRooms(request);
     assertEquals(roomInfos.size(), response.totalCount(), "totalCount");

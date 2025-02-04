@@ -17,9 +17,9 @@ import io.syemessenger.api.OrderBy.Direction;
 import io.syemessenger.api.account.AccountAssertions;
 import io.syemessenger.api.account.AccountInfo;
 import io.syemessenger.api.account.AccountSdk;
-import io.syemessenger.api.account.GetRoomsRequest;
 import io.syemessenger.api.account.LoginAccountRequest;
 import io.syemessenger.environment.CloseHelper;
+import io.syemessenger.environment.IntegrationEnvironmentExtension;
 import io.syemessenger.environment.OffsetLimit;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -28,10 +28,12 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+@ExtendWith(IntegrationEnvironmentExtension.class)
 public class GetRoomMembersIT {
 
   private ClientSdk clientSdk;

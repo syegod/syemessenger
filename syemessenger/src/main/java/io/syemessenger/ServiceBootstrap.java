@@ -19,6 +19,10 @@ public class ServiceBootstrap {
     applicationContext.refresh();
   }
 
+  public AnnotationConfigApplicationContext applicationContext() {
+    return applicationContext;
+  }
+
   public void close() {
     if (applicationContext != null) {
       applicationContext.close();

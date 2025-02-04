@@ -6,7 +6,6 @@ import com.zaxxer.hikari.HikariDataSource;
 import io.syemessenger.websocket.WebSocketServer;
 import io.syemessenger.websocket.WebSocketServlet;
 import jakarta.persistence.EntityManagerFactory;
-import java.util.Properties;
 import javax.sql.DataSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;

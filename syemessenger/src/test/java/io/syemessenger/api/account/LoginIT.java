@@ -7,16 +7,16 @@ import static org.junit.jupiter.api.Assertions.fail;
 import static org.testcontainers.shaded.org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
 
 import io.syemessenger.api.ClientSdk;
-import io.syemessenger.environment.CloseHelper;
-import io.syemessenger.environment.IntegrationEnvironment;
+import io.syemessenger.environment.IntegrationEnvironmentExtension;
 import java.util.stream.Stream;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+@ExtendWith(IntegrationEnvironmentExtension.class)
 public class LoginIT {
 
   private static AccountInfo existingAccountInfo;
