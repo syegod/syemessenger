@@ -36,6 +36,10 @@ public class IntegrationEnvironment implements AutoCloseable {
     }
   }
 
+  public PostgreSQLContainer getPostgresContainer() {
+    return postgres;
+  }
+
   public void close() {
     if (postgres != null) {
       postgres.close();

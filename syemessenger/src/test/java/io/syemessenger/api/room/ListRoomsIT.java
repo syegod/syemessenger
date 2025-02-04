@@ -101,7 +101,7 @@ public class ListRoomsIT {
     accountSdk.login(
         new LoginAccountRequest().username(accountInfo.username()).password("test12345"));
 
-    final var expectedRoomInfos =
+    final var roomInfos =
         IntStream.range(0, n)
             .mapToObj(
                 v -> {
@@ -118,12 +118,13 @@ public class ListRoomsIT {
                   }
                 })
             .sorted(comparator)
-            .skip(offset)
-            .limit(limit)
             .toList();
 
+    final var expectedRoomInfos = roomInfos.stream().skip(offset)
+        .limit(limit).toList();
+
     final var response = roomSdk.listRooms(request);
-    assertEquals(expectedRoomInfos.size(), response.totalCount(), "totalCount");
+    assertEquals(roomInfos.size(), response.totalCount(), "totalCount");
     assertCollections(expectedRoomInfos, response.roomInfos(), RoomAssertions::assertRoom);
   }
 
@@ -134,7 +135,6 @@ public class ListRoomsIT {
     final Direction[] directions = {Direction.ASC, Direction.DESC, null};
 
     // Sort by fields
-
     for (String field : fields) {
       for (Direction direction : directions) {
         final var orderBy = new OrderBy().field(field).direction(direction);
