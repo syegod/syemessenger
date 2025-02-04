@@ -1,67 +1,36 @@
 package io.syemessenger.api.room;
 
 import static io.syemessenger.api.ErrorAssertions.assertError;
-import static io.syemessenger.api.account.AccountAssertions.createAccount;
+import static io.syemessenger.api.account.AccountAssertions.login;
 import static io.syemessenger.api.room.RoomAssertions.createRoom;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import io.syemessenger.api.ClientSdk;
 import io.syemessenger.api.account.AccountInfo;
-import io.syemessenger.api.account.AccountSdk;
-import io.syemessenger.api.account.LoginAccountRequest;
 import io.syemessenger.environment.IntegrationEnvironmentExtension;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 @ExtendWith(IntegrationEnvironmentExtension.class)
 public class RemoveRoomMembersIT {
 
-  private static AccountInfo existingAccountInfo;
-  private static AccountInfo anotherAccountInfo;
-  private ClientSdk clientSdk;
-  private AccountSdk accountSdk;
-  private RoomSdk roomSdk;
-  private RoomInfo existingRoomInfo;
+  private static RoomInfo existingRoomInfo;
 
   @BeforeAll
-  static void beforeAll() {
-    existingAccountInfo = createAccount();
-    anotherAccountInfo = createAccount();
-  }
-
-  @BeforeEach
-  void beforeEach() {
-    clientSdk = new ClientSdk();
-    accountSdk = clientSdk.api(AccountSdk.class);
-    roomSdk = clientSdk.api(RoomSdk.class);
-
-    existingAccountInfo = createAccount();
-    anotherAccountInfo = createAccount();
-
-    existingRoomInfo = createRoom(existingAccountInfo);
-  }
-
-  @AfterEach
-  void afterEach() {
-    if (clientSdk != null) {
-      clientSdk.close();
-    }
+  static void beforeAll(AccountInfo accountInfo) {
+    existingRoomInfo = createRoom(accountInfo);
   }
 
   @Test
-  void testRemoveRoomMembersNotLoggedIn() {
+  void testRemoveRoomMembersNotLoggedIn(ClientSdk clientSdk) {
     try {
-      roomSdk.removeRoomMembers(new RemoveMembersRequest());
+      clientSdk.roomSdk().removeRoomMembers(new RemoveMembersRequest());
       fail("Expected exception");
     } catch (Exception ex) {
       assertError(ex, 401, "Not authenticated");
@@ -70,56 +39,47 @@ public class RemoveRoomMembersIT {
 
   @ParameterizedTest(name = "{0}")
   @MethodSource(value = "testRemoveRoomMembersFailedMethodSource")
-  void testRemoveRoomMembersFailed(
-      String test, RemoveMembersRequest request, int errorCode, String errorMessage) {
-    accountSdk.login(
-        new LoginAccountRequest().username(existingAccountInfo.username()).password("test12345"));
+  void testRemoveRoomMembersFailed(FailedArgs args, ClientSdk clientSdk) {
+    login(clientSdk, request -> request.username(existingRoomInfo.owner()));
     try {
-      roomSdk.removeRoomMembers(request);
+      clientSdk.roomSdk().removeRoomMembers(args.request);
       fail("Expected exception");
     } catch (Exception ex) {
-      assertError(ex, errorCode, errorMessage);
+      assertError(ex, args.errorCode, args.errorMessage);
     }
   }
 
-  static Stream<Arguments> testRemoveRoomMembersFailedMethodSource() {
+  private record FailedArgs(
+      String test, RemoveMembersRequest request, int errorCode, String errorMessage) {}
+
+  private static Stream<?> testRemoveRoomMembersFailedMethodSource() {
     return Stream.of(
-        Arguments.of(
+        new FailedArgs(
             "No room id",
-            new RemoveMembersRequest().memberIds(List.of(anotherAccountInfo.id())),
+            new RemoveMembersRequest().memberIds(10L),
             400,
             "Missing or invalid: roomId"),
-        Arguments.of(
+        new FailedArgs(
             "Wrong room id",
-            new RemoveMembersRequest().roomId(1000L).memberIds(List.of(anotherAccountInfo.id())),
+            new RemoveMembersRequest().roomId(Long.MAX_VALUE).memberIds(10L),
             404,
             "Room not found"),
-        Arguments.of(
+        new FailedArgs(
             "Empty member list",
-            new RemoveMembersRequest()
-                .roomId(existingAccountInfo.id())
-                .memberIds(new ArrayList<>()),
+            new RemoveMembersRequest().roomId(100L).memberIds(List.of()),
             400,
-            "Missing or invalid: memberIds")
-        // TODO: resolve
-        //        Arguments.of(
-        //            "Wrong member id",
-        //            new
-        // RemoveMembersRequest().roomId(existingAccountInfo.id()).memberIds(List.of(1000L)),
-        //            404,
-        //            ""),
-        );
+            "Missing or invalid: memberIds"));
   }
 
   @Test
-  void testRemoveRoomMembersRemoveOwner() {
-    accountSdk.login(
-        new LoginAccountRequest().username(existingAccountInfo.username()).password("test12345"));
+  void testRemoveRoomMembersRemoveOwner(ClientSdk clientSdk, AccountInfo accountInfo) {
+    final var roomInfo = createRoom(accountInfo);
+    login(clientSdk, accountInfo);
     try {
-      roomSdk.removeRoomMembers(
-          new RemoveMembersRequest()
-              .roomId(existingRoomInfo.id())
-              .memberIds(List.of(existingAccountInfo.id())));
+      clientSdk
+          .roomSdk()
+          .removeRoomMembers(
+              new RemoveMembersRequest().roomId(roomInfo.id()).memberIds(accountInfo.id()));
       fail("Expected exception");
     } catch (Exception ex) {
       assertError(ex, 400, "Cannot remove room owner");
@@ -127,39 +87,39 @@ public class RemoveRoomMembersIT {
   }
 
   @Test
-  void testRemoveRoomMembersNotOwner() {
-    accountSdk.login(
-        new LoginAccountRequest().username(anotherAccountInfo.username()).password("test12345"));
-
-    roomSdk.joinRoom(existingRoomInfo.name());
+  void testRemoveRoomMembersNotOwner(
+      ClientSdk clientSdk, AccountInfo accountInfo, AccountInfo anotherAccountInfo) {
+    final var roomInfo = createRoom(accountInfo);
+    login(clientSdk, anotherAccountInfo);
+    clientSdk.roomSdk().joinRoom(roomInfo.name());
 
     try {
-      roomSdk.removeRoomMembers(
-          new RemoveMembersRequest()
-              .roomId(existingRoomInfo.id())
-              .memberIds(List.of(anotherAccountInfo.id())));
+      clientSdk
+          .roomSdk()
+          .removeRoomMembers(
+              new RemoveMembersRequest().roomId(roomInfo.id()).memberIds(accountInfo.id()));
+      fail("Expected exception");
     } catch (Exception ex) {
       assertError(ex, 403, "Not room owner");
     }
   }
 
   @Test
-  void testRemoveRoomMembers() {
-    accountSdk.login(
-        new LoginAccountRequest().username(anotherAccountInfo.username()).password("test12345"));
+  void testRemoveRoomMembers(
+      ClientSdk clientSdk, AccountInfo accountInfo, AccountInfo anotherAccountInfo) {
+    final var roomInfo = createRoom(accountInfo);
+    login(clientSdk, anotherAccountInfo);
+    clientSdk.roomSdk().joinRoom(roomInfo.name());
 
-    roomSdk.joinRoom(existingRoomInfo.name());
+    login(clientSdk, accountInfo);
 
-    accountSdk.login(
-        new LoginAccountRequest().username(existingAccountInfo.username()).password("test12345"));
-
-    roomSdk.removeRoomMembers(
-        new RemoveMembersRequest()
-            .roomId(existingRoomInfo.id())
-            .memberIds(List.of(anotherAccountInfo.id())));
+    clientSdk
+        .roomSdk()
+        .removeRoomMembers(
+            new RemoveMembersRequest().roomId(roomInfo.id()).memberIds(anotherAccountInfo.id()));
 
     final var roomResponse =
-        roomSdk.getRoomMembers(new GetRoomMembersRequest().roomId(existingRoomInfo.id()));
+        clientSdk.roomSdk().getRoomMembers(new GetRoomMembersRequest().roomId(roomInfo.id()));
     assertEquals(1, roomResponse.totalCount());
   }
 }

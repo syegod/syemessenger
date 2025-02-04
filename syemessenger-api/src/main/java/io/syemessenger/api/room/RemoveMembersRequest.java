@@ -1,5 +1,6 @@
 package io.syemessenger.api.room;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.StringJoiner;
 
@@ -23,6 +24,11 @@ public class RemoveMembersRequest {
 
   public RemoveMembersRequest memberIds(List<Long> memberIds) {
     this.memberIds = memberIds;
+    return this;
+  }
+
+  public RemoveMembersRequest memberIds(Long... memberIds) {
+    this.memberIds = Arrays.asList(memberIds);
     return this;
   }
 
