@@ -42,7 +42,7 @@ public class GetRoomMembersIT {
 
   @Test
   void testGetRoomMembersNotLoggedIn(ClientSdk clientSdk) {
-    try (clientSdk) {
+    try {
       clientSdk.api(RoomSdk.class).getRoomMembers(new GetRoomMembersRequest());
       fail("Expected exception");
     } catch (Exception ex) {
@@ -59,16 +59,14 @@ public class GetRoomMembersIT {
       String errorMessage,
       ClientSdk clientSdk,
       AccountInfo accountInfo) {
-    try (clientSdk) {
-      clientSdk
-          .api(AccountSdk.class)
-          .login(new LoginAccountRequest().username(accountInfo.username()).password("test12345"));
-      try {
-        clientSdk.api(RoomSdk.class).getRoomMembers(request);
-        fail("Expected exception");
-      } catch (Exception ex) {
-        assertError(ex, errorCode, errorMessage);
-      }
+    clientSdk
+        .api(AccountSdk.class)
+        .login(new LoginAccountRequest().username(accountInfo.username()).password("test12345"));
+    try {
+      clientSdk.api(RoomSdk.class).getRoomMembers(request);
+      fail("Expected exception");
+    } catch (Exception ex) {
+      assertError(ex, errorCode, errorMessage);
     }
   }
 
@@ -104,34 +102,32 @@ public class GetRoomMembersIT {
       Comparator<Object> comparator,
       ClientSdk clientSdk,
       AccountInfo accountInfo) {
-    try (clientSdk) {
-      final int n = 25;
-      final var offset = request.offset() != null ? request.offset() : 0;
-      final var limit = request.limit() != null ? request.limit() : 50;
+    final int n = 25;
+    final var offset = request.offset() != null ? request.offset() : 0;
+    final var limit = request.limit() != null ? request.limit() : 50;
 
-      clientSdk
-          .api(AccountSdk.class)
-          .login(new LoginAccountRequest().username(accountInfo.username()).password("test12345"));
+    clientSdk
+        .api(AccountSdk.class)
+        .login(new LoginAccountRequest().username(accountInfo.username()).password("test12345"));
 
-      final var roomInfo = createRoom(accountInfo);
-      request.roomId(roomInfo.id());
-      final var roomMembers = new ArrayList<AccountInfo>();
-      roomMembers.add(accountInfo);
-      for (int i = 0; i < n; i++) {
-        final var account = createAccount(r -> r.username("username@" + nextLong()));
-        joinRoom(roomInfo.name(), account.username());
-        roomMembers.add(account);
-      }
-
-      final var expectedRoomMembers =
-          roomMembers.stream().sorted(comparator).skip(offset).limit(limit).toList();
-
-      final var response = clientSdk.api(RoomSdk.class).getRoomMembers(request);
-      // TODO: figure out what is expected total count
-      assertEquals(roomMembers.size(), response.totalCount(), "totalCount");
-      assertCollections(
-          expectedRoomMembers, response.accountInfos(), AccountAssertions::assertAccount);
+    final var roomInfo = createRoom(accountInfo);
+    request.roomId(roomInfo.id());
+    final var roomMembers = new ArrayList<AccountInfo>();
+    roomMembers.add(accountInfo);
+    for (int i = 0; i < n; i++) {
+      final var account = createAccount(r -> r.username("username@" + nextLong()));
+      joinRoom(roomInfo.name(), account.username());
+      roomMembers.add(account);
     }
+
+    final var expectedRoomMembers =
+        roomMembers.stream().sorted(comparator).skip(offset).limit(limit).toList();
+
+    final var response = clientSdk.api(RoomSdk.class).getRoomMembers(request);
+    // TODO: figure out what is expected total count
+    assertEquals(roomMembers.size(), response.totalCount(), "totalCount");
+    assertCollections(
+        expectedRoomMembers, response.accountInfos(), AccountAssertions::assertAccount);
   }
 
   private static Stream<Arguments> testGetRoomMembersMethodSource() {
