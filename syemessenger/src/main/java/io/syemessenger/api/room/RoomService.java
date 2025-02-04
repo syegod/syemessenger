@@ -12,10 +12,8 @@ import jakarta.inject.Named;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.List;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 
 @Named
 public class RoomService {
@@ -128,7 +126,7 @@ public class RoomService {
     }
 
     if (id == null) {
-      sessionContext.sendError(401, "Not authenticated");
+      sessionContext.sendError(400, "Missing or invalid: id");
       return;
     }
 
@@ -289,7 +287,8 @@ public class RoomService {
     if (keyword == null) {
       roomsPages = roomRepository.findAll(pageable);
     } else {
-     roomsPages = roomRepository.findByNameContainingOrDescriptionContaining(keyword, keyword, pageable);
+      roomsPages =
+          roomRepository.findByNameContainingOrDescriptionContaining(keyword, keyword, pageable);
     }
 
     final var roomInfos = roomsPages.getContent().stream().map(RoomMappers::toRoomInfo).toList();
