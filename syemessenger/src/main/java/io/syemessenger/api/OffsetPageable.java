@@ -22,7 +22,7 @@ public class OffsetPageable implements Pageable {
 
   @Override
   public int getPageNumber() {
-    return 0;
+    return offset / limit;
   }
 
   @Override

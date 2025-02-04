@@ -1,7 +1,15 @@
 package io.syemessenger.environment;
 
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 import io.syemessenger.ServiceBootstrap;
 import io.syemessenger.ServiceConfig;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.sql.Statement;
+import javax.sql.DataSource;
 import org.testcontainers.containers.PostgreSQLContainer;
 
 public class IntegrationEnvironment implements AutoCloseable {
@@ -14,7 +22,6 @@ public class IntegrationEnvironment implements AutoCloseable {
       postgres = new PostgreSQLContainer("postgres:16-alpine");
       postgres.withExposedPorts(5432);
       postgres.start();
-
       serviceBootstrap =
           new ServiceBootstrap(
               new ServiceConfig()
@@ -22,6 +29,7 @@ public class IntegrationEnvironment implements AutoCloseable {
                   .dbUser(postgres.getUsername())
                   .dbPassword(postgres.getPassword()));
       serviceBootstrap.start();
+
     } catch (Exception e) {
       close();
       throw new RuntimeException(e);

@@ -12,7 +12,10 @@ import jakarta.inject.Named;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 import org.springframework.dao.DataAccessException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 @Named
 public class RoomService {
@@ -261,7 +264,45 @@ public class RoomService {
 
   public void unblockRoomMembers(SessionContext sessionContext, UnblockMembersRequest request) {}
 
-  public void listRooms(SessionContext sessionContext, ListRoomsRequest request) {}
+  public void listRooms(SessionContext sessionContext, ListRoomsRequest request) {
+    if (!sessionContext.isLoggedIn()) {
+      sessionContext.sendError(401, "Not authenticated");
+      return;
+    }
+
+    final var offset = request.offset();
+    if (offset != null && offset < 0) {
+      sessionContext.sendError(400, "Missing or invalid: offset");
+      return;
+    }
+
+    final var limit = request.limit();
+    if (limit != null && (limit < 0 || limit > 50)) {
+      sessionContext.sendError(400, "Missing or invalid: limit");
+      return;
+    }
+
+    final var pageable = toPageable(offset, limit, request.orderBy());
+
+    var keyword = request.keyword();
+    Page<Room> roomsPages;
+    if (keyword == null) {
+      roomsPages = roomRepository.findAll(pageable);
+    } else {
+     roomsPages = roomRepository.findByNameContainingOrDescriptionContaining(keyword, keyword, pageable);
+    }
+
+    final var roomInfos = roomsPages.getContent().stream().map(RoomMappers::toRoomInfo).toList();
+
+    final var listRoomsResponse =
+        new ListRoomsResponse()
+            .roomInfos(roomInfos)
+            .offset(offset)
+            .limit(limit)
+            .totalCount(roomsPages.getTotalElements());
+
+    sessionContext.send(new ServiceMessage().qualifier("listRooms").data(listRoomsResponse));
+  }
 
   public void getRoomMembers(SessionContext sessionContext, GetRoomMembersRequest request) {
     if (!sessionContext.isLoggedIn()) {

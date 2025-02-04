@@ -40,17 +40,14 @@ public interface RoomRepository extends CrudRepository<Room, Long> {
           + "ON rm.account_id = a.id WHERE rm.room_id = ?1 AND rm.account_id = ?2")
   Account findRoomMember(Long roomId, Long accountId);
 
-  // SELECT
-  //    u.*,
-  //    COUNT(*) OVER() AS total_count
-  // FROM user u
-  // WHERE name LIKE :searchName
-  // ORDER BY u.id ASC
-  // LIMIT :limit OFFSET :offset
-
   @NativeQuery(
       value =
           "SELECT * FROM accounts a JOIN room_members rm ON rm.account_id = a.id "
               + "WHERE rm.room_id = :roomId")
   Page<Account> findRoomMembers(@Param("roomId") Long roomId, Pageable pageable);
+
+  Page<Room> findByNameContainingOrDescriptionContaining(String keyword1, String keyword2, Pageable pageable);
+
+  @NativeQuery(value = "SELECT * FROM rooms")
+  Page<Room> findAll(Pageable pageable);
 }
