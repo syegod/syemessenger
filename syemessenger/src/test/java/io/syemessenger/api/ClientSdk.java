@@ -4,12 +4,13 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import io.syemessenger.JsonMappers;
 import io.syemessenger.MessageCodec;
+import io.syemessenger.api.account.AccountSdk;
+import io.syemessenger.api.room.RoomSdk;
 import java.lang.reflect.Proxy;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.WebSocket;
 import java.net.http.WebSocket.Listener;
-import java.util.Optional;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletionStage;
@@ -97,6 +98,14 @@ public class ClientSdk implements AutoCloseable {
               sendText(message);
               return pollResponse();
             });
+  }
+
+  public AccountSdk accountSdk() {
+    return api(AccountSdk.class);
+  }
+
+  public RoomSdk roomSdk() {
+    return api(RoomSdk.class);
   }
 
   private Object toStringOrEqualsOrHashCode(String method, Class<?> api, Object... args) {

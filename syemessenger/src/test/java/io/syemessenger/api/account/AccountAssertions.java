@@ -34,6 +34,12 @@ public class AccountAssertions {
     }
   }
 
+  public static void login(ClientSdk clientSdk, Consumer<LoginAccountRequest> consumer) {
+    final var request = new LoginAccountRequest().password("test12345");
+    consumer.accept(request);
+    clientSdk.accountSdk().login(request);
+  }
+
   public static void assertAccount(AccountInfo expected, AccountInfo actual) {
     assertEquals(expected.id(), actual.id(), "actual.id");
     assertEquals(expected.username(), actual.username(), "actual.username");
