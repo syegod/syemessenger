@@ -38,6 +38,8 @@ public class Pageables {
           orderBy.field("created_at");
         } else if (orderBy.field().equals("updatedAt")) {
           orderBy.field("updated_at");
+        } else if (orderBy.field().equals("owner")) {
+          orderBy.field("owner_id");
         }
       }
       if (orderBy.direction() == null) {
