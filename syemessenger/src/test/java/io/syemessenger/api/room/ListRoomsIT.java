@@ -1,7 +1,7 @@
 package io.syemessenger.api.room;
 
 import static io.syemessenger.api.ErrorAssertions.assertError;
-import static io.syemessenger.api.account.AccountAssertions.createAccount;
+import static io.syemessenger.api.account.AccountAssertions.login;
 import static io.syemessenger.environment.AssertionUtils.assertCollections;
 import static io.syemessenger.environment.AssertionUtils.getFields;
 import static io.syemessenger.environment.AssertionUtils.toComparator;
@@ -14,49 +14,30 @@ import io.syemessenger.api.ClientSdk;
 import io.syemessenger.api.OrderBy;
 import io.syemessenger.api.OrderBy.Direction;
 import io.syemessenger.api.account.AccountInfo;
-import io.syemessenger.api.account.AccountSdk;
-import io.syemessenger.api.account.LoginAccountRequest;
-import io.syemessenger.environment.CloseHelper;
 import io.syemessenger.environment.IntegrationEnvironmentExtension;
 import io.syemessenger.environment.OffsetLimit;
 import java.util.Comparator;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import javax.sql.DataSource;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 @ExtendWith(IntegrationEnvironmentExtension.class)
 public class ListRoomsIT {
 
-  private ClientSdk clientSdk;
-  private AccountSdk accountSdk;
-  private RoomSdk roomSdk;
-  private AccountInfo accountInfo;
-
   @BeforeEach
   void beforeEach(DataSource dataSource) {
     cleanTables(dataSource);
-    clientSdk = new ClientSdk();
-    accountSdk = clientSdk.api(AccountSdk.class);
-    roomSdk = clientSdk.api(RoomSdk.class);
-    accountInfo = createAccount();
-  }
-
-  @AfterEach
-  void afterEach() {
-    CloseHelper.close(clientSdk);
   }
 
   @Test
-  void testListRoomsNotLoggedIn() {
+  void testListRoomsNotLoggedIn(ClientSdk clientSdk) {
     try {
-      roomSdk.listRooms(new ListRoomsRequest());
+      clientSdk.roomSdk().listRooms(new ListRoomsRequest());
       fail("Expected exception");
     } catch (Exception ex) {
       assertError(ex, 401, "Not authenticated");
@@ -65,55 +46,61 @@ public class ListRoomsIT {
 
   @ParameterizedTest(name = "{0}")
   @MethodSource("testListRoomsFailedMethodSource")
-  void testListRoomsFailed(
-      String test, ListRoomsRequest request, int errorCode, String errorMessage) {
-    accountSdk.login(
-        new LoginAccountRequest().username(accountInfo.username()).password("test12345"));
+  void testListRoomsFailed(FailedArgs args, ClientSdk clientSdk, AccountInfo accountInfo) {
+    login(clientSdk, request -> request.username(accountInfo.username()));
     try {
-      roomSdk.listRooms(request);
+      clientSdk.roomSdk().listRooms(args.request);
       fail("Expected exception");
     } catch (Exception ex) {
-      assertError(ex, errorCode, errorMessage);
+      assertError(ex, args.errorCode, args.errorMessage);
     }
   }
 
-  private static Stream<Arguments> testListRoomsFailedMethodSource() {
+  private record FailedArgs(
+      String test, ListRoomsRequest request, int errorCode, String errorMessage) {}
+
+  private static Stream<?> testListRoomsFailedMethodSource() {
     return Stream.of(
-        Arguments.of(
+        new FailedArgs(
             "Offset is negative",
             new ListRoomsRequest().offset(-50),
             400,
             "Missing or invalid: offset"),
-        Arguments.of(
+        new FailedArgs(
             "Limit is negative",
             new ListRoomsRequest().limit(-50),
             400,
             "Missing or invalid: limit"),
-        Arguments.of(
+        new FailedArgs(
             "Limit is over than max",
             new ListRoomsRequest().limit(60),
             400,
             "Missing or invalid: limit"));
   }
 
+  @SuppressWarnings("unchecked")
   @ParameterizedTest(name = "{0}")
   @MethodSource("testListRoomsMethodSource")
-  void testListRooms(String test, ListRoomsRequest request, Comparator<Object> comparator) {
+  void testListRooms(SuccessArgs args, ClientSdk clientSdk, AccountInfo accountInfo) {
     final int n = 25;
+    final var request = args.request;
     final var k = request.keyword();
     final var offset = request.offset() != null ? request.offset() : 0;
     final var limit = request.limit() != null ? request.limit() : 50;
 
-    accountSdk.login(
-        new LoginAccountRequest().username(accountInfo.username()).password("test12345"));
+    login(clientSdk, accountInfo);
 
     final var roomInfos =
         IntStream.range(0, n)
             .mapToObj(
                 v -> {
                   final var l = nextLong();
-                  return roomSdk.createRoom(
-                      new CreateRoomRequest().name("room@" + l).description("description@" + l));
+                  return clientSdk
+                      .roomSdk()
+                      .createRoom(
+                          new CreateRoomRequest()
+                              .name("room@" + l)
+                              .description("description@" + l));
                 })
             .filter(
                 roomInfo -> {
@@ -123,18 +110,21 @@ public class ListRoomsIT {
                     return true;
                   }
                 })
-            .sorted(comparator)
+            .sorted(args.comparator)
             .toList();
 
     final var expectedRoomInfos = roomInfos.stream().skip(offset).limit(limit).toList();
 
-    final var response = roomSdk.listRooms(request);
+    final var response = clientSdk.roomSdk().listRooms(request);
     assertEquals(roomInfos.size(), response.totalCount(), "totalCount");
     assertCollections(expectedRoomInfos, response.roomInfos(), RoomAssertions::assertRoom);
   }
 
-  private static Stream<Arguments> testListRoomsMethodSource() {
-    final var builder = Stream.<Arguments>builder();
+  @SuppressWarnings("rawtypes")
+  private record SuccessArgs(String test, ListRoomsRequest request, Comparator comparator) {}
+
+  private static Stream<?> testListRoomsMethodSource() {
+    final var builder = Stream.<SuccessArgs>builder();
 
     final String[] fields = getFields(RoomInfo.class);
     final Direction[] directions = {Direction.ASC, Direction.DESC, null};
@@ -144,7 +134,7 @@ public class ListRoomsIT {
       for (Direction direction : directions) {
         final var orderBy = new OrderBy().field(field).direction(direction);
         builder.add(
-            Arguments.of(
+            new SuccessArgs(
                 "Field: " + field + ", direction: " + direction,
                 new ListRoomsRequest().orderBy(orderBy),
                 toComparator(orderBy)));
@@ -156,7 +146,7 @@ public class ListRoomsIT {
     final String[] keywords = {"room@", "description@", null};
     for (String keyword : keywords) {
       builder.add(
-          Arguments.of(
+          new SuccessArgs(
               "Keyword: " + keyword,
               new ListRoomsRequest().keyword(keyword),
               Comparator.<RoomInfo, Long>comparing(RoomInfo::id)));
@@ -177,7 +167,7 @@ public class ListRoomsIT {
       final var offset = offsetLimit.offset();
       final var limit = offsetLimit.limit();
       builder.add(
-          Arguments.of(
+          new SuccessArgs(
               "Offset: " + offset + ", limit: " + limit,
               new ListRoomsRequest().offset(offset).limit(limit),
               Comparator.<RoomInfo, Long>comparing(RoomInfo::id)));

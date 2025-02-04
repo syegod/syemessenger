@@ -34,6 +34,10 @@ public class AccountAssertions {
     }
   }
 
+  public static void login(ClientSdk clientSdk, AccountInfo accountInfo) {
+    login(clientSdk, request -> request.username(accountInfo.username()));
+  }
+
   public static void login(ClientSdk clientSdk, Consumer<LoginAccountRequest> consumer) {
     final var request = new LoginAccountRequest().password("test12345");
     consumer.accept(request);
