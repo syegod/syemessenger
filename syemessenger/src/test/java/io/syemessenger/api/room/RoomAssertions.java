@@ -5,7 +5,6 @@ import static org.testcontainers.shaded.org.apache.commons.lang3.RandomStringUti
 
 import io.syemessenger.api.ClientSdk;
 import io.syemessenger.api.account.AccountInfo;
-import io.syemessenger.api.account.AccountSdk;
 import io.syemessenger.api.account.LoginAccountRequest;
 
 public class RoomAssertions {
@@ -15,20 +14,16 @@ public class RoomAssertions {
   public static RoomInfo createRoom(AccountInfo accountInfo) {
     try (final var client = new ClientSdk()) {
       client
-          .api(AccountSdk.class)
+          .accountSdk()
           .login(new LoginAccountRequest().username(accountInfo.username()).password("test12345"));
-      return client
-          .api(RoomSdk.class)
-          .createRoom(new CreateRoomRequest().name(randomAlphanumeric(8, 65)));
+      return client.roomSdk().createRoom(new CreateRoomRequest().name(randomAlphanumeric(8, 65)));
     }
   }
 
   public static void joinRoom(String name, final String username) {
     try (final var client = new ClientSdk()) {
-      client
-          .api(AccountSdk.class)
-          .login(new LoginAccountRequest().username(username).password("test12345"));
-      client.api(RoomSdk.class).joinRoom(name);
+      client.accountSdk().login(new LoginAccountRequest().username(username).password("test12345"));
+      client.roomSdk().joinRoom(name);
     }
   }
 

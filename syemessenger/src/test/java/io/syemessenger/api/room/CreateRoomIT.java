@@ -1,6 +1,7 @@
 package io.syemessenger.api.room;
 
 import static io.syemessenger.api.ErrorAssertions.assertError;
+import static io.syemessenger.api.account.AccountAssertions.login;
 import static io.syemessenger.api.room.RoomAssertions.createRoom;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -10,8 +11,6 @@ import static org.testcontainers.shaded.org.apache.commons.lang3.RandomStringUti
 
 import io.syemessenger.api.ClientSdk;
 import io.syemessenger.api.account.AccountInfo;
-import io.syemessenger.api.account.AccountSdk;
-import io.syemessenger.api.account.LoginAccountRequest;
 import io.syemessenger.environment.IntegrationEnvironmentExtension;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeAll;
@@ -36,7 +35,7 @@ public class CreateRoomIT {
       final var name = randomAlphanumeric(20);
       final var description = randomAlphanumeric(20);
       clientSdk
-          .api(RoomSdk.class)
+          .roomSdk()
           .createRoom(new CreateRoomRequest().name(name).description(description));
       fail("Expected exception");
     } catch (Exception ex) {
@@ -46,13 +45,11 @@ public class CreateRoomIT {
 
   @Test
   void testCreateRoomNoDescription(ClientSdk clientSdk, AccountInfo accountInfo) {
-    clientSdk
-        .api(AccountSdk.class)
-        .login(new LoginAccountRequest().username(accountInfo.username()).password("test12345"));
+    login(clientSdk, accountInfo);
 
     final var name = randomAlphanumeric(20);
     final var roomInfo =
-        clientSdk.api(RoomSdk.class).createRoom(new CreateRoomRequest().name(name));
+        clientSdk.roomSdk().createRoom(new CreateRoomRequest().name(name));
 
     assertTrue(roomInfo.id() > 0, "roomInfo.id: " + roomInfo.id());
     assertEquals(accountInfo.username(), roomInfo.owner());
@@ -62,11 +59,9 @@ public class CreateRoomIT {
   @ParameterizedTest(name = "{0}")
   @MethodSource(value = "testCreateRoomFailedMethodSource")
   void testCreateRoomFailed(FailedArgs args, ClientSdk clientSdk, AccountInfo accountInfo) {
-    clientSdk
-        .api(AccountSdk.class)
-        .login(new LoginAccountRequest().username(accountInfo.username()).password("test12345"));
+    login(clientSdk, accountInfo);
     try {
-      clientSdk.api(RoomSdk.class).createRoom(args.request);
+      clientSdk.roomSdk().createRoom(args.request);
       fail("Expected exception");
     } catch (Exception ex) {
       assertError(ex, args.errorCode, args.errorMessage);
@@ -111,15 +106,13 @@ public class CreateRoomIT {
 
   @Test
   void testCreateRoom(ClientSdk clientSdk, AccountInfo accountInfo) {
-    clientSdk
-        .api(AccountSdk.class)
-        .login(new LoginAccountRequest().username(accountInfo.username()).password("test12345"));
+    login(clientSdk, accountInfo);
 
     final var name = randomAlphanumeric(20);
     final var description = randomAlphanumeric(20);
     final var roomInfo =
         clientSdk
-            .api(RoomSdk.class)
+            .roomSdk()
             .createRoom(new CreateRoomRequest().name(name).description(description));
 
     assertTrue(roomInfo.id() > 0, "roomInfo.id: " + roomInfo.id());

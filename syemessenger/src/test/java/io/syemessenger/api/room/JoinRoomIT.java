@@ -1,6 +1,7 @@
 package io.syemessenger.api.room;
 
 import static io.syemessenger.api.ErrorAssertions.assertError;
+import static io.syemessenger.api.account.AccountAssertions.login;
 import static io.syemessenger.api.room.RoomAssertions.assertRoom;
 import static io.syemessenger.api.room.RoomAssertions.createRoom;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -10,9 +11,7 @@ import static org.testcontainers.shaded.org.apache.commons.lang3.RandomStringUti
 
 import io.syemessenger.api.ClientSdk;
 import io.syemessenger.api.account.AccountInfo;
-import io.syemessenger.api.account.AccountSdk;
 import io.syemessenger.api.account.GetRoomsRequest;
-import io.syemessenger.api.account.LoginAccountRequest;
 import io.syemessenger.environment.IntegrationEnvironmentExtension;
 import java.util.List;
 import java.util.stream.Stream;
@@ -25,28 +24,11 @@ import org.junit.jupiter.params.provider.MethodSource;
 @ExtendWith(IntegrationEnvironmentExtension.class)
 public class JoinRoomIT {
 
-  //  private ClientSdk clientSdk;
-  //  private AccountSdk accountSdk;
-  //  private RoomSdk roomSdk;
-  //  private AccountInfo existingAccountInfo;
-  //  private RoomInfo existingRoomInfo;
-  //  private AccountInfo anotherAccountInfo;
-  //
-  //  @BeforeEach
-  //  void beforeEach() {
-  //    clientSdk = new ClientSdk();
-  //    accountSdk = clientSdk.api(AccountSdk.class);
-  //    roomSdk = clientSdk.api(RoomSdk.class);
-  //    existingAccountInfo = createAccount();
-  //    anotherAccountInfo = createAccount();
-  //    existingRoomInfo = createRoom(existingAccountInfo);
-  //  }
-
   @Test
   void testJoinRoomNotLoggedIn(ClientSdk clientSdk, AccountInfo accountInfo) {
     try {
       final var roomInfo = createRoom(accountInfo);
-      clientSdk.api(RoomSdk.class).joinRoom(roomInfo.name());
+      clientSdk.roomSdk().joinRoom(roomInfo.name());
       fail("Expected exception");
     } catch (Exception ex) {
       assertError(ex, 401, "Not authenticated");
@@ -56,11 +38,9 @@ public class JoinRoomIT {
   @ParameterizedTest(name = "{0}")
   @MethodSource("testJoinRoomFailedMethodSource")
   void testJoinRoomFailed(FailedArgs args, ClientSdk clientSdk, AccountInfo accountInfo) {
-    clientSdk
-        .api(AccountSdk.class)
-        .login(new LoginAccountRequest().username(accountInfo.username()).password("test12345"));
+    login(clientSdk, accountInfo);
     try {
-      clientSdk.api(RoomSdk.class).joinRoom(args.name);
+      clientSdk.roomSdk().joinRoom(args.name);
       fail("Expected exception");
     } catch (Exception ex) {
       assertError(ex, args.errorCode, args.errorMessage);
@@ -79,11 +59,9 @@ public class JoinRoomIT {
   @Test
   void testJoinOwnRoom(ClientSdk clientSdk, AccountInfo accountInfo) {
     try {
-      clientSdk
-          .api(AccountSdk.class)
-          .login(new LoginAccountRequest().username(accountInfo.username()).password("test12345"));
+      login(clientSdk, accountInfo);
       final var roomInfo = createRoom(accountInfo);
-      clientSdk.api(RoomSdk.class).joinRoom(roomInfo.name());
+      clientSdk.roomSdk().joinRoom(roomInfo.name());
       fail("Expected exception");
     } catch (Exception ex) {
       assertError(ex, 400, "Cannot join room: already joined");
@@ -95,14 +73,9 @@ public class JoinRoomIT {
       ClientSdk clientSdk, AccountInfo accountInfo, AccountInfo anotherAccountInfo) {
     final var roomInfo = createRoom(accountInfo);
 
-    clientSdk
-        .api(AccountSdk.class)
-        .login(
-            new LoginAccountRequest()
-                .username(anotherAccountInfo.username())
-                .password("test12345"));
+    login(clientSdk, anotherAccountInfo);
 
-    final var roomSdk = clientSdk.api(RoomSdk.class);
+    final var roomSdk = clientSdk.roomSdk();
     roomSdk.joinRoom(roomInfo.name());
     try {
       roomSdk.joinRoom(roomInfo.name());
@@ -116,20 +89,17 @@ public class JoinRoomIT {
   @Test
   void testJoinRoomBlocked(
       ClientSdk clientSdk, AccountInfo accountInfo, AccountInfo anotherAccountInfo) {
-    final var accountSdk = clientSdk.api(AccountSdk.class);
-    accountSdk.login(
-        new LoginAccountRequest().username(accountInfo.username()).password("test12345"));
+    login(clientSdk, accountInfo);
 
     final var roomInfo = createRoom(accountInfo);
 
-    final var roomSdk = clientSdk.api(RoomSdk.class);
+    final var roomSdk = clientSdk.roomSdk();
     roomSdk.blockRoomMembers(
         new BlockMembersRequest()
             .roomId(roomInfo.id())
             .memberIds(List.of(anotherAccountInfo.id())));
 
-    accountSdk.login(
-        new LoginAccountRequest().username(anotherAccountInfo.username()).password("test12345"));
+    login(clientSdk, anotherAccountInfo);
 
     try {
       roomSdk.joinRoom(roomInfo.name());
@@ -141,17 +111,13 @@ public class JoinRoomIT {
 
   @Test
   void testJoinRoom(ClientSdk clientSdk, AccountInfo accountInfo, AccountInfo anotherAccountInfo) {
-    final var accountSdk = clientSdk.api(AccountSdk.class);
-    accountSdk.login(
-        new LoginAccountRequest().username(accountInfo.username()).password("test12345"));
+    login(clientSdk, accountInfo);
     final var existingRoomInfo = createRoom(accountInfo);
 
-    accountSdk.login(
-        new LoginAccountRequest().username(anotherAccountInfo.username()).password("test12345"));
+    login(clientSdk, anotherAccountInfo);
+    clientSdk.roomSdk().joinRoom(existingRoomInfo.name());
 
-    clientSdk.api(RoomSdk.class).joinRoom(existingRoomInfo.name());
-
-    final var roomsResponse = accountSdk.getRooms(new GetRoomsRequest());
+    final var roomsResponse = clientSdk.accountSdk().getRooms(new GetRoomsRequest());
     assertNotNull(roomsResponse.roomInfos(), "roomInfos");
     assertEquals(1, roomsResponse.roomInfos().size());
     final var roomInfo = roomsResponse.roomInfos().getFirst();

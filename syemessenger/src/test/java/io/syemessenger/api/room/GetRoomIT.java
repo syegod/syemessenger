@@ -1,14 +1,13 @@
 package io.syemessenger.api.room;
 
 import static io.syemessenger.api.ErrorAssertions.assertError;
+import static io.syemessenger.api.account.AccountAssertions.login;
 import static io.syemessenger.api.room.RoomAssertions.assertRoom;
 import static io.syemessenger.api.room.RoomAssertions.createRoom;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import io.syemessenger.api.ClientSdk;
 import io.syemessenger.api.account.AccountInfo;
-import io.syemessenger.api.account.AccountSdk;
-import io.syemessenger.api.account.LoginAccountRequest;
 import io.syemessenger.environment.IntegrationEnvironmentExtension;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
@@ -23,7 +22,7 @@ public class GetRoomIT {
   void testGetRoomNotLoggedIn(ClientSdk clientSdk, AccountInfo accountInfo) {
     try {
       final var roomInfo = createRoom(accountInfo);
-      clientSdk.api(RoomSdk.class).getRoom(roomInfo.id());
+      clientSdk.roomSdk().getRoom(roomInfo.id());
       fail("Expected exception");
     } catch (Exception ex) {
       assertError(ex, 401, "Not authenticated");
@@ -33,11 +32,9 @@ public class GetRoomIT {
   @ParameterizedTest(name = "{0}")
   @MethodSource("testGetRoomFailedMethodSource")
   void testGetRoomFailed(FailedArgs args, ClientSdk clientSdk, AccountInfo accountInfo) {
-    clientSdk
-        .api(AccountSdk.class)
-        .login(new LoginAccountRequest().username(accountInfo.username()).password("test12345"));
+    login(clientSdk, accountInfo);
     try {
-      clientSdk.api(RoomSdk.class).getRoom(args.id);
+      clientSdk.roomSdk().getRoom(args.id);
       fail("Expected exception");
     } catch (Exception ex) {
       assertError(ex, args.errorCode, args.errorMessage);
@@ -55,10 +52,8 @@ public class GetRoomIT {
   @Test
   void testGetRoom(ClientSdk clientSdk, AccountInfo accountInfo) {
     final var existingRoomInfo = createRoom(accountInfo);
-    clientSdk
-        .api(AccountSdk.class)
-        .login(new LoginAccountRequest().username(accountInfo.username()).password("test12345"));
-    final var roomInfo = clientSdk.api(RoomSdk.class).getRoom(existingRoomInfo.id());
+    login(clientSdk, accountInfo);
+    final var roomInfo = clientSdk.roomSdk().getRoom(existingRoomInfo.id());
     assertRoom(existingRoomInfo, roomInfo);
   }
 }

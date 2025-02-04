@@ -2,6 +2,7 @@ package io.syemessenger.api.room;
 
 import static io.syemessenger.api.ErrorAssertions.assertError;
 import static io.syemessenger.api.account.AccountAssertions.createAccount;
+import static io.syemessenger.api.account.AccountAssertions.login;
 import static io.syemessenger.api.room.RoomAssertions.createRoom;
 import static io.syemessenger.api.room.RoomAssertions.joinRoom;
 import static io.syemessenger.environment.AssertionUtils.assertCollections;
@@ -17,8 +18,6 @@ import io.syemessenger.api.OrderBy;
 import io.syemessenger.api.OrderBy.Direction;
 import io.syemessenger.api.account.AccountAssertions;
 import io.syemessenger.api.account.AccountInfo;
-import io.syemessenger.api.account.AccountSdk;
-import io.syemessenger.api.account.LoginAccountRequest;
 import io.syemessenger.environment.IntegrationEnvironmentExtension;
 import io.syemessenger.environment.OffsetLimit;
 import java.util.ArrayList;
@@ -42,7 +41,7 @@ public class GetRoomMembersIT {
   @Test
   void testGetRoomMembersNotLoggedIn(ClientSdk clientSdk) {
     try {
-      clientSdk.api(RoomSdk.class).getRoomMembers(new GetRoomMembersRequest());
+      clientSdk.roomSdk().getRoomMembers(new GetRoomMembersRequest());
       fail("Expected exception");
     } catch (Exception ex) {
       assertError(ex, 401, "Not authenticated");
@@ -52,11 +51,9 @@ public class GetRoomMembersIT {
   @ParameterizedTest(name = "{0}")
   @MethodSource("testGetRoomMembersFailedMethodSource")
   void testGetRoomMembersFailed(FailedArgs args, ClientSdk clientSdk, AccountInfo accountInfo) {
-    clientSdk
-        .api(AccountSdk.class)
-        .login(new LoginAccountRequest().username(accountInfo.username()).password("test12345"));
+    login(clientSdk, accountInfo);
     try {
-      clientSdk.api(RoomSdk.class).getRoomMembers(args.request);
+      clientSdk.roomSdk().getRoomMembers(args.request);
       fail("Expected exception");
     } catch (Exception ex) {
       assertError(ex, args.errorCode, args.errorMessage);
@@ -100,9 +97,7 @@ public class GetRoomMembersIT {
     final var offset = request.offset() != null ? request.offset() : 0;
     final var limit = request.limit() != null ? request.limit() : 50;
 
-    clientSdk
-        .api(AccountSdk.class)
-        .login(new LoginAccountRequest().username(accountInfo.username()).password("test12345"));
+    login(clientSdk, accountInfo);
 
     final var roomInfo = createRoom(accountInfo);
     request.roomId(roomInfo.id());
@@ -117,7 +112,7 @@ public class GetRoomMembersIT {
     final var expectedRoomMembers =
         roomMembers.stream().sorted(args.comparator).skip(offset).limit(limit).toList();
 
-    final var response = clientSdk.api(RoomSdk.class).getRoomMembers(request);
+    final var response = clientSdk.roomSdk().getRoomMembers(request);
     assertEquals(roomMembers.size(), response.totalCount(), "totalCount");
     assertCollections(
         expectedRoomMembers, response.accountInfos(), AccountAssertions::assertAccount);
