@@ -30,7 +30,7 @@ public class AccountAssertions {
         consumer.accept(request);
       }
 
-      return clientSdk.api(AccountSdk.class).createAccount(request);
+      return clientSdk.accountSdk().createAccount(request);
     }
   }
 
