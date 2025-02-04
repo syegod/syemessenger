@@ -6,6 +6,7 @@ import static io.syemessenger.environment.AssertionUtils.assertCollections;
 import static io.syemessenger.environment.AssertionUtils.getFields;
 import static io.syemessenger.environment.AssertionUtils.toComparator;
 import static io.syemessenger.environment.CounterUtils.nextLong;
+import static io.syemessenger.environment.IntegrationEnvironment.cleanTables;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -21,6 +22,7 @@ import io.syemessenger.environment.OffsetLimit;
 import java.util.Comparator;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import javax.sql.DataSource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -38,7 +40,8 @@ public class ListRoomsIT {
   private AccountInfo accountInfo;
 
   @BeforeEach
-  void beforeEach() {
+  void beforeEach(DataSource dataSource) {
+    cleanTables(dataSource);
     clientSdk = new ClientSdk();
     accountSdk = clientSdk.api(AccountSdk.class);
     roomSdk = clientSdk.api(RoomSdk.class);

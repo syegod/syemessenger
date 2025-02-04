@@ -43,13 +43,15 @@ public class IntegrationEnvironmentExtension
   public boolean supportsParameter(
       ParameterContext parameterContext, ExtensionContext extensionContext)
       throws ParameterResolutionException {
-    return false;
+    Class<?> type = parameterContext.getParameter().getType();
+    return PARAMETERS_TO_RESOLVE.keySet().stream().anyMatch(type::isAssignableFrom);
   }
 
   @Override
   public Object resolveParameter(
       ParameterContext parameterContext, ExtensionContext extensionContext)
       throws ParameterResolutionException {
-    return null;
+    Class<?> type = parameterContext.getParameter().getType();
+    return PARAMETERS_TO_RESOLVE.get(type).get();
   }
 }
