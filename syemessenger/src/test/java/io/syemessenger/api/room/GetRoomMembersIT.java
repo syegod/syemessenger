@@ -8,6 +8,7 @@ import static io.syemessenger.environment.AssertionUtils.assertCollections;
 import static io.syemessenger.environment.AssertionUtils.getFields;
 import static io.syemessenger.environment.AssertionUtils.toComparator;
 import static io.syemessenger.environment.CounterUtils.nextLong;
+import static io.syemessenger.environment.IntegrationEnvironment.cleanTables;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -18,14 +19,12 @@ import io.syemessenger.api.account.AccountAssertions;
 import io.syemessenger.api.account.AccountInfo;
 import io.syemessenger.api.account.AccountSdk;
 import io.syemessenger.api.account.LoginAccountRequest;
-import io.syemessenger.environment.CloseHelper;
 import io.syemessenger.environment.IntegrationEnvironmentExtension;
 import io.syemessenger.environment.OffsetLimit;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.stream.Stream;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
+import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -36,34 +35,15 @@ import org.junit.jupiter.params.provider.MethodSource;
 @ExtendWith(IntegrationEnvironmentExtension.class)
 public class GetRoomMembersIT {
 
-  private ClientSdk clientSdk;
-  private AccountSdk accountSdk;
-  private RoomSdk roomSdk;
-  private static AccountInfo accountInfo;
-  private static RoomInfo existingRoomInfo;
-
-  @BeforeAll
-  static void beforeAll() {
-    accountInfo = createAccount();
-    existingRoomInfo = createRoom(accountInfo);
-  }
-
   @BeforeEach
-  void beforeEach() {
-    clientSdk = new ClientSdk();
-    accountSdk = clientSdk.api(AccountSdk.class);
-    roomSdk = clientSdk.api(RoomSdk.class);
-  }
-
-  @AfterEach
-  void afterEach() {
-    CloseHelper.close(clientSdk);
+  void beforeEach(DataSource dataSource) {
+    cleanTables(dataSource);
   }
 
   @Test
-  void testGetRoomMembersNotLoggedIn() {
-    try {
-      roomSdk.getRoomMembers(new GetRoomMembersRequest());
+  void testGetRoomMembersNotLoggedIn(ClientSdk clientSdk) {
+    try (clientSdk) {
+      clientSdk.api(RoomSdk.class).getRoomMembers(new GetRoomMembersRequest());
       fail("Expected exception");
     } catch (Exception ex) {
       assertError(ex, 401, "Not authenticated");
@@ -73,14 +53,22 @@ public class GetRoomMembersIT {
   @ParameterizedTest(name = "{0}")
   @MethodSource("testGetRoomMembersFailedMethodSource")
   void testGetRoomMembersFailed(
-      String test, GetRoomMembersRequest request, int errorCode, String errorMessage) {
-    accountSdk.login(
-        new LoginAccountRequest().username(accountInfo.username()).password("test12345"));
-    try {
-      roomSdk.getRoomMembers(request);
-      fail("Expected exception");
-    } catch (Exception ex) {
-      assertError(ex, errorCode, errorMessage);
+      String test,
+      GetRoomMembersRequest request,
+      int errorCode,
+      String errorMessage,
+      ClientSdk clientSdk,
+      AccountInfo accountInfo) {
+    try (clientSdk) {
+      clientSdk
+          .api(AccountSdk.class)
+          .login(new LoginAccountRequest().username(accountInfo.username()).password("test12345"));
+      try {
+        clientSdk.api(RoomSdk.class).getRoomMembers(request);
+        fail("Expected exception");
+      } catch (Exception ex) {
+        assertError(ex, errorCode, errorMessage);
+      }
     }
   }
 
@@ -93,17 +81,17 @@ public class GetRoomMembersIT {
             "Missing or invalid: roomId"),
         Arguments.of(
             "Offset is negative",
-            new GetRoomMembersRequest().roomId(existingRoomInfo.id()).offset(-50),
+            new GetRoomMembersRequest().roomId(10L).offset(-50),
             400,
             "Missing or invalid: offset"),
         Arguments.of(
             "Limit is negative",
-            new GetRoomMembersRequest().roomId(existingRoomInfo.id()).limit(-50),
+            new GetRoomMembersRequest().roomId(10L).limit(-50),
             400,
             "Missing or invalid: limit"),
         Arguments.of(
             "Limit is over than max",
-            new GetRoomMembersRequest().roomId(existingRoomInfo.id()).limit(60),
+            new GetRoomMembersRequest().roomId(10L).limit(60),
             400,
             "Missing or invalid: limit"));
   }
@@ -111,32 +99,39 @@ public class GetRoomMembersIT {
   @ParameterizedTest(name = "{0}")
   @MethodSource("testGetRoomMembersMethodSource")
   void testGetRoomMembers(
-      String test, GetRoomMembersRequest request, Comparator<Object> comparator) {
-    final int n = 25;
-    final var offset = request.offset() != null ? request.offset() : 0;
-    final var limit = request.limit() != null ? request.limit() : 50;
+      String test,
+      GetRoomMembersRequest request,
+      Comparator<Object> comparator,
+      ClientSdk clientSdk,
+      AccountInfo accountInfo) {
+    try (clientSdk) {
+      final int n = 25;
+      final var offset = request.offset() != null ? request.offset() : 0;
+      final var limit = request.limit() != null ? request.limit() : 50;
 
-    accountSdk.login(
-        new LoginAccountRequest().username(accountInfo.username()).password("test12345"));
+      clientSdk
+          .api(AccountSdk.class)
+          .login(new LoginAccountRequest().username(accountInfo.username()).password("test12345"));
 
-    final var roomInfo = createRoom(accountInfo);
-    request.roomId(roomInfo.id());
-    final var roomMembers = new ArrayList<AccountInfo>();
-    roomMembers.add(accountInfo);
-    for (int i = 0; i < n; i++) {
-      final var account = createAccount(r -> r.username("username@" + nextLong()));
-      joinRoom(roomInfo.name(), account.username());
-      roomMembers.add(account);
+      final var roomInfo = createRoom(accountInfo);
+      request.roomId(roomInfo.id());
+      final var roomMembers = new ArrayList<AccountInfo>();
+      roomMembers.add(accountInfo);
+      for (int i = 0; i < n; i++) {
+        final var account = createAccount(r -> r.username("username@" + nextLong()));
+        joinRoom(roomInfo.name(), account.username());
+        roomMembers.add(account);
+      }
+
+      final var expectedRoomMembers =
+          roomMembers.stream().sorted(comparator).skip(offset).limit(limit).toList();
+
+      final var response = clientSdk.api(RoomSdk.class).getRoomMembers(request);
+      // TODO: figure out what is expected total count
+      assertEquals(roomMembers.size(), response.totalCount(), "totalCount");
+      assertCollections(
+          expectedRoomMembers, response.accountInfos(), AccountAssertions::assertAccount);
     }
-
-    final var expectedRoomMembers =
-        roomMembers.stream().sorted(comparator).skip(offset).limit(limit).toList();
-
-    final var response = roomSdk.getRoomMembers(request);
-    //TODO: figure out what is expected total count
-    assertEquals(roomMembers.size(), response.totalCount(), "totalCount");
-    assertCollections(
-        expectedRoomMembers, response.accountInfos(), AccountAssertions::assertAccount);
   }
 
   private static Stream<Arguments> testGetRoomMembersMethodSource() {

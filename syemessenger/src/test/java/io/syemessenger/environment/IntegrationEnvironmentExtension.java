@@ -1,5 +1,8 @@
 package io.syemessenger.environment;
 
+import io.syemessenger.api.ClientSdk;
+import io.syemessenger.api.account.AccountAssertions;
+import io.syemessenger.api.account.AccountInfo;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;
@@ -32,6 +35,8 @@ public class IntegrationEnvironmentExtension
 
     PARAMETERS_TO_RESOLVE.put(IntegrationEnvironment.class, () -> environment);
     PARAMETERS_TO_RESOLVE.put(DataSource.class, () -> environment.getBean(DataSource.class));
+    PARAMETERS_TO_RESOLVE.put(ClientSdk.class, ClientSdk::new);
+    PARAMETERS_TO_RESOLVE.put(AccountInfo.class, AccountAssertions::createAccount);
   }
 
   @Override
