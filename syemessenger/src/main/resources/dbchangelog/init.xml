@@ -55,11 +55,11 @@
     <createTable tableName="blocked_users">
       <column name="room_id" type="bigint">
         <constraints nullable="false" foreignKeyName="fk_blocked_users_room"
-          references="rooms(id)"/>
+          references="rooms(id)" deleteCascade="true"/>
       </column>
       <column name="account_id" type="bigint">
         <constraints nullable="false" foreignKeyName="fk_blocked_users_account"
-          references="accounts(id)"/>
+          references="accounts(id)" deleteCascade="true"/>
       </column>
     </createTable>
     <addPrimaryKey tableName="blocked_users" columnNames="room_id, account_id"/>
@@ -70,8 +70,13 @@
       <column name="id" type="bigserial">
         <constraints primaryKey="true"/>
       </column>
-      <column name="sender_id" type="bigint"/>
-      <column name="room_id" type="bigint"/>
+      <column name="sender_id" type="bigint">
+        <constraints nullable="false" foreignKeyName="fk_messages_sender"
+          references="accounts(id)"/>
+      </column>
+      <column name="room_id" type="bigint">
+        <constraints nullable="false" foreignKeyName="fk_messages_room" references="rooms(id)"/>
+      </column>
       <column name="message" type="varchar"/>
       <column name="timestamp" type="timestamp without time zone"/>
     </createTable>
