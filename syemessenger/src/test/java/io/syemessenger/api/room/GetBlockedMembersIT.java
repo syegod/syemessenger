@@ -22,7 +22,6 @@ import io.syemessenger.environment.IntegrationEnvironmentExtension;
 import io.syemessenger.environment.OffsetLimit;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.List;
 import java.util.stream.Stream;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
