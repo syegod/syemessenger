@@ -1,15 +1,11 @@
 package io.syemessenger.api.room.repository;
 
 import io.syemessenger.api.account.repository.Account;
-
 import java.util.List;
-
-import jakarta.persistence.Tuple;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.NativeQuery;
-import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.query.Param;
 import org.springframework.transaction.annotation.Transactional;
@@ -50,4 +46,8 @@ public interface RoomRepository extends CrudRepository<Room, Long> {
 
   @NativeQuery(value = "SELECT * FROM rooms")
   Page<Room> findAll(Pageable pageable);
+  
+  @NativeQuery("SELECT * FROM accounts a JOIN blocked_users bu ON bu.account_id = a.id "
+      + "WHERE bu.room_id = :roomId")
+  Page<Account> findBlockedMembers(@Param("roomId") Long roomId, Pageable pageable);
 }

@@ -3,7 +3,9 @@ package io.syemessenger.api.room;
 import static io.syemessenger.api.Pageables.toPageable;
 
 import io.syemessenger.api.ServiceMessage;
+import io.syemessenger.api.account.AccountInfo;
 import io.syemessenger.api.account.AccountMappers;
+import io.syemessenger.api.account.repository.Account;
 import io.syemessenger.api.account.repository.AccountRepository;
 import io.syemessenger.api.room.repository.Room;
 import io.syemessenger.api.room.repository.RoomRepository;
@@ -12,6 +14,8 @@ import jakarta.inject.Named;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
+import java.util.Optional;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.domain.Page;
 
@@ -104,7 +108,7 @@ public class RoomService {
     }
 
     if (!room.owner().id().equals(sessionContext.accountId())) {
-      sessionContext.sendError(403, "Not allowed");
+      sessionContext.sendError(403, "Not room owner");
       return;
     }
 
@@ -268,6 +272,50 @@ public class RoomService {
       return;
     }
 
+    final var offset = request.offset();
+    if (offset != null && offset < 0) {
+      sessionContext.sendError(400, "Missing or invalid: offset");
+      return;
+    }
+
+    final var limit = request.limit();
+    if (limit != null && (limit < 0 || limit > 50)) {
+      sessionContext.sendError(400, "Missing or invalid: limit");
+      return;
+    }
+
+    final var roomId = request.roomId();
+    if (roomId == null) {
+      sessionContext.sendError(400, "Missing or invalid: roomId");
+      return;
+    }
+
+    final var room = roomRepository.findById(roomId).orElse(null);
+    if (room == null) {
+      sessionContext.sendError(404, "Room not found");
+      return;
+    }
+
+    if (!room.owner().id().equals(sessionContext.accountId())) {
+      sessionContext.sendError(403, "Not room owner");
+      return;
+    }
+
+    final var pageable = toPageable(offset, limit, request.orderBy());
+
+    final var accountPage = roomRepository.findBlockedMembers(roomId, pageable);
+
+    final var accountInfos =
+        accountPage.getContent().stream().map(AccountMappers::toAccountInfo).toList();
+
+    final var response =
+        new GetBlockedMembersResponse()
+            .accountInfos(accountInfos)
+            .offset(offset)
+            .limit(limit)
+            .totalCount(accountPage.getTotalElements());
+
+    sessionContext.send(new ServiceMessage().qualifier("getBlockedMembers").data(response));
   }
 
   public void listRooms(SessionContext sessionContext, ListRoomsRequest request) {

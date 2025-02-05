@@ -8,7 +8,7 @@ public class GetBlockedMembersResponse {
   private List<AccountInfo> accountInfos;
   private Integer offset;
   private Integer limit;
-  private Integer totalCount;
+  private Long totalCount;
 
   public List<AccountInfo> accountInfos() {
     return accountInfos;
@@ -42,11 +42,11 @@ public class GetBlockedMembersResponse {
     return this;
   }
 
-  public Integer totalCount() {
+  public Long totalCount() {
     return totalCount;
   }
 
-  public GetBlockedMembersResponse totalCount(Integer totalCount) {
+  public GetBlockedMembersResponse totalCount(Long totalCount) {
     this.totalCount = totalCount;
     return this;
   }

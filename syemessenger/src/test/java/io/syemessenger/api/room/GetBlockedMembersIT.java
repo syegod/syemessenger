@@ -57,6 +57,7 @@ public class GetBlockedMembersIT {
       createRoom(accountInfo);
       login(clientSdk, accountInfo);
       clientSdk.roomSdk().getBlockedMembers(args.request);
+      fail("Expected exception");
     } catch (Exception ex) {
       assertError(ex, args.errorCode, args.errorMessage);
     }
@@ -96,6 +97,19 @@ public class GetBlockedMembersIT {
                 .orderBy(new OrderBy().field(randomAlphanumeric(10))),
             400,
             "Missing or invalid: orderBy"));
+  }
+
+  @Test
+  void testGetBlockedMembersNotRoomOwner(
+      ClientSdk clientSdk, AccountInfo accountInfo, AccountInfo anotherAccountInfo) {
+    final var roomInfo = createRoom(accountInfo);
+    login(clientSdk, anotherAccountInfo);
+    try {
+      clientSdk.roomSdk().getBlockedMembers(new GetBlockedMembersRequest().roomId(roomInfo.id()));
+      fail("Expected exception");
+    } catch (Exception ex) {
+      assertError(ex, 403, "Not room owner");
+    }
   }
 
   @SuppressWarnings("unchecked")

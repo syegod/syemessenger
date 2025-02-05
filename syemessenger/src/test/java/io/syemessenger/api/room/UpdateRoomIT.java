@@ -48,7 +48,7 @@ public class UpdateRoomIT {
               new UpdateRoomRequest().roomId(roomInfo.id()).description(randomAlphanumeric(20)));
       fail("Expected exception");
     } catch (Exception ex) {
-      assertError(ex, 403, "Not allowed");
+      assertError(ex, 403, "Not room owner");
     }
   }
 
