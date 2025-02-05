@@ -262,7 +262,42 @@ public class RoomService {
     }
   }
 
-  public void blockRoomMembers(SessionContext sessionContext, BlockMembersRequest request) {}
+  public void blockRoomMembers(SessionContext sessionContext, BlockMembersRequest request) {
+    if (!sessionContext.isLoggedIn()) {
+      sessionContext.sendError(401, "Not authenticated");
+      return;
+    }
+
+    final var roomId = request.roomId();
+    if (roomId == null) {
+      sessionContext.sendError(400, "Missing or invalid: roomId");
+      return;
+    }
+
+    final var memberIds = request.memberIds();
+    if (memberIds == null) {
+      sessionContext.sendError(400, "Missing or invalid: memberIds");
+      return;
+    }
+    if (memberIds.isEmpty()) {
+      sessionContext.sendError(400, "Missing or invalid: memberIds");
+      return;
+    }
+
+    final var room = roomRepository.findById(roomId).orElse(null);
+    if (room == null) {
+      sessionContext.sendError(404, "Room not found");
+      return;
+    }
+
+    try {
+      roomRepository.deleteRoomMembers(roomId, memberIds);
+      roomRepository.blockMembers(roomId, memberIds);
+      sessionContext.send(new ServiceMessage().qualifier("blockRoomMembers").data(roomId));
+    } catch (Exception e) {
+      sessionContext.sendError(500, e.getMessage());
+    }
+  }
 
   public void unblockRoomMembers(SessionContext sessionContext, UnblockMembersRequest request) {}
 
