@@ -1,6 +1,7 @@
 package io.syemessenger.api.room;
 
 import static io.syemessenger.api.ErrorAssertions.assertError;
+import static io.syemessenger.api.account.AccountAssertions.assertAccount;
 import static io.syemessenger.api.account.AccountAssertions.createAccount;
 import static io.syemessenger.api.account.AccountAssertions.login;
 import static io.syemessenger.api.room.RoomAssertions.createRoom;
@@ -105,7 +106,7 @@ public class BlockRoomMembersIT {
               new BlockMembersRequest().roomId(roomInfo.id()).memberIds(accountInfo.id()));
       fail("Exception expected");
     } catch (Exception ex) {
-      assertError(ex, 403, "Cannot block room owner");
+      assertError(ex, 400, "Cannot block room owner");
     }
   }
 
@@ -114,13 +115,33 @@ public class BlockRoomMembersIT {
     final var roomInfo = createRoom(accountInfo);
     login(clientSdk, accountInfo);
 
+    try {
+      clientSdk
+          .roomSdk()
+          .blockRoomMembers(
+              new BlockMembersRequest().roomId(roomInfo.id()).memberIds(5000L, 10000L));
+      fail("Exception expected");
+    } catch (Exception ex) {
+      assertError(ex, 404, "Account not found");
+    }
+  }
+
+  @Test
+  void testBlockMembersNotMember(
+      ClientSdk clientSdk, AccountInfo accountInfo, AccountInfo anotherAccountInfo) {
+    final var roomInfo = createRoom(accountInfo);
+    login(clientSdk, accountInfo);
+
     clientSdk
         .roomSdk()
-        .blockRoomMembers(new BlockMembersRequest().roomId(roomInfo.id()).memberIds(5000L, 10000L));
+        .blockRoomMembers(
+            new BlockMembersRequest().roomId(roomInfo.id()).memberIds(anotherAccountInfo.id()));
 
-    final var blockedMembersResponse =
+    final var blockedMembers =
         clientSdk.roomSdk().getBlockedMembers(new GetBlockedMembersRequest().roomId(roomInfo.id()));
-    assertEquals(0, blockedMembersResponse.totalCount(), "totalCount");
+
+    assertEquals(1, blockedMembers.totalCount(), "totalCount");
+    assertAccount(anotherAccountInfo, blockedMembers.accountInfos().getFirst());
   }
 
   @Test
