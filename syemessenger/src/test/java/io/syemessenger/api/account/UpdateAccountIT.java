@@ -2,6 +2,7 @@ package io.syemessenger.api.account;
 
 import static io.syemessenger.api.ErrorAssertions.assertError;
 import static io.syemessenger.api.account.AccountAssertions.createAccount;
+import static io.syemessenger.api.account.AccountAssertions.login;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.testcontainers.shaded.org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
@@ -13,28 +14,26 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 @ExtendWith(IntegrationEnvironmentExtension.class)
 public class UpdateAccountIT {
 
   private static AccountInfo existingAccountInfo;
-  private static AccountInfo anotherAccountInfo;
 
   @BeforeAll
   static void beforeAll() {
     existingAccountInfo = createAccount();
-    anotherAccountInfo = createAccount();
   }
 
   @Test
-  void testUpdateAccountNotLoggedIn() {
-    try (ClientSdk clientSdk = new ClientSdk()) {
-      final var api = clientSdk.api(AccountSdk.class);
+  void testUpdateAccountNotLoggedIn(ClientSdk clientSdk) {
+    try {
       final var username = randomAlphanumeric(8, 65);
       final var email = "example@gmail.com";
-      api.updateAccount(new UpdateAccountRequest().username(username).email(email));
+      clientSdk
+          .accountSdk()
+          .updateAccount(new UpdateAccountRequest().username(username).email(email));
       fail("Expected exception");
     } catch (Exception ex) {
       assertError(ex, 401, "Not authenticated");
@@ -43,88 +42,82 @@ public class UpdateAccountIT {
 
   @ParameterizedTest(name = "{0}")
   @MethodSource(value = "failedUpdateAccountMethodSource")
-  void testUpdateAccountFailed(
-      String test, UpdateAccountRequest request, int errorCode, String errorMessage) {
-    try (ClientSdk clientSdk = new ClientSdk()) {
-      final var api = clientSdk.api(AccountSdk.class);
-      api.login(
-          new LoginAccountRequest().username(existingAccountInfo.username()).password("test12345"));
-      api.updateAccount(request);
+  void testUpdateAccountFailed(FailedArgs args, ClientSdk clientSdk, AccountInfo accountInfo) {
+    try {
+      login(clientSdk, accountInfo);
+      clientSdk.accountSdk().updateAccount(args.request);
       fail("Expected exception");
     } catch (Exception ex) {
-      assertError(ex, errorCode, errorMessage);
+      assertError(ex, args.errorCode, args.errorMessage);
     }
   }
 
-  private static Stream<Arguments> failedUpdateAccountMethodSource() {
+  private record FailedArgs(
+      String test, UpdateAccountRequest request, int errorCode, String errorMessage) {}
+
+  private static Stream<?> failedUpdateAccountMethodSource() {
     return Stream.of(
-        Arguments.of(
+        new FailedArgs(
             "Username too long",
             new UpdateAccountRequest().username(randomAlphanumeric(80)),
             400,
             "Invalid: username"),
-        Arguments.of(
+        new FailedArgs(
             "Username too short",
             new UpdateAccountRequest().username(randomAlphanumeric(7)),
             400,
             "Invalid: username"),
-        Arguments.of(
+        new FailedArgs(
             "Wrong email type",
             new UpdateAccountRequest().email(randomAlphanumeric(8, 65)),
             400,
             "Invalid: email"),
-        Arguments.of(
+        new FailedArgs(
             "Email too long",
             new UpdateAccountRequest().email(randomAlphanumeric(80)),
             400,
             "Invalid: email"),
-        Arguments.of(
+        new FailedArgs(
             "Email too short",
             new UpdateAccountRequest().email(randomAlphanumeric(7)),
             400,
             "Invalid: email"),
-        Arguments.of(
+        new FailedArgs(
             "Password too long",
             new UpdateAccountRequest().password(randomAlphanumeric(80)),
             400,
             "Invalid: password"),
-        Arguments.of(
+        new FailedArgs(
             "Password too short",
             new UpdateAccountRequest().password(randomAlphanumeric(7)),
             400,
             "Invalid: password"),
-        Arguments.of(
+        new FailedArgs(
             "Updating username to already existing",
-            new UpdateAccountRequest().username(anotherAccountInfo.username()),
+            new UpdateAccountRequest().username(existingAccountInfo.username()),
             400,
             "Cannot update account: already exists"),
-        Arguments.of(
+        new FailedArgs(
             "Updating email to already existing",
-            new UpdateAccountRequest().email(anotherAccountInfo.email()),
+            new UpdateAccountRequest().email(existingAccountInfo.email()),
             400,
             "Cannot update account: already exists"));
   }
 
   @Test
-  void testUpdateAccount() {
-    try (ClientSdk clientSdk = new ClientSdk()) {
-      final var api = clientSdk.api(AccountSdk.class);
-      final var username = randomAlphanumeric(8, 65);
-      final var email = "example1@gmail.com";
-      final var password = randomAlphanumeric(8, 65);
+  void testUpdateAccount(ClientSdk clientSdk, AccountInfo accountInfo) {
+    final var accountSdk = clientSdk.accountSdk();
+    final var username = randomAlphanumeric(8, 65);
+    final var email = "example@gmail.com";
 
-      final var account =
-          api.createAccount(
-              new CreateAccountRequest().username(username).email(email).password(password));
+    login(clientSdk, accountInfo);
 
-      api.login(new LoginAccountRequest().username(account.username()).password(password));
+    final var updatedAccountInfo =
+        accountSdk.updateAccount(new UpdateAccountRequest().username(username).email(email));
 
-      final var accountInfo =
-          api.updateAccount(new UpdateAccountRequest().username(username).email(email));
-
-      assertEquals(account.id(), accountInfo.id(), "accountInfo.id: " + accountInfo.id());
-      assertEquals(username, accountInfo.username(), "username");
-      assertEquals(email, accountInfo.email(), "email");
-    }
+    assertEquals(
+        accountInfo.id(), updatedAccountInfo.id(), "accountInfo.id: " + updatedAccountInfo.id());
+    assertEquals(username, updatedAccountInfo.username(), "username");
+    assertEquals(email, updatedAccountInfo.email(), "email");
   }
 }

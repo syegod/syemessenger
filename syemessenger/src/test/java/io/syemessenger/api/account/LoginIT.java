@@ -13,7 +13,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 @ExtendWith(IntegrationEnvironmentExtension.class)
@@ -92,8 +91,7 @@ public class LoginIT {
     final var accountId =
         clientSdk
             .accountSdk()
-            .login(
-                new LoginAccountRequest().email(accountInfo.email()).password("test12345"));
+            .login(new LoginAccountRequest().email(accountInfo.email()).password("test12345"));
 
     assertEquals(accountInfo.id(), accountId, "accountId");
   }
