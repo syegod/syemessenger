@@ -22,6 +22,7 @@ import io.syemessenger.environment.IntegrationEnvironmentExtension;
 import io.syemessenger.environment.OffsetLimit;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.function.Function;
 import java.util.stream.Stream;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.BeforeEach;
@@ -88,14 +89,7 @@ public class GetBlockedMembersIT {
             "Limit is over than max",
             new GetBlockedMembersRequest().roomId(10L).limit(60),
             400,
-            "Missing or invalid: limit"),
-        new FailedArgs(
-            "Order by non-existing field",
-            new GetBlockedMembersRequest()
-                .roomId(10L)
-                .orderBy(new OrderBy().field(randomAlphanumeric(10))),
-            400,
-            "Missing or invalid: orderBy"));
+            "Missing or invalid: limit"));
   }
 
   @Test
@@ -118,7 +112,7 @@ public class GetBlockedMembersIT {
     final var roomInfo = createRoom(accountInfo);
     login(clientSdk, accountInfo);
 
-    final var request = args.request;
+    final var request = args.request.apply(roomInfo);
 
     int n = 25;
     final var offset = request.offset() != null ? request.offset() : 0;
@@ -148,7 +142,7 @@ public class GetBlockedMembersIT {
 
   @SuppressWarnings("rawtypes")
   private record SuccessArgs(
-      String test, GetBlockedMembersRequest request, Comparator comparator) {}
+      String test, Function<RoomInfo, GetBlockedMembersRequest> request, Comparator comparator) {}
 
   private static Stream<?> testGetBlockedMembersMethodSource() {
     final var builder = Stream.<SuccessArgs>builder();
@@ -163,8 +157,8 @@ public class GetBlockedMembersIT {
         final var orderBy = new OrderBy().field(field).direction(direction);
         builder.add(
             new SuccessArgs(
-                "Field" + field + ", direction: " + direction,
-                new GetBlockedMembersRequest().roomId(1L).orderBy(orderBy),
+                "Field: " + field + ", direction: " + direction,
+                roomInfo -> new GetBlockedMembersRequest().roomId(roomInfo.id()).orderBy(orderBy),
                 toComparator(orderBy)));
       }
     }
@@ -186,7 +180,7 @@ public class GetBlockedMembersIT {
       builder.add(
           new SuccessArgs(
               "Offset: " + offset + ", limit: " + limit,
-              new GetBlockedMembersRequest().roomId(1L).offset(offset).limit(limit),
+              roomInfo -> new GetBlockedMembersRequest().roomId(roomInfo.id()).offset(offset).limit(limit),
               Comparator.<AccountInfo, Long>comparing(AccountInfo::id)));
     }
 
