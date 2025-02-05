@@ -7,7 +7,7 @@ import jakarta.persistence.IdClass;
 import jakarta.persistence.Table;
 
 @Entity
-@Table(name = "blocked_users")
+@Table(name = "blocked_members")
 @IdClass(BlockedMemberId.class)
 public class BlockedMember {
 

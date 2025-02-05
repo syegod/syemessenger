@@ -6,6 +6,7 @@ import io.syemessenger.api.ServiceMessage;
 import io.syemessenger.api.account.AccountMappers;
 import io.syemessenger.api.account.repository.AccountRepository;
 import io.syemessenger.api.room.repository.BlockedMember;
+import io.syemessenger.api.room.repository.BlockedMemberId;
 import io.syemessenger.api.room.repository.BlockedRepository;
 import io.syemessenger.api.room.repository.Room;
 import io.syemessenger.api.room.repository.RoomRepository;
@@ -16,6 +17,7 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.domain.Page;
 
@@ -167,6 +169,15 @@ public class RoomService {
     final var room = roomRepository.findByName(name);
     if (room == null) {
       sessionContext.sendError(404, "Room not found");
+      return;
+    }
+
+    final var blockedMember =
+        blockedRepository
+            .findById(new BlockedMemberId().roomId(room.id()).accountId(sessionContext.accountId()))
+            .orElse(null);
+    if (blockedMember != null) {
+      sessionContext.sendError(400, "Cannot join room: blocked");
       return;
     }
 
@@ -322,7 +333,51 @@ public class RoomService {
     }
   }
 
-  public void unblockRoomMembers(SessionContext sessionContext, UnblockMembersRequest request) {}
+  public void unblockRoomMembers(SessionContext sessionContext, UnblockMembersRequest request) {
+    if (!sessionContext.isLoggedIn()) {
+      sessionContext.sendError(401, "Not authenticated");
+      return;
+    }
+
+    final var roomId = request.roomId();
+    if (roomId == null) {
+      sessionContext.sendError(400, "Missing or invalid: roomId");
+      return;
+    }
+
+    final var memberIds = request.memberIds();
+    if (memberIds == null) {
+      sessionContext.sendError(400, "Missing or invalid: memberIds");
+      return;
+    }
+    if (memberIds.isEmpty()) {
+      sessionContext.sendError(400, "Missing or invalid: memberIds");
+      return;
+    }
+
+    final var room = roomRepository.findById(roomId).orElse(null);
+    if (room == null) {
+      sessionContext.sendError(404, "Room not found");
+      return;
+    }
+
+    if (!sessionContext.accountId().equals(room.owner().id())) {
+      sessionContext.sendError(403, "Not room owner");
+      return;
+    }
+
+    final var blockedMembers = new ArrayList<BlockedMember>();
+    for (var memberId : memberIds) {
+      blockedMembers.add(new BlockedMember().roomId(roomId).accountId(memberId));
+    }
+
+    try {
+      blockedRepository.deleteAll(blockedMembers);
+      sessionContext.send(new ServiceMessage().qualifier("unblockRoomMembers").data(roomId));
+    } catch (Exception ex) {
+      sessionContext.sendError(500, ex.getMessage());
+    }
+  }
 
   public void getBlockedMembers(SessionContext sessionContext, GetBlockedMembersRequest request) {
     if (!sessionContext.isLoggedIn()) {

@@ -52,17 +52,17 @@
   </changeSet>
 
   <changeSet id="5" author="Oleh Vysochyn">
-    <createTable tableName="blocked_users">
+    <createTable tableName="blocked_members">
       <column name="room_id" type="bigint">
-        <constraints nullable="false" foreignKeyName="fk_blocked_users_room"
+        <constraints nullable="false" foreignKeyName="fk_blocked_members_room"
           references="rooms(id)" deleteCascade="true"/>
       </column>
       <column name="account_id" type="bigint">
-        <constraints nullable="false" foreignKeyName="fk_blocked_users_account"
+        <constraints nullable="false" foreignKeyName="fk_blocked_members_account"
           references="accounts(id)" deleteCascade="true"/>
       </column>
     </createTable>
-    <addPrimaryKey tableName="blocked_users" columnNames="room_id, account_id"/>
+    <addPrimaryKey tableName="blocked_members" columnNames="room_id, account_id"/>
   </changeSet>
 
   <changeSet id="6" author="Oleh Vysochyn">

@@ -85,7 +85,6 @@ public class JoinRoomIT {
     }
   }
 
-  @Disabled("https://github.com/syegod/syemessenger/issues/16")
   @Test
   void testJoinRoomBlocked(
       ClientSdk clientSdk, AccountInfo accountInfo, AccountInfo anotherAccountInfo) {

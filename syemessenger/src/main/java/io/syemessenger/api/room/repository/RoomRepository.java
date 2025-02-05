@@ -49,11 +49,7 @@ public interface RoomRepository extends CrudRepository<Room, Long> {
   Page<Room> findAll(Pageable pageable);
 
   @NativeQuery(
-      "SELECT * FROM accounts a JOIN blocked_users bu ON bu.account_id = a.id "
-          + "WHERE bu.room_id = :roomId")
+      "SELECT * FROM accounts a JOIN blocked_members bm ON bm.account_id = a.id "
+          + "WHERE bm.room_id = :roomId")
   Page<Account> findBlockedMembers(@Param("roomId") Long roomId, Pageable pageable);
-
-  @Modifying
-  @NativeQuery("INSERT INTO blocked_users VALUES (:roomId, :memberIds) ")
-  void blockMembers(@Param("roomId") Long roomId, @Param("memberIds") List<Long> memberIds);
 }

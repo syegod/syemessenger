@@ -18,7 +18,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestClassOrder;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -27,8 +26,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 public class BlockRoomMembersIT {
 
   @Test
-  void testBlockRoomMembersNotLoggedIn(ClientSdk clientSdk, AccountInfo accountInfo) {
-    final var roomInfo = createRoom(accountInfo);
+  void testBlockRoomMembersNotLoggedIn(ClientSdk clientSdk) {
 
     try {
       clientSdk.roomSdk().blockRoomMembers(new BlockMembersRequest());

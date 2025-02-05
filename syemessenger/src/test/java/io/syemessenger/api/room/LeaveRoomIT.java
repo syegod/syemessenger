@@ -87,7 +87,6 @@ public class LeaveRoomIT {
     }
   }
 
-  @Disabled("https://github.com/syegod/syemessenger/issues/16")
   @Test
   void testLeaveRoomBlocked(
       ClientSdk clientSdk, AccountInfo accountInfo, AccountInfo anotherAccountInfo) {
