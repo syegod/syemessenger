@@ -2,6 +2,7 @@ package io.syemessenger.api.account;
 
 import static io.syemessenger.api.ErrorAssertions.assertError;
 import static io.syemessenger.api.account.AccountAssertions.createAccount;
+import static io.syemessenger.api.account.AccountAssertions.login;
 import static io.syemessenger.api.room.RoomAssertions.assertRoom;
 import static io.syemessenger.api.room.RoomAssertions.createRoom;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -24,32 +25,27 @@ import org.junit.jupiter.params.provider.MethodSource;
 @ExtendWith(IntegrationEnvironmentExtension.class)
 public class GetRoomsIT {
 
-  private ClientSdk clientSdk;
-  private AccountSdk accountSdk;
-  private RoomSdk roomSdk;
-  private AccountInfo existingAccountInfo;
-  private AccountInfo anotherAccountInfo;
-  private RoomInfo existingRoomInfo;
-
-  @BeforeEach
-  void beforeEach() {
-    clientSdk = new ClientSdk();
-    accountSdk = clientSdk.api(AccountSdk.class);
-    roomSdk = clientSdk.api(RoomSdk.class);
-    existingAccountInfo = createAccount();
-    anotherAccountInfo = createAccount();
-    existingRoomInfo = createRoom(existingAccountInfo);
-  }
-
-  @AfterEach
-  void afterEach() {
-    CloseHelper.close(clientSdk);
-  }
+  //  private ClientSdk clientSdk;
+  //  private AccountSdk accountSdk;
+  //  private RoomSdk roomSdk;
+  //  private AccountInfo existingAccountInfo;
+  //  private AccountInfo anotherAccountInfo;
+  //  private RoomInfo existingRoomInfo;
+  //
+  //  @BeforeEach
+  //  void beforeEach() {
+  //    clientSdk = new ClientSdk();
+  //    accountSdk = clientSdk.api(AccountSdk.class);
+  //    roomSdk = clientSdk.api(RoomSdk.class);
+  //    existingAccountInfo = createAccount();
+  //    anotherAccountInfo = createAccount();
+  //    existingRoomInfo = createRoom(existingAccountInfo);
+  //  }
 
   @Test
-  void testGetRoomsNotLoggedIn() {
+  void testGetRoomsNotLoggedIn(ClientSdk clientSdk) {
     try {
-      accountSdk.getRooms(new GetRoomsRequest());
+      clientSdk.accountSdk().getRooms(new GetRoomsRequest());
       fail("Expected exception");
     } catch (Exception ex) {
       assertError(ex, 401, "Not authenticated");
@@ -58,31 +54,32 @@ public class GetRoomsIT {
 
   @ParameterizedTest(name = "{0}")
   @MethodSource(value = "testGetRoomsFailedMethodSource")
-  void testGetRoomsFailed(
-      String test, GetRoomsRequest request, int errorCode, String errorMessage) {
-    accountSdk.login(
-        new LoginAccountRequest().username(existingAccountInfo.username()).password("test12345"));
+  void testGetRoomsFailed(FailedArgs args, ClientSdk clientSdk, AccountInfo accountInfo) {
+    login(clientSdk, accountInfo);
     try {
-      accountSdk.getRooms(request);
+      clientSdk.accountSdk().getRooms(args.request);
       fail("Expected exception");
     } catch (Exception ex) {
-      assertError(ex, errorCode, errorMessage);
+      assertError(ex, args.errorCode, args.errorMessage);
     }
   }
 
-  private static Stream<Arguments> testGetRoomsFailedMethodSource() {
+  private record FailedArgs(
+      String test, GetRoomsRequest request, int errorCode, String errorMessage) {}
+
+  private static Stream<?> testGetRoomsFailedMethodSource() {
     return Stream.of(
-        Arguments.of(
+        new FailedArgs(
             "Offset is negative",
             new GetRoomsRequest().offset(-50),
             400,
             "Missing or invalid: offset"),
-        Arguments.of(
+        new FailedArgs(
             "Limit is negative",
             new GetRoomsRequest().limit(-50),
             400,
             "Missing or invalid: limit"),
-        Arguments.of(
+        new FailedArgs(
             "Limit is over than max",
             new GetRoomsRequest().limit(60),
             400,
@@ -90,19 +87,18 @@ public class GetRoomsIT {
   }
 
   @Test
-  void testGetRooms() {
-    accountSdk.login(
-        new LoginAccountRequest().username(existingAccountInfo.username()).password("test12345"));
-    final var rooms = accountSdk.getRooms(new GetRoomsRequest());
+  void testGetRooms(ClientSdk clientSdk, AccountInfo accountInfo) {
+    final var roomInfo = createRoom(accountInfo);
+    login(clientSdk, accountInfo);
+    final var rooms = clientSdk.accountSdk().getRooms(new GetRoomsRequest());
     assertEquals(1, rooms.totalCount());
-    assertRoom(existingRoomInfo, rooms.roomInfos().getFirst());
+    assertRoom(roomInfo, rooms.roomInfos().getFirst());
   }
 
   @Test
-  void testGetRoomsEmpty() {
-    accountSdk.login(
-        new LoginAccountRequest().username(anotherAccountInfo.username()).password("test12345"));
-    final var rooms = accountSdk.getRooms(new GetRoomsRequest());
+  void testGetRoomsEmpty(ClientSdk clientSdk, AccountInfo accountInfo) {
+    login(clientSdk, accountInfo);
+    final var rooms = clientSdk.accountSdk().getRooms(new GetRoomsRequest());
     assertEquals(0, rooms.roomInfos().size());
   }
 }

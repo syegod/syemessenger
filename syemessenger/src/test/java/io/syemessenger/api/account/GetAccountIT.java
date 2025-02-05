@@ -2,34 +2,16 @@ package io.syemessenger.api.account;
 
 import static io.syemessenger.api.ErrorAssertions.assertError;
 import static io.syemessenger.api.account.AccountAssertions.assertAccount;
-import static io.syemessenger.api.account.AccountAssertions.createAccount;
 import static io.syemessenger.api.account.AccountAssertions.login;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import io.syemessenger.api.ClientSdk;
-import io.syemessenger.environment.CloseHelper;
 import io.syemessenger.environment.IntegrationEnvironmentExtension;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 @ExtendWith(IntegrationEnvironmentExtension.class)
 public class GetAccountIT {
-
-//  private ClientSdk clientSdk;
-//  private AccountSdk accountSdk;
-//  private AccountInfo existingAccountInfo;
-//  private AccountInfo anotherAccountInfo;
-//
-//  @BeforeEach
-//  void beforeEach() {
-//    clientSdk = new ClientSdk();
-//    accountSdk = clientSdk.api(AccountSdk.class);
-//    existingAccountInfo = createAccount();
-//    anotherAccountInfo = createAccount();
-//  }
-
 
   @Test
   void testGetAccountNotLoggedIn(ClientSdk clientSdk, AccountInfo accountInfo) {
