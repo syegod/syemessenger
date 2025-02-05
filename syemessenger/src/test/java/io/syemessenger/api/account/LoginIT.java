@@ -28,26 +28,28 @@ public class LoginIT {
 
   @ParameterizedTest(name = "{0}")
   @MethodSource(value = "testLoginFailedMethodSource")
-  void testLoginFailed(
-      String test, LoginAccountRequest request, int errorCode, String errorMessage) {
-    try (ClientSdk clientSdk = new ClientSdk()) {
-      clientSdk.api(AccountSdk.class).login(request);
+  void testLoginFailed(FailedArgs args, ClientSdk clientSdk, AccountInfo accountInfo) {
+    try {
+      clientSdk.accountSdk().login(args.request);
       fail("Expected exception");
     } catch (Exception ex) {
-      assertError(ex, errorCode, errorMessage);
+      assertError(ex, args.errorCode, args.errorMessage);
     }
   }
 
-  private static Stream<Arguments> testLoginFailedMethodSource() {
+  private record FailedArgs(
+      String test, LoginAccountRequest request, int errorCode, String errorMessage) {}
+
+  private static Stream<?> testLoginFailedMethodSource() {
     return Stream.of(
-        Arguments.of(
+        new FailedArgs(
             "Login to non-existing account",
             new LoginAccountRequest()
                 .username(randomAlphanumeric(8, 65))
                 .password(randomAlphanumeric(8, 65)),
             401,
             "Login failed"),
-        Arguments.of(
+        new FailedArgs(
             "Cannot provide both username and email",
             new LoginAccountRequest()
                 .username(randomAlphanumeric(8, 65))
@@ -55,17 +57,17 @@ public class LoginIT {
                 .password(randomAlphanumeric(8, 65)),
             401,
             "Login failed"),
-        Arguments.of(
+        new FailedArgs(
             "Username and email are not provided",
             new LoginAccountRequest().password(randomAlphanumeric(8, 65)),
             401,
             "Login failed"),
-        Arguments.of(
+        new FailedArgs(
             "Password not provided",
             new LoginAccountRequest().username(randomAlphanumeric(8, 65)),
             401,
             "Login failed"),
-        Arguments.of(
+        new FailedArgs(
             "Invalid password",
             new LoginAccountRequest()
                 .username(existingAccountInfo.username())
@@ -75,32 +77,24 @@ public class LoginIT {
   }
 
   @Test
-  void testLoginByUsername() {
-    try (ClientSdk clientSdk = new ClientSdk()) {
-      final var accountId =
-          clientSdk
-              .api(AccountSdk.class)
-              .login(
-                  new LoginAccountRequest()
-                      .username(existingAccountInfo.username())
-                      .password("test12345"));
+  void testLoginByUsername(ClientSdk clientSdk, AccountInfo accountInfo) {
+    final var accountId =
+        clientSdk
+            .accountSdk()
+            .login(
+                new LoginAccountRequest().username(accountInfo.username()).password("test12345"));
 
-      assertEquals(existingAccountInfo.id(), accountId, "accountId");
-    }
+    assertEquals(accountInfo.id(), accountId, "accountId");
   }
 
   @Test
-  void testLoginByEmail() {
-    try (ClientSdk clientSdk = new ClientSdk()) {
-      final var accountId =
-          clientSdk
-              .api(AccountSdk.class)
-              .login(
-                  new LoginAccountRequest()
-                      .email(existingAccountInfo.email())
-                      .password("test12345"));
+  void testLoginByEmail(ClientSdk clientSdk, AccountInfo accountInfo) {
+    final var accountId =
+        clientSdk
+            .accountSdk()
+            .login(
+                new LoginAccountRequest().email(accountInfo.email()).password("test12345"));
 
-      assertEquals(existingAccountInfo.id(), accountId, "accountId");
-    }
+    assertEquals(accountInfo.id(), accountId, "accountId");
   }
 }
