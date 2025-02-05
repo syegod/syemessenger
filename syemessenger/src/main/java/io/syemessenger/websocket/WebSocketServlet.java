@@ -9,6 +9,8 @@ import io.syemessenger.api.account.LoginAccountRequest;
 import io.syemessenger.api.account.UpdateAccountRequest;
 import io.syemessenger.api.room.BlockMembersRequest;
 import io.syemessenger.api.room.CreateRoomRequest;
+import io.syemessenger.api.room.GetBlockedMembersRequest;
+import io.syemessenger.api.room.GetBlockedMembersResponse;
 import io.syemessenger.api.room.GetRoomMembersRequest;
 import io.syemessenger.api.room.ListRoomsRequest;
 import io.syemessenger.api.room.RemoveMembersRequest;
@@ -50,6 +52,7 @@ public class WebSocketServlet extends JettyWebSocketServlet {
               map.put("v1/syemessenger/getRoomMembers", GetRoomMembersRequest.class);
               map.put("v1/syemessenger/removeRoomMembers", RemoveMembersRequest.class);
               map.put("v1/syemessenger/blockRoomMembers", BlockMembersRequest.class);
+              map.put("v1/syemessenger/getBlockedMembers", GetBlockedMembersRequest.class);
               map.put("v1/syemessenger/unblockRoomMembers", UnblockMembersRequest.class);
               map.put("v1/syemessenger/listRooms", ListRoomsRequest.class);
             });

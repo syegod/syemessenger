@@ -21,4 +21,6 @@ public interface RoomSdk {
   ListRoomsResponse listRooms(ListRoomsRequest request);
 
   GetRoomMembersResponse getRoomMembers(GetRoomMembersRequest request);
+
+  GetBlockedMembersResponse getBlockedMembers(GetBlockedMembersRequest request);
 }

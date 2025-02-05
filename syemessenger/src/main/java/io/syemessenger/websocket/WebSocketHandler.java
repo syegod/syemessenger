@@ -10,6 +10,7 @@ import io.syemessenger.api.account.LoginAccountRequest;
 import io.syemessenger.api.account.UpdateAccountRequest;
 import io.syemessenger.api.room.BlockMembersRequest;
 import io.syemessenger.api.room.CreateRoomRequest;
+import io.syemessenger.api.room.GetBlockedMembersRequest;
 import io.syemessenger.api.room.GetRoomMembersRequest;
 import io.syemessenger.api.room.ListRoomsRequest;
 import io.syemessenger.api.room.RemoveMembersRequest;
@@ -120,6 +121,9 @@ public class WebSocketHandler {
           break;
         case "v1/syemessenger/unblockRoomMembers":
           roomService.unblockRoomMembers(sessionContext, (UnblockMembersRequest) request);
+          break;
+        case  "v1/syemessenger/getBlockedMembers":
+          roomService.getBlockedMembers(sessionContext, (GetBlockedMembersRequest) request);
           break;
         case "v1/syemessenger/listRooms":
           roomService.listRooms(sessionContext, (ListRoomsRequest) request);

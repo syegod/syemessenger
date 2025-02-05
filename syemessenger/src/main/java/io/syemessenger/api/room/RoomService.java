@@ -262,6 +262,14 @@ public class RoomService {
 
   public void unblockRoomMembers(SessionContext sessionContext, UnblockMembersRequest request) {}
 
+  public void getBlockedMembers(SessionContext sessionContext, GetBlockedMembersRequest request) {
+    if (!sessionContext.isLoggedIn()) {
+      sessionContext.sendError(401, "Not authenticated");
+      return;
+    }
+
+  }
+
   public void listRooms(SessionContext sessionContext, ListRoomsRequest request) {
     if (!sessionContext.isLoggedIn()) {
       sessionContext.sendError(401, "Not authenticated");
