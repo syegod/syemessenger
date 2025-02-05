@@ -31,50 +31,52 @@ public class CreateAccountIT {
 
   @ParameterizedTest(name = "{0}")
   @MethodSource(value = "failedAccountMethodSource")
-  void testCreateAccountFailed(
-      String test, CreateAccountRequest request, int errorCode, String errorMessage) {
-    try (ClientSdk clientSdk = new ClientSdk()) {
-      clientSdk.api(AccountSdk.class).createAccount(request);
+  void testCreateAccountFailed(FailedArgs args, ClientSdk clientSdk) {
+    try {
+      clientSdk.accountSdk().createAccount(args.request);
       fail("Expected exception");
     } catch (Exception ex) {
-      assertError(ex, errorCode, errorMessage);
+      assertError(ex, args.errorCode, args.errorMessage);
     }
   }
 
-  private static Stream<Arguments> failedAccountMethodSource() {
+  private record FailedArgs(
+      String test, CreateAccountRequest request, int errorCode, String errorMessage) {}
+
+  private static Stream<?> failedAccountMethodSource() {
     return Stream.of(
-        Arguments.of(
+        new FailedArgs(
             "All parameters are empty strings",
             new CreateAccountRequest().username("").email("").password(""),
             400,
             "Missing or invalid: username"),
-        Arguments.of(
+        new FailedArgs(
             "All parameters are null",
             new CreateAccountRequest(),
             400,
             "Missing or invalid: username"),
-        Arguments.of(
+        new FailedArgs(
             "No password",
             new CreateAccountRequest()
                 .username(randomAlphanumeric(8, 65))
                 .email("example@email.com"),
             400,
             "Missing or invalid: password"),
-        Arguments.of(
+        new FailedArgs(
             "No username",
             new CreateAccountRequest()
                 .email("example@email.com")
                 .password(randomAlphanumeric(8, 65)),
             400,
             "Missing or invalid: username"),
-        Arguments.of(
+        new FailedArgs(
             "No email",
             new CreateAccountRequest()
                 .username(randomAlphanumeric(8, 65))
                 .password(randomAlphanumeric(8, 65)),
             400,
             "Missing or invalid: email"),
-        Arguments.of(
+        new FailedArgs(
             "Username too short",
             new CreateAccountRequest()
                 .username(randomAlphanumeric(7))
@@ -82,7 +84,7 @@ public class CreateAccountIT {
                 .password(randomAlphanumeric(8, 65)),
             400,
             "Missing or invalid: username"),
-        Arguments.of(
+        new FailedArgs(
             "Username too long",
             new CreateAccountRequest()
                 .username(randomAlphanumeric(80))
@@ -90,7 +92,7 @@ public class CreateAccountIT {
                 .password(randomAlphanumeric(8, 65)),
             400,
             "Missing or invalid: username"),
-        Arguments.of(
+        new FailedArgs(
             "Wrong email type",
             new CreateAccountRequest()
                 .username(randomAlphanumeric(8, 65))
@@ -98,7 +100,7 @@ public class CreateAccountIT {
                 .password(randomAlphanumeric(8, 65)),
             400,
             "Missing or invalid: email"),
-        Arguments.of(
+        new FailedArgs(
             "Email too short",
             new CreateAccountRequest()
                 .username(randomAlphanumeric(8, 65))
@@ -106,7 +108,7 @@ public class CreateAccountIT {
                 .password(randomAlphanumeric(8, 65)),
             400,
             "Missing or invalid: email"),
-        Arguments.of(
+        new FailedArgs(
             "Email too long",
             new CreateAccountRequest()
                 .username(randomAlphanumeric(8, 65))
@@ -114,7 +116,7 @@ public class CreateAccountIT {
                 .password(randomAlphanumeric(8, 65)),
             400,
             "Missing or invalid: email"),
-        Arguments.of(
+        new FailedArgs(
             "Password too short",
             new CreateAccountRequest()
                 .username(randomAlphanumeric(8, 65))
@@ -122,7 +124,7 @@ public class CreateAccountIT {
                 .password(randomAlphanumeric(7)),
             400,
             "Missing or invalid: password"),
-        Arguments.of(
+        new FailedArgs(
             "Password too long",
             new CreateAccountRequest()
                 .username(randomAlphanumeric(8, 65))
@@ -130,7 +132,7 @@ public class CreateAccountIT {
                 .password(randomAlphanumeric(80)),
             400,
             "Missing or invalid: password"),
-        Arguments.of(
+        new FailedArgs(
             "Username already exists",
             new CreateAccountRequest()
                 .username(existingAccountInfo.username())
@@ -138,7 +140,7 @@ public class CreateAccountIT {
                 .password(randomAlphanumeric(8, 65)),
             400,
             "Cannot create account: already exists"),
-        Arguments.of(
+        new FailedArgs(
             "Email already exists",
             new CreateAccountRequest()
                 .username(randomAlphanumeric(8, 65))
@@ -149,21 +151,20 @@ public class CreateAccountIT {
   }
 
   @Test
-  void testCreateAccount() {
-    try (ClientSdk clientSdk = new ClientSdk()) {
-      final var api = clientSdk.api(AccountSdk.class);
-      String username = randomAlphanumeric(8, 65);
-      String email =
-          randomAlphanumeric(4) + "@" + randomAlphabetic(2, 10) + "." + randomAlphabetic(2, 10);
-      String password = randomAlphanumeric(8, 65);
+  void testCreateAccount(ClientSdk clientSdk) {
+    String username = randomAlphanumeric(8, 65);
+    String email =
+        randomAlphanumeric(4) + "@" + randomAlphabetic(2, 10) + "." + randomAlphabetic(2, 10);
+    String password = randomAlphanumeric(8, 65);
 
-      final AccountInfo accountInfo =
-          api.createAccount(
-              new CreateAccountRequest().username(username).email(email).password(password));
-      assertEquals(username, accountInfo.username(), "username");
-      assertEquals(email, accountInfo.email(), "email");
-      assertNotNull(accountInfo.createdAt(), "createdAt");
-      assertTrue(accountInfo.id() > 0, "accountInfo.id: " + accountInfo.id());
-    }
+    final AccountInfo accountInfo =
+        clientSdk
+            .accountSdk()
+            .createAccount(
+                new CreateAccountRequest().username(username).email(email).password(password));
+    assertEquals(username, accountInfo.username(), "username");
+    assertEquals(email, accountInfo.email(), "email");
+    assertNotNull(accountInfo.createdAt(), "createdAt");
+    assertTrue(accountInfo.id() > 0, "accountInfo.id: " + accountInfo.id());
   }
 }
