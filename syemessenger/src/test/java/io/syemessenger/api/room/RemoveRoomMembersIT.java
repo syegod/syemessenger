@@ -1,14 +1,18 @@
 package io.syemessenger.api.room;
 
 import static io.syemessenger.api.ErrorAssertions.assertError;
+import static io.syemessenger.api.account.AccountAssertions.createAccount;
 import static io.syemessenger.api.account.AccountAssertions.login;
 import static io.syemessenger.api.room.RoomAssertions.createRoom;
+import static io.syemessenger.api.room.RoomAssertions.joinRoom;
+import static io.syemessenger.environment.AssertionUtils.assertCollections;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import io.syemessenger.api.ClientSdk;
 import io.syemessenger.api.account.AccountInfo;
 import io.syemessenger.environment.IntegrationEnvironmentExtension;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeAll;
@@ -117,6 +121,32 @@ public class RemoveRoomMembersIT {
         .roomSdk()
         .removeRoomMembers(
             new RemoveMembersRequest().roomId(roomInfo.id()).memberIds(anotherAccountInfo.id()));
+
+    final var roomResponse =
+        clientSdk.roomSdk().getRoomMembers(new GetRoomMembersRequest().roomId(roomInfo.id()));
+    assertEquals(1, roomResponse.totalCount());
+  }
+
+  @Test
+  void testRemoveMultipleRoomMembers(ClientSdk clientSdk, AccountInfo accountInfo) {
+    final var roomInfo = createRoom(accountInfo);
+
+    int n = 10;
+    final var members = new ArrayList<AccountInfo>();
+    for (int i = 0; i < n; i++) {
+      final var account = createAccount();
+      joinRoom(roomInfo.name(), account.username());
+      members.add(account);
+    }
+
+    login(clientSdk, accountInfo);
+
+    clientSdk
+        .roomSdk()
+        .removeRoomMembers(
+            new RemoveMembersRequest()
+                .roomId(roomInfo.id())
+                .memberIds(members.stream().map(AccountInfo::id).toList()));
 
     final var roomResponse =
         clientSdk.roomSdk().getRoomMembers(new GetRoomMembersRequest().roomId(roomInfo.id()));
