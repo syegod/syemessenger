@@ -13,3 +13,5 @@
 *.csv
 *.log
 !.helmignore
+.idea/misc.xml
+.idea/vcs.xml
