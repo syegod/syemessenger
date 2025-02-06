@@ -66,7 +66,8 @@ public class AccountService {
 
     final var now = LocalDateTime.now(Clock.systemUTC()).truncatedTo(ChronoUnit.MILLIS);
 
-    final var hashedPassword = PasswordHashing.hash(password);
+    final var hashedPassword =
+        PasswordHasher.signPassword(password, PasswordHasher.createSecretKey());
 
     final var account =
         new Account()
@@ -138,7 +139,8 @@ public class AccountService {
         account.email(email);
       }
       if (password != null) {
-        account.passwordHash(PasswordHashing.hash(password));
+        account.passwordHash(
+            PasswordHasher.signPassword(password, PasswordHasher.createSecretKey()));
       }
 
       final var updated =
@@ -181,7 +183,7 @@ public class AccountService {
       return;
     }
 
-    if (!PasswordHashing.check(password, account.passwordHash())) {
+    if (!PasswordHasher.verifyPassword(password, account.passwordHash())) {
       sessionContext.sendError(401, "Login failed");
       return;
     }
