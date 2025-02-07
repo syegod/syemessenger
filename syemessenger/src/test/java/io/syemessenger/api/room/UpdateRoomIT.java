@@ -69,7 +69,12 @@ public class UpdateRoomIT {
       String test,
       Function<RoomInfo, UpdateRoomRequest> request,
       int errorCode,
-      String errorMessage) {}
+      String errorMessage) {
+    @Override
+    public String toString() {
+      return test;
+    }
+  }
 
   private static Stream<?> testUpdateRoomFailedMethodSource() {
     return Stream.of(

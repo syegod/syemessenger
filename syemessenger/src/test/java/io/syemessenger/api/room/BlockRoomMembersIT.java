@@ -50,7 +50,12 @@ public class BlockRoomMembersIT {
   }
 
   private record FailedArgs(
-      String test, BlockMembersRequest request, int errorCode, String errorMessage) {}
+      String test, BlockMembersRequest request, int errorCode, String errorMessage) {
+    @Override
+    public String toString() {
+      return test;
+    }
+  }
 
   private static Stream<?> testBlockRoomMembersFailedMethodSource() {
     return Stream.of(

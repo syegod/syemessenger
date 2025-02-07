@@ -69,7 +69,12 @@ public class CreateRoomIT {
   }
 
   private record FailedArgs(
-      String test, CreateRoomRequest request, int errorCode, String errorMessage) {}
+      String test, CreateRoomRequest request, int errorCode, String errorMessage) {
+    @Override
+    public String toString() {
+      return test;
+    }
+  }
 
   private static Stream<?> testCreateRoomFailedMethodSource() {
     return Stream.of(

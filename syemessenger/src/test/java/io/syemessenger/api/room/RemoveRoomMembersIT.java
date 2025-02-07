@@ -54,7 +54,12 @@ public class RemoveRoomMembersIT {
   }
 
   private record FailedArgs(
-      String test, RemoveMembersRequest request, int errorCode, String errorMessage) {}
+      String test, RemoveMembersRequest request, int errorCode, String errorMessage) {
+    @Override
+    public String toString() {
+      return test;
+    }
+  }
 
   private static Stream<?> testRemoveRoomMembersFailedMethodSource() {
     return Stream.of(

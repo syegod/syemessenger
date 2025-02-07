@@ -40,7 +40,12 @@ public class CreateAccountIT {
   }
 
   private record FailedArgs(
-      String test, CreateAccountRequest request, int errorCode, String errorMessage) {}
+      String test, CreateAccountRequest request, int errorCode, String errorMessage) {
+    @Override
+    public String toString() {
+      return test;
+    }
+  }
 
   private static Stream<?> failedAccountMethodSource() {
     return Stream.of(

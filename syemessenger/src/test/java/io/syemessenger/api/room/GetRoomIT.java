@@ -41,7 +41,12 @@ public class GetRoomIT {
     }
   }
 
-  private record FailedArgs(String test, Long id, int errorCode, String errorMessage) {}
+  private record FailedArgs(String test, Long id, int errorCode, String errorMessage) {
+    @Override
+    public String toString() {
+      return test;
+    }
+  }
 
   private static Stream<?> testGetRoomFailedMethodSource() {
     return Stream.of(

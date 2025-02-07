@@ -47,7 +47,12 @@ public class JoinRoomIT {
     }
   }
 
-  private record FailedArgs(String test, String name, int errorCode, String errorMessage) {}
+  private record FailedArgs(String test, String name, int errorCode, String errorMessage) {
+    @Override
+    public String toString() {
+      return test;
+    }
+  }
 
   private static Stream<?> testJoinRoomFailedMethodSource() {
     return Stream.of(

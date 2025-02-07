@@ -53,7 +53,12 @@ public class UpdateAccountIT {
   }
 
   private record FailedArgs(
-      String test, UpdateAccountRequest request, int errorCode, String errorMessage) {}
+      String test, UpdateAccountRequest request, int errorCode, String errorMessage) {
+    @Override
+    public String toString() {
+      return test;
+    }
+  }
 
   private static Stream<?> failedUpdateAccountMethodSource() {
     return Stream.of(

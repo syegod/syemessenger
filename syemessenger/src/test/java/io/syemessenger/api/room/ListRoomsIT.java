@@ -121,7 +121,12 @@ public class ListRoomsIT {
   }
 
   @SuppressWarnings("rawtypes")
-  private record SuccessArgs(String test, ListRoomsRequest request, Comparator comparator) {}
+  private record SuccessArgs(String test, ListRoomsRequest request, Comparator comparator) {
+    @Override
+    public String toString() {
+      return test;
+    }
+  }
 
   private static Stream<?> testListRoomsMethodSource() {
     final var builder = Stream.<SuccessArgs>builder();

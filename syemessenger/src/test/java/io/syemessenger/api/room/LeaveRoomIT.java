@@ -53,7 +53,12 @@ public class LeaveRoomIT {
     }
   }
 
-  private record FailedArgs(String test, Long id, int errorCode, String errorMessage) {}
+  private record FailedArgs(String test, Long id, int errorCode, String errorMessage) {
+    @Override
+    public String toString() {
+      return test;
+    }
+  }
 
   private static Stream<?> testLeaveRoomFailedMethodSource() {
     return Stream.of(

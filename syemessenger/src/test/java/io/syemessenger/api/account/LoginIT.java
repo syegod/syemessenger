@@ -37,7 +37,12 @@ public class LoginIT {
   }
 
   private record FailedArgs(
-      String test, LoginAccountRequest request, int errorCode, String errorMessage) {}
+      String test, LoginAccountRequest request, int errorCode, String errorMessage) {
+    @Override
+    public String toString() {
+      return test;
+    }
+  }
 
   private static Stream<?> testLoginFailedMethodSource() {
     return Stream.of(

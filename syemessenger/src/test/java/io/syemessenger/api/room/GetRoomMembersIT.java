@@ -60,7 +60,6 @@ public class GetRoomMembersIT {
     }
   }
 
-  // TODO: make ParameterizedTest to output test name
   private record FailedArgs(
       String test, GetRoomMembersRequest request, int errorCode, String errorMessage) {}
 
@@ -118,7 +117,13 @@ public class GetRoomMembersIT {
         expectedRoomMembers, response.accountInfos(), AccountAssertions::assertAccount);
   }
 
-  private record SuccessArgs(String test, GetRoomMembersRequest request, Comparator comparator) {}
+  private record SuccessArgs(String test, GetRoomMembersRequest request, Comparator comparator) {
+
+    @Override
+    public String toString() {
+      return test;
+    }
+  }
 
   private static Stream<?> testGetRoomMembersMethodSource() {
     final var builder = Stream.<SuccessArgs>builder();

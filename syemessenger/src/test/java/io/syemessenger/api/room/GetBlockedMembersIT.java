@@ -9,7 +9,6 @@ import static io.syemessenger.environment.AssertionUtils.assertCollections;
 import static io.syemessenger.environment.AssertionUtils.getFields;
 import static io.syemessenger.environment.AssertionUtils.toComparator;
 import static io.syemessenger.environment.IntegrationEnvironment.cleanTables;
-import static org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -64,7 +63,12 @@ public class GetBlockedMembersIT {
   }
 
   private record FailedArgs(
-      String test, GetBlockedMembersRequest request, int errorCode, String errorMessage) {}
+      String test, GetBlockedMembersRequest request, int errorCode, String errorMessage) {
+    @Override
+    public String toString() {
+      return test;
+    }
+  }
 
   private static Stream<?> testGetBlockedMembersFailedMethodSource() {
     return Stream.of(
@@ -142,7 +146,12 @@ public class GetBlockedMembersIT {
 
   @SuppressWarnings("rawtypes")
   private record SuccessArgs(
-      String test, Function<RoomInfo, GetBlockedMembersRequest> request, Comparator comparator) {}
+      String test, Function<RoomInfo, GetBlockedMembersRequest> request, Comparator comparator) {
+    @Override
+    public String toString() {
+      return test;
+    }
+  }
 
   private static Stream<?> testGetBlockedMembersMethodSource() {
     final var builder = Stream.<SuccessArgs>builder();
@@ -180,7 +189,8 @@ public class GetBlockedMembersIT {
       builder.add(
           new SuccessArgs(
               "Offset: " + offset + ", limit: " + limit,
-              roomInfo -> new GetBlockedMembersRequest().roomId(roomInfo.id()).offset(offset).limit(limit),
+              roomInfo ->
+                  new GetBlockedMembersRequest().roomId(roomInfo.id()).offset(offset).limit(limit),
               Comparator.<AccountInfo, Long>comparing(AccountInfo::id)));
     }
 

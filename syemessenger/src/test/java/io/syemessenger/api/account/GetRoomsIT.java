@@ -18,23 +18,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 @ExtendWith(IntegrationEnvironmentExtension.class)
 public class GetRoomsIT {
 
-  //  private ClientSdk clientSdk;
-  //  private AccountSdk accountSdk;
-  //  private RoomSdk roomSdk;
-  //  private AccountInfo existingAccountInfo;
-  //  private AccountInfo anotherAccountInfo;
-  //  private RoomInfo existingRoomInfo;
-  //
-  //  @BeforeEach
-  //  void beforeEach() {
-  //    clientSdk = new ClientSdk();
-  //    accountSdk = clientSdk.api(AccountSdk.class);
-  //    roomSdk = clientSdk.api(RoomSdk.class);
-  //    existingAccountInfo = createAccount();
-  //    anotherAccountInfo = createAccount();
-  //    existingRoomInfo = createRoom(existingAccountInfo);
-  //  }
-
   @Test
   void testGetRoomsNotLoggedIn(ClientSdk clientSdk) {
     try {
@@ -58,7 +41,12 @@ public class GetRoomsIT {
   }
 
   private record FailedArgs(
-      String test, GetRoomsRequest request, int errorCode, String errorMessage) {}
+      String test, GetRoomsRequest request, int errorCode, String errorMessage) {
+    @Override
+    public String toString() {
+      return test;
+    }
+  }
 
   private static Stream<?> testGetRoomsFailedMethodSource() {
     return Stream.of(

@@ -48,7 +48,12 @@ public class UnblockRoomMembersIT {
   }
 
   private record FailedArgs(
-      String test, UnblockMembersRequest request, int errorCode, String errorMessage) {}
+      String test, UnblockMembersRequest request, int errorCode, String errorMessage) {
+    @Override
+    public String toString() {
+      return test;
+    }
+  }
 
   private static Stream<?> testUnblockRoomMembersFailedMethodSource() {
     return Stream.of(
