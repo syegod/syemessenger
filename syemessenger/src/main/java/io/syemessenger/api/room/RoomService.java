@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Optional;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.domain.Page;
+import org.springframework.transaction.annotation.Transactional;
 
 @Named
 public class RoomService {
@@ -278,6 +279,7 @@ public class RoomService {
     }
   }
 
+  @Transactional
   public void blockRoomMembers(SessionContext sessionContext, BlockMembersRequest request) {
     if (!sessionContext.isLoggedIn()) {
       sessionContext.sendError(401, "Not authenticated");
