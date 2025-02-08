@@ -22,8 +22,12 @@ public class InvocationHandler {
     try {
       method.invoke(target, sessionContext, messageCodec.decode(message));
     } catch (InvocationTargetException e) {
-      final var ex = (ServiceException) e.getTargetException();
-      sessionContext.sendError(ex.errorCode(), ex.getMessage());
+      final var th = e.getTargetException();
+      if (th instanceof ServiceException ex) {
+        sessionContext.sendError(ex.errorCode(), ex.getMessage());
+      } else {
+        sessionContext.sendError(500, "Internal service error: " + th);
+      }
     } catch (Exception ex) {
       sessionContext.sendError(500, "Internal service error: " + ex);
     }
