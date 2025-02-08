@@ -1,5 +1,7 @@
 package io.syemessenger.api.account;
 
+import io.syemessenger.annotations.RequestController;
+import io.syemessenger.annotations.RequestHandler;
 import io.syemessenger.api.Pageables;
 import io.syemessenger.api.ServiceMessage;
 import io.syemessenger.api.account.repository.Account;
@@ -15,6 +17,7 @@ import java.util.regex.Pattern;
 import org.springframework.dao.DataAccessException;
 
 @Named
+@RequestController
 public class AccountService {
 
   private final AccountRepository accountRepository;
@@ -28,6 +31,7 @@ public class AccountService {
     this.roomRepository = roomRepository;
   }
 
+  @RequestHandler("v1/syemessenger/createAccount")
   public void createAccount(SessionContext sessionContext, CreateAccountRequest request) {
     final var username = request.username();
     if (username == null) {
@@ -90,6 +94,7 @@ public class AccountService {
     }
   }
 
+  @RequestHandler("v1/syemessenger/updateAccount")
   public void updateAccount(SessionContext sessionContext, UpdateAccountRequest request) {
     if (!sessionContext.isLoggedIn()) {
       sessionContext.sendError(401, "Not authenticated");
@@ -157,6 +162,7 @@ public class AccountService {
     }
   }
 
+  @RequestHandler("v1/syemessenger/login")
   public void login(SessionContext sessionContext, LoginAccountRequest request) {
     final var username = request.username();
     final var email = request.email();
@@ -190,6 +196,7 @@ public class AccountService {
     sessionContext.send(new ServiceMessage().qualifier("login").data(account.id()));
   }
 
+  @RequestHandler("v1/syemessenger/getAccount")
   public void getAccount(SessionContext sessionContext, Long id) {
     if (!sessionContext.isLoggedIn()) {
       sessionContext.sendError(401, "Not authenticated");
@@ -211,6 +218,7 @@ public class AccountService {
         new ServiceMessage().qualifier("getAccount").data(AccountMappers.toAccountInfo(account)));
   }
 
+  @RequestHandler("v1/syemessenger/getRooms")
   public void getRooms(SessionContext sessionContext, GetRoomsRequest request) {
     if (!sessionContext.isLoggedIn()) {
       sessionContext.sendError(401, "Not authenticated");

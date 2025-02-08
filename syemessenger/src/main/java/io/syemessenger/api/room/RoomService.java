@@ -2,6 +2,8 @@ package io.syemessenger.api.room;
 
 import static io.syemessenger.api.Pageables.toPageable;
 
+import io.syemessenger.annotations.RequestController;
+import io.syemessenger.annotations.RequestHandler;
 import io.syemessenger.api.ServiceMessage;
 import io.syemessenger.api.account.AccountMappers;
 import io.syemessenger.api.account.repository.AccountRepository;
@@ -16,13 +18,11 @@ import java.time.Clock;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.domain.Page;
-import org.springframework.transaction.annotation.Transactional;
 
 @Named
+@RequestController
 public class RoomService {
 
   private final RoomRepository roomRepository;
@@ -38,6 +38,7 @@ public class RoomService {
     this.blockedRepository = blockedRepository;
   }
 
+  @RequestHandler("v1/syemessenger/createRoom")
   public void createRoom(SessionContext sessionContext, CreateRoomRequest request) {
     if (!sessionContext.isLoggedIn()) {
       sessionContext.sendError(401, "Not authenticated");
@@ -88,6 +89,7 @@ public class RoomService {
     }
   }
 
+  @RequestHandler("v1/syemessenger/updateRoom")
   public void updateRoom(SessionContext sessionContext, UpdateRoomRequest request) {
     if (!sessionContext.isLoggedIn()) {
       sessionContext.sendError(401, "Not authenticated");
@@ -131,6 +133,7 @@ public class RoomService {
     }
   }
 
+  @RequestHandler("v1/syemessenger/getRoom")
   public void getRoom(SessionContext sessionContext, Long id) {
     if (!sessionContext.isLoggedIn()) {
       sessionContext.sendError(401, "Not authenticated");
@@ -152,6 +155,7 @@ public class RoomService {
         new ServiceMessage().qualifier("getRoom").data(RoomMappers.toRoomInfo(room)));
   }
 
+  @RequestHandler("v1/syemessenger/joinRoom")
   public void joinRoom(SessionContext sessionContext, String name) {
     if (!sessionContext.isLoggedIn()) {
       sessionContext.sendError(401, "Not authenticated");
@@ -197,6 +201,7 @@ public class RoomService {
     sessionContext.send(new ServiceMessage().qualifier("joinRoom").data(room.id()));
   }
 
+  @RequestHandler("v1/syemessenger/leaveRoom")
   public void leaveRoom(SessionContext sessionContext, Long id) {
     if (!sessionContext.isLoggedIn()) {
       sessionContext.sendError(401, "Not authenticated");
@@ -233,6 +238,7 @@ public class RoomService {
     }
   }
 
+  @RequestHandler("v1/syemessenger/removeRoomMembers")
   public void removeRoomMembers(SessionContext sessionContext, RemoveMembersRequest request) {
     if (!sessionContext.isLoggedIn()) {
       sessionContext.sendError(401, "Not authenticated");
@@ -279,7 +285,7 @@ public class RoomService {
     }
   }
 
-  @Transactional
+  @RequestHandler("v1/syemessenger/blockRoomMembers")
   public void blockRoomMembers(SessionContext sessionContext, BlockMembersRequest request) {
     if (!sessionContext.isLoggedIn()) {
       sessionContext.sendError(401, "Not authenticated");
@@ -335,6 +341,7 @@ public class RoomService {
     }
   }
 
+  @RequestHandler("v1/syemessenger/unblockRoomMembers")
   public void unblockRoomMembers(SessionContext sessionContext, UnblockMembersRequest request) {
     if (!sessionContext.isLoggedIn()) {
       sessionContext.sendError(401, "Not authenticated");
@@ -381,6 +388,7 @@ public class RoomService {
     }
   }
 
+  @RequestHandler("v1/syemessenger/getBlockedMembers")
   public void getBlockedMembers(SessionContext sessionContext, GetBlockedMembersRequest request) {
     if (!sessionContext.isLoggedIn()) {
       sessionContext.sendError(401, "Not authenticated");
@@ -433,6 +441,7 @@ public class RoomService {
     sessionContext.send(new ServiceMessage().qualifier("getBlockedMembers").data(response));
   }
 
+  @RequestHandler("v1/syemessenger/listRooms")
   public void listRooms(SessionContext sessionContext, ListRoomsRequest request) {
     if (!sessionContext.isLoggedIn()) {
       sessionContext.sendError(401, "Not authenticated");
@@ -474,6 +483,7 @@ public class RoomService {
     sessionContext.send(new ServiceMessage().qualifier("listRooms").data(listRoomsResponse));
   }
 
+  @RequestHandler("v1/syemessenger/getRoomMembers")
   public void getRoomMembers(SessionContext sessionContext, GetRoomMembersRequest request) {
     if (!sessionContext.isLoggedIn()) {
       sessionContext.sendError(401, "Not authenticated");
