@@ -2,34 +2,23 @@ package io.syemessenger.api.account;
 
 import io.syemessenger.annotations.RequestController;
 import io.syemessenger.annotations.RequestHandler;
-import io.syemessenger.api.Pageables;
 import io.syemessenger.api.ServiceException;
 import io.syemessenger.api.ServiceMessage;
-import io.syemessenger.api.account.repository.Account;
-import io.syemessenger.api.account.repository.AccountRepository;
-import io.syemessenger.api.room.RoomMappers;
-import io.syemessenger.api.room.repository.RoomRepository;
 import io.syemessenger.websocket.SessionContext;
 import jakarta.inject.Named;
-import java.time.Clock;
-import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.regex.Pattern;
-import org.springframework.dao.DataAccessException;
 
 @Named
 @RequestController
 public class AccountController {
 
-  private final AccountRepository accountRepository;
-  private final RoomRepository roomRepository;
+  private final AccountService accountService;
 
   private static final Pattern EMAIL_PATTERN =
       Pattern.compile("^[a-zA-Z0-9_!#$%&'*+/=?`{|}~^.-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
 
-  public AccountController(AccountRepository accountRepository, RoomRepository roomRepository) {
-    this.accountRepository = accountRepository;
-    this.roomRepository = roomRepository;
+  public AccountController(AccountService accountService) {
+    this.accountService = accountService;
   }
 
   @RequestHandler("v1/syemessenger/createAccount")
@@ -62,27 +51,9 @@ public class AccountController {
       throw new ServiceException(400, "Missing or invalid: password");
     }
 
-    final var now = LocalDateTime.now(Clock.systemUTC()).truncatedTo(ChronoUnit.MILLIS);
+    final var accountInfo = accountService.createAccount(request);
 
-    final var hashedPassword = PasswordHashing.hash(password);
-
-    final var account =
-        new Account()
-            .username(username)
-            .email(email)
-            .passwordHash(hashedPassword)
-            .createdAt(now)
-            .updatedAt(now);
-    try {
-      final var saved = accountRepository.save(account);
-      final var accountInfo = AccountMappers.toAccountInfo(saved);
-      sessionContext.send(new ServiceMessage().qualifier("createAccount").data(accountInfo));
-    } catch (DataAccessException e) {
-      if (e.getMessage().contains("duplicate key value violates unique constraint")) {
-        throw new ServiceException(400, "Cannot create account: already exists");
-      }
-      throw e;
-    }
+    sessionContext.send(new ServiceMessage().qualifier("createAccount").data(accountInfo));
   }
 
   @RequestHandler("v1/syemessenger/updateAccount")
@@ -115,33 +86,9 @@ public class AccountController {
       }
     }
 
-    try {
-      final var account = accountRepository.findById(sessionContext.accountId()).orElse(null);
-      if (account == null) {
-        throw new ServiceException(404, "Account not found");
-      }
+    final var accountInfo = accountService.updateAccount(request, sessionContext.accountId());
 
-      if (username != null) {
-        account.username(username);
-      }
-      if (email != null) {
-        account.email(email);
-      }
-      if (password != null) {
-        account.passwordHash(PasswordHashing.hash(password));
-      }
-
-      final var updated =
-          accountRepository.save(account.updatedAt(LocalDateTime.now(Clock.systemUTC())));
-      final var accountInfo = AccountMappers.toAccountInfo(updated);
-
-      sessionContext.send(new ServiceMessage().qualifier("updateAccount").data(accountInfo));
-    } catch (DataAccessException e) {
-      if (e.getMessage().contains("duplicate key value violates unique constraint")) {
-        throw new ServiceException(400, "Cannot update account: already exists");
-      }
-      throw e;
-    }
+    sessionContext.send(new ServiceMessage().qualifier("updateAccount").data(accountInfo));
   }
 
   @RequestHandler("v1/syemessenger/login")
@@ -160,18 +107,11 @@ public class AccountController {
       throw new ServiceException(401, "Login failed");
     }
 
-    final var account = accountRepository.findByEmailOrUsername(email, username);
-    if (account == null) {
-      throw new ServiceException(401, "Login failed");
-    }
+    final var id = accountService.login(request);
 
-    if (!PasswordHashing.check(password, account.passwordHash())) {
-      throw new ServiceException(401, "Login failed");
-    }
+    sessionContext.accountId(id);
 
-    sessionContext.accountId(account.id());
-
-    sessionContext.send(new ServiceMessage().qualifier("login").data(account.id()));
+    sessionContext.send(new ServiceMessage().qualifier("login").data(id));
   }
 
   @RequestHandler("v1/syemessenger/getAccount")
@@ -183,14 +123,10 @@ public class AccountController {
     if (id == null) {
       throw new ServiceException(400, "Missing or invalid: id");
     }
-    final var account = accountRepository.findById(id).orElse(null);
 
-    if (account == null) {
-      throw new ServiceException(404, "Account not found");
-    }
+    final var account = accountService.getAccount(id);
 
-    sessionContext.send(
-        new ServiceMessage().qualifier("getAccount").data(AccountMappers.toAccountInfo(account)));
+    sessionContext.send(new ServiceMessage().qualifier("getAccount").data(account));
   }
 
   @RequestHandler("v1/syemessenger/getRooms")
@@ -209,20 +145,9 @@ public class AccountController {
       throw new ServiceException(400, "Missing or invalid: limit");
     }
 
-    final var roomPage =
-        roomRepository.findByAccountId(
-            sessionContext.accountId(), Pageables.toPageable(offset, limit, request.orderBy()));
+    final var response = accountService.getRooms(sessionContext.accountId(), request);
 
-    final var roomInfos = roomPage.getContent().stream().map(RoomMappers::toRoomInfo).toList();
-
-    final var getRoomsResponse =
-        new GetRoomsResponse()
-            .roomInfos(roomInfos)
-            .offset(offset)
-            .limit(limit)
-            .totalCount(roomPage.getTotalElements());
-
-    sessionContext.send(new ServiceMessage().qualifier("getRooms").data(getRoomsResponse));
+    sessionContext.send(new ServiceMessage().qualifier("getRooms").data(response));
   }
 
   private static boolean isEmailValid(String email) {

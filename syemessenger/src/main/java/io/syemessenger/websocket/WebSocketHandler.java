@@ -62,7 +62,7 @@ public class WebSocketHandler {
 
       invocationHandler.invoke(sessionContext, serviceMessage);
     } catch (Exception e) {
-      LOGGER.error("[onWebSocketText] Failed to parse message [{}]", message, e);
+      LOGGER.error("[onWebSocketText] Exception onMessage [{}]", message, e);
       throw new RuntimeException(e);
     }
   }
