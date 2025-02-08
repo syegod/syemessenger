@@ -4,13 +4,13 @@ import io.syemessenger.api.Pageables;
 import io.syemessenger.api.ServiceException;
 import io.syemessenger.api.account.repository.Account;
 import io.syemessenger.api.account.repository.AccountRepository;
-import io.syemessenger.api.room.RoomMappers;
+import io.syemessenger.api.room.repository.Room;
 import io.syemessenger.api.room.repository.RoomRepository;
 import jakarta.inject.Named;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
-import org.springframework.dao.DataAccessException;
+import org.springframework.data.domain.Page;
 import org.springframework.transaction.annotation.Transactional;
 
 @Named
@@ -25,7 +25,7 @@ public class AccountService {
     this.roomRepository = roomRepository;
   }
 
-  public AccountInfo createAccount(CreateAccountRequest request) {
+  public Account createAccount(CreateAccountRequest request) {
     final var now = LocalDateTime.now(Clock.systemUTC()).truncatedTo(ChronoUnit.MILLIS);
     final var hashedPassword = PasswordHashing.hash(request.password());
 
@@ -36,44 +36,27 @@ public class AccountService {
             .passwordHash(hashedPassword)
             .createdAt(now)
             .updatedAt(now);
-    try {
-      final var saved = accountRepository.save(account);
-      return AccountMappers.toAccountInfo(saved);
-    } catch (DataAccessException e) {
-      if (e.getMessage().contains("duplicate key value violates unique constraint")) {
-        throw new ServiceException(400, "Cannot create account: already exists");
-      }
-      throw e;
-    }
+
+    return accountRepository.save(account);
   }
 
-  public AccountInfo updateAccount(UpdateAccountRequest request, Long accountId) {
-    try {
-      final var account = accountRepository.findById(accountId).orElse(null);
-      if (account == null) {
-        throw new ServiceException(404, "Account not found");
-      }
-
-      if (request.username() != null) {
-        account.username(request.username());
-      }
-      if (request.email() != null) {
-        account.email(request.email());
-      }
-      if (request.password() != null) {
-        account.passwordHash(PasswordHashing.hash(request.password()));
-      }
-
-      final var updated =
-          accountRepository.save(account.updatedAt(LocalDateTime.now(Clock.systemUTC())));
-
-      return AccountMappers.toAccountInfo(updated);
-    } catch (DataAccessException e) {
-      if (e.getMessage().contains("duplicate key value violates unique constraint")) {
-        throw new ServiceException(400, "Cannot update account: already exists");
-      }
-      throw e;
+  public Account updateAccount(UpdateAccountRequest request, Long accountId) {
+    final var account = accountRepository.findById(accountId).orElse(null);
+    if (account == null) {
+      throw new ServiceException(404, "Account not found");
     }
+
+    if (request.username() != null) {
+      account.username(request.username());
+    }
+    if (request.email() != null) {
+      account.email(request.email());
+    }
+    if (request.password() != null) {
+      account.passwordHash(PasswordHashing.hash(request.password()));
+    }
+
+    return accountRepository.save(account.updatedAt(LocalDateTime.now(Clock.systemUTC())));
   }
 
   @Transactional(readOnly = true)
@@ -92,30 +75,22 @@ public class AccountService {
   }
 
   @Transactional(readOnly = true)
-  public AccountInfo getAccount(Long id) {
+  public Account getAccount(Long id) {
     final var account = accountRepository.findById(id).orElse(null);
 
     if (account == null) {
       throw new ServiceException(404, "Account not found");
     }
 
-    return AccountMappers.toAccountInfo(account);
+    return account;
   }
 
   @Transactional(readOnly = true)
-  public GetRoomsResponse getRooms(Long id, GetRoomsRequest request) {
+  public Page<Room> getRooms(Long id, GetRoomsRequest request) {
     final var offset = request.offset();
     final var limit = request.limit();
 
-    final var roomPage =
-        roomRepository.findByAccountId(id, Pageables.toPageable(offset, limit, request.orderBy()));
-
-    final var roomInfos = roomPage.getContent().stream().map(RoomMappers::toRoomInfo).toList();
-
-    return new GetRoomsResponse()
-        .roomInfos(roomInfos)
-        .offset(offset)
-        .limit(limit)
-        .totalCount(roomPage.getTotalElements());
+    return roomRepository.findByAccountId(
+        id, Pageables.toPageable(offset, limit, request.orderBy()));
   }
 }

@@ -4,9 +4,12 @@ import io.syemessenger.annotations.RequestController;
 import io.syemessenger.annotations.RequestHandler;
 import io.syemessenger.api.ServiceException;
 import io.syemessenger.api.ServiceMessage;
+import io.syemessenger.api.account.repository.Account;
+import io.syemessenger.api.room.RoomMappers;
 import io.syemessenger.websocket.SessionContext;
 import jakarta.inject.Named;
 import java.util.regex.Pattern;
+import org.springframework.dao.DataAccessException;
 
 @Named
 @RequestController
@@ -51,9 +54,19 @@ public class AccountController {
       throw new ServiceException(400, "Missing or invalid: password");
     }
 
-    final var accountInfo = accountService.createAccount(request);
-
-    sessionContext.send(new ServiceMessage().qualifier("createAccount").data(accountInfo));
+    Account account;
+    try {
+      account = accountService.createAccount(request);
+    } catch (DataAccessException e) {
+      if (e.getMessage().contains("duplicate key value violates unique constraint")) {
+        throw new ServiceException(400, "Cannot create account: already exists");
+      }
+      throw e;
+    }
+    sessionContext.send(
+        new ServiceMessage()
+            .qualifier("createAccount")
+            .data(AccountMappers.toAccountInfo(account)));
   }
 
   @RequestHandler("v1/syemessenger/updateAccount")
@@ -86,9 +99,20 @@ public class AccountController {
       }
     }
 
-    final var accountInfo = accountService.updateAccount(request, sessionContext.accountId());
+    Account account;
+    try {
+      account = accountService.updateAccount(request, sessionContext.accountId());
+    } catch (DataAccessException e) {
+      if (e.getMessage().contains("duplicate key value violates unique constraint")) {
+        throw new ServiceException(400, "Cannot update account: already exists");
+      }
+      throw e;
+    }
 
-    sessionContext.send(new ServiceMessage().qualifier("updateAccount").data(accountInfo));
+    sessionContext.send(
+        new ServiceMessage()
+            .qualifier("updateAccount")
+            .data(AccountMappers.toAccountInfo(account)));
   }
 
   @RequestHandler("v1/syemessenger/login")
@@ -126,7 +150,8 @@ public class AccountController {
 
     final var account = accountService.getAccount(id);
 
-    sessionContext.send(new ServiceMessage().qualifier("getAccount").data(account));
+    sessionContext.send(
+        new ServiceMessage().qualifier("getAccount").data(AccountMappers.toAccountInfo(account)));
   }
 
   @RequestHandler("v1/syemessenger/getRooms")
@@ -145,7 +170,16 @@ public class AccountController {
       throw new ServiceException(400, "Missing or invalid: limit");
     }
 
-    final var response = accountService.getRooms(sessionContext.accountId(), request);
+    final var page = accountService.getRooms(sessionContext.accountId(), request);
+
+    final var roomInfos = page.getContent().stream().map(RoomMappers::toRoomInfo).toList();
+
+    final var response =
+        new GetRoomsResponse()
+            .roomInfos(roomInfos)
+            .offset(offset)
+            .limit(limit)
+            .totalCount(page.getTotalElements());
 
     sessionContext.send(new ServiceMessage().qualifier("getRooms").data(response));
   }
