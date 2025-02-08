@@ -25,7 +25,6 @@ public class AccountService {
     this.roomRepository = roomRepository;
   }
 
-
   public AccountInfo createAccount(CreateAccountRequest request) {
     final var now = LocalDateTime.now(Clock.systemUTC()).truncatedTo(ChronoUnit.MILLIS);
     final var hashedPassword = PasswordHashing.hash(request.password());
