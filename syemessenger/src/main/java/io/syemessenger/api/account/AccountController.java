@@ -3,6 +3,7 @@ package io.syemessenger.api.account;
 import io.syemessenger.annotations.RequestController;
 import io.syemessenger.annotations.RequestHandler;
 import io.syemessenger.api.Pageables;
+import io.syemessenger.api.ServiceException;
 import io.syemessenger.api.ServiceMessage;
 import io.syemessenger.api.account.repository.Account;
 import io.syemessenger.api.account.repository.AccountRepository;
@@ -18,7 +19,7 @@ import org.springframework.dao.DataAccessException;
 
 @Named
 @RequestController
-public class AccountService {
+public class AccountController {
 
   private final AccountRepository accountRepository;
   private final RoomRepository roomRepository;
@@ -26,7 +27,7 @@ public class AccountService {
   private static final Pattern EMAIL_PATTERN =
       Pattern.compile("^[a-zA-Z0-9_!#$%&'*+/=?`{|}~^.-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
 
-  public AccountService(AccountRepository accountRepository, RoomRepository roomRepository) {
+  public AccountController(AccountRepository accountRepository, RoomRepository roomRepository) {
     this.accountRepository = accountRepository;
     this.roomRepository = roomRepository;
   }
@@ -35,37 +36,30 @@ public class AccountService {
   public void createAccount(SessionContext sessionContext, CreateAccountRequest request) {
     final var username = request.username();
     if (username == null) {
-      sessionContext.sendError(400, "Missing or invalid: username");
-      return;
+      throw new ServiceException(400, "Missing or invalid: username");
     }
     if (username.length() < 8 || username.length() > 64) {
-      sessionContext.sendError(400, "Missing or invalid: username");
-      return;
+      throw new ServiceException(400, "Missing or invalid: username");
     }
 
     final var email = request.email();
     if (email == null) {
-      sessionContext.sendError(400, "Missing or invalid: email");
-      return;
+      throw new ServiceException(400, "Missing or invalid: email");
     }
     if (email.length() < 8 || email.length() > 64) {
-      sessionContext.sendError(400, "Missing or invalid: email");
-      return;
+      throw new ServiceException(400, "Missing or invalid: email");
     }
 
     if (!isEmailValid(email)) {
-      sessionContext.sendError(400, "Missing or invalid: email");
-      return;
+      throw new ServiceException(400, "Missing or invalid: email");
     }
 
     final var password = request.password();
     if (password == null) {
-      sessionContext.sendError(400, "Missing or invalid: password");
-      return;
+      throw new ServiceException(400, "Missing or invalid: password");
     }
     if (password.length() < 8 || password.length() > 64) {
-      sessionContext.sendError(400, "Missing or invalid: password");
-      return;
+      throw new ServiceException(400, "Missing or invalid: password");
     }
 
     final var now = LocalDateTime.now(Clock.systemUTC()).truncatedTo(ChronoUnit.MILLIS);
@@ -85,55 +79,46 @@ public class AccountService {
       sessionContext.send(new ServiceMessage().qualifier("createAccount").data(accountInfo));
     } catch (DataAccessException e) {
       if (e.getMessage().contains("duplicate key value violates unique constraint")) {
-        sessionContext.sendError(400, "Cannot create account: already exists");
-      } else {
-        sessionContext.sendError(400, "Cannot create account");
+        throw new ServiceException(400, "Cannot create account: already exists");
       }
-    } catch (Exception e) {
-      sessionContext.sendError(500, e.getMessage());
+      throw e;
     }
   }
 
   @RequestHandler("v1/syemessenger/updateAccount")
   public void updateAccount(SessionContext sessionContext, UpdateAccountRequest request) {
     if (!sessionContext.isLoggedIn()) {
-      sessionContext.sendError(401, "Not authenticated");
-      return;
+      throw new ServiceException(401, "Not authenticated");
     }
 
     final var username = request.username();
     if (username != null) {
       if (username.length() < 8 || username.length() > 64) {
-        sessionContext.sendError(400, "Invalid: username");
-        return;
+        throw new ServiceException(400, "Invalid: username");
       }
     }
 
     final var email = request.email();
     if (email != null) {
       if (email.length() < 8 || email.length() > 64) {
-        sessionContext.sendError(400, "Invalid: email");
-        return;
+        throw new ServiceException(400, "Invalid: email");
       }
       if (!isEmailValid(email)) {
-        sessionContext.sendError(400, "Invalid: email");
-        return;
+        throw new ServiceException(400, "Invalid: email");
       }
     }
 
     final var password = request.password();
     if (password != null) {
       if (password.length() < 8 || password.length() > 64) {
-        sessionContext.sendError(400, "Invalid: password");
-        return;
+        throw new ServiceException(400, "Invalid: password");
       }
     }
 
     try {
       final var account = accountRepository.findById(sessionContext.accountId()).orElse(null);
       if (account == null) {
-        sessionContext.sendError(404, "Account not found");
-        return;
+        throw new ServiceException(404, "Account not found");
       }
 
       if (username != null) {
@@ -153,12 +138,9 @@ public class AccountService {
       sessionContext.send(new ServiceMessage().qualifier("updateAccount").data(accountInfo));
     } catch (DataAccessException e) {
       if (e.getMessage().contains("duplicate key value violates unique constraint")) {
-        sessionContext.sendError(400, "Cannot update account: already exists");
-      } else {
-        sessionContext.sendError(400, "Cannot update account");
+        throw new ServiceException(400, "Cannot update account: already exists");
       }
-    } catch (Exception e) {
-      sessionContext.sendError(500, e.getMessage());
+      throw e;
     }
   }
 
@@ -167,51 +149,44 @@ public class AccountService {
     final var username = request.username();
     final var email = request.email();
     if (username != null && email != null) {
-      sessionContext.sendError(401, "Login failed");
-      return;
+      throw new ServiceException(401, "Login failed");
     }
     if (username == null && email == null) {
-      sessionContext.sendError(401, "Login failed");
-      return;
+      throw new ServiceException(401, "Login failed");
     }
 
     final var password = request.password();
     if (password == null) {
-      sessionContext.sendError(401, "Login failed");
-      return;
+      throw new ServiceException(401, "Login failed");
     }
 
     final var account = accountRepository.findByEmailOrUsername(email, username);
     if (account == null) {
-      sessionContext.sendError(401, "Login failed");
-      return;
+      throw new ServiceException(401, "Login failed");
     }
 
     if (!PasswordHashing.check(password, account.passwordHash())) {
-      sessionContext.sendError(401, "Login failed");
-      return;
+      throw new ServiceException(401, "Login failed");
     }
 
     sessionContext.accountId(account.id());
+
     sessionContext.send(new ServiceMessage().qualifier("login").data(account.id()));
   }
 
   @RequestHandler("v1/syemessenger/getAccount")
   public void getAccount(SessionContext sessionContext, Long id) {
     if (!sessionContext.isLoggedIn()) {
-      sessionContext.sendError(401, "Not authenticated");
-      return;
+      throw new ServiceException(401, "Not authenticated");
     }
 
     if (id == null) {
-      sessionContext.sendError(400, "Missing or invalid: id");
-      return;
+      throw new ServiceException(400, "Missing or invalid: id");
     }
     final var account = accountRepository.findById(id).orElse(null);
 
     if (account == null) {
-      sessionContext.sendError(404, "Account not found");
-      return;
+      throw new ServiceException(404, "Account not found");
     }
 
     sessionContext.send(
@@ -221,20 +196,17 @@ public class AccountService {
   @RequestHandler("v1/syemessenger/getRooms")
   public void getRooms(SessionContext sessionContext, GetRoomsRequest request) {
     if (!sessionContext.isLoggedIn()) {
-      sessionContext.sendError(401, "Not authenticated");
-      return;
+      throw new ServiceException(401, "Not authenticated");
     }
 
     final var offset = request.offset();
     if (offset != null && offset < 0) {
-      sessionContext.sendError(400, "Missing or invalid: offset");
-      return;
+      throw new ServiceException(400, "Missing or invalid: offset");
     }
 
     final var limit = request.limit();
     if (limit != null && (limit < 0 || limit > 50)) {
-      sessionContext.sendError(400, "Missing or invalid: limit");
-      return;
+      throw new ServiceException(400, "Missing or invalid: limit");
     }
 
     final var roomPage =
