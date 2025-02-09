@@ -135,6 +135,7 @@ public class ListRoomsIT {
     final Direction[] directions = {Direction.ASC, Direction.DESC, null};
 
     // Sort by fields
+
     for (String field : fields) {
       for (Direction direction : directions) {
         final var orderBy = new OrderBy().field(field).direction(direction);
