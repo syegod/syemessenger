@@ -2,13 +2,23 @@ package io.syemessenger.api.account;
 
 import static io.syemessenger.api.ErrorAssertions.assertError;
 import static io.syemessenger.api.account.AccountAssertions.login;
-import static io.syemessenger.api.room.RoomAssertions.assertRoom;
-import static io.syemessenger.api.room.RoomAssertions.createRoom;
+import static io.syemessenger.environment.AssertionUtils.assertCollections;
+import static io.syemessenger.environment.AssertionUtils.getFields;
+import static io.syemessenger.environment.AssertionUtils.toComparator;
+import static io.syemessenger.environment.CounterUtils.nextLong;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import io.syemessenger.api.ClientSdk;
+import io.syemessenger.api.OrderBy;
+import io.syemessenger.api.OrderBy.Direction;
+import io.syemessenger.api.room.CreateRoomRequest;
+import io.syemessenger.api.room.RoomAssertions;
+import io.syemessenger.api.room.RoomInfo;
 import io.syemessenger.environment.IntegrationEnvironmentExtension;
+import io.syemessenger.environment.OffsetLimit;
+import java.util.Comparator;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -67,13 +77,88 @@ public class GetRoomsIT {
             "Missing or invalid: limit"));
   }
 
-  @Test
-  void testGetRooms(ClientSdk clientSdk, AccountInfo accountInfo) {
-    final var roomInfo = createRoom(accountInfo);
+  @SuppressWarnings("unchecked")
+  @ParameterizedTest(name = "{0}")
+  @MethodSource("testGetRoomsMethodSource")
+  void testGetRooms(SuccessArgs args, ClientSdk clientSdk, AccountInfo accountInfo) {
+    final int n = 25;
+    final var request = args.request;
+    final var offset = request.offset() != null ? request.offset() : 0;
+    final var limit = request.limit() != null ? request.limit() : 50;
+
     login(clientSdk, accountInfo);
-    final var rooms = clientSdk.accountSdk().getRooms(new GetRoomsRequest());
-    assertEquals(1, rooms.totalCount());
-    assertRoom(roomInfo, rooms.roomInfos().getFirst());
+
+    final var roomInfos =
+        IntStream.range(0, n)
+            .mapToObj(
+                v -> {
+                  final var l = nextLong();
+                  return clientSdk
+                      .roomSdk()
+                      .createRoom(
+                          new CreateRoomRequest()
+                              .name("room@" + l)
+                              .description("description@" + l));
+                })
+            .sorted(args.comparator)
+            .toList();
+
+    final var expectedRoomInfos = roomInfos.stream().skip(offset).limit(limit).toList();
+
+    final var response = clientSdk.accountSdk().getRooms(request);
+    assertEquals(roomInfos.size(), response.totalCount(), "totalCount");
+    assertCollections(expectedRoomInfos, response.roomInfos(), RoomAssertions::assertRoom);
+  }
+
+  @SuppressWarnings("rawtypes")
+  private record SuccessArgs(String test, GetRoomsRequest request, Comparator comparator) {
+    @Override
+    public String toString() {
+      return test;
+    }
+  }
+
+  private static Stream<?> testGetRoomsMethodSource() {
+    final var builder = Stream.<SuccessArgs>builder();
+
+    final String[] fields = getFields(RoomInfo.class);
+    final Direction[] directions = {Direction.ASC, Direction.DESC, null};
+
+    // Sort by fields
+
+    for (String field : fields) {
+      for (Direction direction : directions) {
+        final var orderBy = new OrderBy().field(field).direction(direction);
+        builder.add(
+            new SuccessArgs(
+                "Field: " + field + ", direction: " + direction,
+                new GetRoomsRequest().orderBy(orderBy),
+                toComparator(orderBy)));
+      }
+    }
+
+    // Pagination
+
+    final OffsetLimit[] offsetLimits = {
+      new OffsetLimit(null, null),
+      new OffsetLimit(null, 5),
+      new OffsetLimit(10, null),
+      new OffsetLimit(5, 10),
+      new OffsetLimit(10, 5),
+      new OffsetLimit(20, 10)
+    };
+
+    for (OffsetLimit offsetLimit : offsetLimits) {
+      final var offset = offsetLimit.offset();
+      final var limit = offsetLimit.limit();
+      builder.add(
+          new SuccessArgs(
+              "Offset: " + offset + ", limit: " + limit,
+              new GetRoomsRequest().offset(offset).limit(limit),
+              Comparator.<RoomInfo, Long>comparing(RoomInfo::id)));
+    }
+
+    return builder.build();
   }
 
   @Test
