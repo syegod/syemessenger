@@ -11,6 +11,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.WebSocket;
 import java.net.http.WebSocket.Listener;
+import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletionStage;
@@ -50,7 +51,7 @@ public class ClientSdk implements AutoCloseable {
         .thenRun(() -> System.out.println("WebSocket closed"));
   }
 
-  private Object pollResponse() {
+  private Object pollResponse(UUID cid) {
     final ServiceMessage response;
     try {
       response = messageQueue.poll(3, TimeUnit.SECONDS);
@@ -59,6 +60,11 @@ public class ClientSdk implements AutoCloseable {
     }
     if (response == null) {
       throw new RuntimeException("Poll failed");
+    }
+
+    if (!response.cid().equals(cid)) {
+      throw new RuntimeException(
+          "Invalid cid: request = " + cid + ", response = " + response.cid());
     }
 
     final var data = messageCodec.decode(response);
@@ -94,9 +100,9 @@ public class ClientSdk implements AutoCloseable {
               }
               final var request = args != null ? args[0] : null;
               final var name = method.getName();
-              final var message = new ServiceMessage().qualifier(name).data(request);
-              sendText(message);
-              return pollResponse();
+              final var cid = UUID.randomUUID();
+              sendText(new ServiceMessage().cid(cid).qualifier(name).data(request));
+              return pollResponse(cid);
             });
   }
 

@@ -2,19 +2,19 @@ package io.syemessenger;
 
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import io.syemessenger.api.ServiceMessage;
+import jakarta.inject.Named;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Consumer;
 
+@Named
 public class MessageCodec {
 
   private final JsonMapper jsonMapper;
-  private final Map<String, Class<?>> qualifierMap;
 
-  public MessageCodec(JsonMapper jsonMapper, Consumer<Map<String, Class<?>>> consumer) {
+  private final Map<String, Class<?>> qualifierMap = new ConcurrentHashMap<>();
+
+  public MessageCodec(JsonMapper jsonMapper) {
     this.jsonMapper = jsonMapper;
-    qualifierMap = new ConcurrentHashMap<>();
-    consumer.accept(qualifierMap);
   }
 
   public Object decode(ServiceMessage message) {
@@ -25,5 +25,9 @@ public class MessageCodec {
       throw new IllegalArgumentException("Cannot find qualifier: " + qualifier);
     }
     return jsonMapper.convertValue(data, type);
+  }
+
+  public void register(String qualifier, Class<?> dataType) {
+    qualifierMap.put(qualifier, dataType);
   }
 }

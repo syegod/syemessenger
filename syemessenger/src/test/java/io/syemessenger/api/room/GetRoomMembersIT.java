@@ -87,6 +87,19 @@ public class GetRoomMembersIT {
             "Missing or invalid: limit"));
   }
 
+  @Test
+  void testGetRoomMembersNotMember(
+      ClientSdk clientSdk, AccountInfo accountInfo, AccountInfo anotherAccountInfo) {
+    final var roomInfo = createRoom(accountInfo);
+    login(clientSdk, anotherAccountInfo);
+    try {
+      clientSdk.roomSdk().getRoomMembers(new GetRoomMembersRequest().roomId(roomInfo.id()));
+      fail("Expected exception");
+    } catch (Exception ex) {
+      assertError(ex, 403, "Not room member");
+    }
+  }
+
   @SuppressWarnings("unchecked")
   @ParameterizedTest(name = "{0}")
   @MethodSource("testGetRoomMembersMethodSource")

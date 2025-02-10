@@ -1,22 +1,10 @@
 package io.syemessenger.websocket;
 
 import com.fasterxml.jackson.databind.json.JsonMapper;
-import io.syemessenger.MessageCodec;
+import io.syemessenger.ServiceRegistry;
+import io.syemessenger.api.ServiceException;
 import io.syemessenger.api.ServiceMessage;
-import io.syemessenger.api.account.AccountService;
-import io.syemessenger.api.account.CreateAccountRequest;
-import io.syemessenger.api.account.GetRoomsRequest;
-import io.syemessenger.api.account.LoginAccountRequest;
-import io.syemessenger.api.account.UpdateAccountRequest;
-import io.syemessenger.api.room.BlockMembersRequest;
-import io.syemessenger.api.room.CreateRoomRequest;
-import io.syemessenger.api.room.GetBlockedMembersRequest;
-import io.syemessenger.api.room.GetRoomMembersRequest;
-import io.syemessenger.api.room.ListRoomsRequest;
-import io.syemessenger.api.room.RemoveMembersRequest;
-import io.syemessenger.api.room.RoomService;
-import io.syemessenger.api.room.UnblockMembersRequest;
-import io.syemessenger.api.room.UpdateRoomRequest;
+import java.util.UUID;
 import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.annotations.OnWebSocketClose;
 import org.eclipse.jetty.websocket.api.annotations.OnWebSocketError;
@@ -32,21 +20,13 @@ public class WebSocketHandler {
   private static final Logger LOGGER = LoggerFactory.getLogger(WebSocketHandler.class);
 
   private final JsonMapper jsonMapper;
-  private final MessageCodec messageCodec;
-  private final AccountService accountService;
-  private final RoomService roomService;
+  private final ServiceRegistry serviceRegistry;
 
   private SessionContext sessionContext;
 
-  public WebSocketHandler(
-      JsonMapper jsonMapper,
-      MessageCodec messageCodec,
-      AccountService accountService,
-      RoomService roomService) {
+  public WebSocketHandler(JsonMapper jsonMapper, ServiceRegistry serviceRegistry) {
     this.jsonMapper = jsonMapper;
-    this.accountService = accountService;
-    this.messageCodec = messageCodec;
-    this.roomService = roomService;
+    this.serviceRegistry = serviceRegistry;
   }
 
   @OnWebSocketClose
@@ -67,72 +47,28 @@ public class WebSocketHandler {
   }
 
   @OnWebSocketMessage
-  public void onWebSocketText(String message) {
-    LOGGER.info("Received message [{}]", message);
+  public void onWebSocketText(String text) {
+    LOGGER.info("Received message [{}]", text);
+    UUID cid = null;
     try {
-      final var serviceMessage = jsonMapper.readValue(message, ServiceMessage.class);
-      final var qualifier = serviceMessage.qualifier();
+      final var message = jsonMapper.readValue(text, ServiceMessage.class);
+      cid = message.cid();
+      final var qualifier = message.qualifier();
 
       if (qualifier == null) {
-        throw new RuntimeException("Wrong message: qualifier is missing");
+        throw new ServiceException(400, "Wrong message: qualifier is missing");
       }
 
-      final var request = messageCodec.decode(serviceMessage);
-
-      switch (qualifier) {
-        case "v1/syemessenger/createAccount":
-          accountService.createAccount(sessionContext, (CreateAccountRequest) request);
-          break;
-        case "v1/syemessenger/updateAccount":
-          accountService.updateAccount(sessionContext, (UpdateAccountRequest) request);
-          break;
-        case "v1/syemessenger/getAccount":
-          accountService.getAccount(sessionContext, (Long) request);
-          break;
-        case "v1/syemessenger/login":
-          accountService.login(sessionContext, (LoginAccountRequest) request);
-          break;
-        case "v1/syemessenger/getRooms":
-          accountService.getRooms(sessionContext, (GetRoomsRequest) request);
-          break;
-        case "v1/syemessenger/createRoom":
-          roomService.createRoom(sessionContext, (CreateRoomRequest) request);
-          break;
-        case "v1/syemessenger/updateRoom":
-          roomService.updateRoom(sessionContext, (UpdateRoomRequest) request);
-          break;
-        case "v1/syemessenger/getRoom":
-          roomService.getRoom(sessionContext, (Long) request);
-          break;
-        case "v1/syemessenger/joinRoom":
-          roomService.joinRoom(sessionContext, (String) request);
-          break;
-        case "v1/syemessenger/leaveRoom":
-          roomService.leaveRoom(sessionContext, (Long) request);
-          break;
-        case "v1/syemessenger/getRoomMembers":
-          roomService.getRoomMembers(sessionContext, (GetRoomMembersRequest) request);
-          break;
-        case "v1/syemessenger/removeRoomMembers":
-          roomService.removeRoomMembers(sessionContext, (RemoveMembersRequest) request);
-          break;
-        case "v1/syemessenger/blockRoomMembers":
-          roomService.blockRoomMembers(sessionContext, (BlockMembersRequest) request);
-          break;
-        case "v1/syemessenger/unblockRoomMembers":
-          roomService.unblockRoomMembers(sessionContext, (UnblockMembersRequest) request);
-          break;
-        case  "v1/syemessenger/getBlockedMembers":
-          roomService.getBlockedMembers(sessionContext, (GetBlockedMembersRequest) request);
-          break;
-        case "v1/syemessenger/listRooms":
-          roomService.listRooms(sessionContext, (ListRoomsRequest) request);
-          break;
-        default:
-          throw new IllegalArgumentException("Wrong request: " + request);
+      final var invocationHandler = serviceRegistry.lookup(qualifier);
+      if (invocationHandler == null) {
+        throw new ServiceException(400, "Wrong message: request handler is missing");
       }
+
+      invocationHandler.invoke(sessionContext, message);
+    } catch (ServiceException ex) {
+      sessionContext.sendError(cid, ex.errorCode(), ex.getMessage());
     } catch (Exception e) {
-      LOGGER.error("[onWebSocketText] Failed to parse message [{}]", message, e);
+      LOGGER.error("[onWebSocketText] Exception onMessage [{}]", text, e);
       throw new RuntimeException(e);
     }
   }
