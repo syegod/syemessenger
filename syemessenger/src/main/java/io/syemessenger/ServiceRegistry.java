@@ -38,7 +38,7 @@ public class ServiceRegistry {
       if (annotation != null) {
         final var qualifier = annotation.value();
         handlers.put(qualifier, new InvocationHandler(method, bean, messageCodec));
-        registerDataType(qualifier, method);
+        registerDataType(qualifier, method, annotation.requestType());
       }
     }
   }
@@ -47,7 +47,7 @@ public class ServiceRegistry {
     return handlers.get(qualifier);
   }
 
-  private void registerDataType(String qualifier, Method method) {
+  private void registerDataType(String qualifier, Method method, Class<?> requestType) {
     final var parameterTypes = method.getParameterTypes();
     if (parameterTypes.length != 2) {
       throw new IllegalArgumentException("Wrong method arguments: " + method.getName());
@@ -55,6 +55,6 @@ public class ServiceRegistry {
     if (!parameterTypes[0].isAssignableFrom(SessionContext.class)) {
       throw new IllegalArgumentException("Wrong method arguments: " + method.getName());
     }
-    messageCodec.register(qualifier, parameterTypes[1]);
+    messageCodec.register(qualifier, requestType);
   }
 }

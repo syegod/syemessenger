@@ -24,8 +24,10 @@ public class AccountController {
     this.accountService = accountService;
   }
 
-  @RequestHandler("v1/syemessenger/createAccount")
-  public void createAccount(SessionContext sessionContext, CreateAccountRequest request) {
+  @RequestHandler(value = "v1/syemessenger/createAccount", requestType = CreateAccountRequest.class)
+  public void createAccount(SessionContext sessionContext, ServiceMessage message) {
+    final var request = (CreateAccountRequest) message.data();
+
     final var username = request.username();
     if (username == null) {
       throw new ServiceException(400, "Missing or invalid: username");
@@ -63,17 +65,16 @@ public class AccountController {
       }
       throw e;
     }
-    sessionContext.send(
-        new ServiceMessage()
-            .qualifier("createAccount")
-            .data(AccountMappers.toAccountInfo(account)));
+    sessionContext.send(message.clone().data(AccountMappers.toAccountInfo(account)));
   }
 
-  @RequestHandler("v1/syemessenger/updateAccount")
-  public void updateAccount(SessionContext sessionContext, UpdateAccountRequest request) {
+  @RequestHandler(value = "v1/syemessenger/updateAccount", requestType = UpdateAccountRequest.class)
+  public void updateAccount(SessionContext sessionContext, ServiceMessage message) {
     if (!sessionContext.isLoggedIn()) {
       throw new ServiceException(401, "Not authenticated");
     }
+
+    final var request = (UpdateAccountRequest) message.data();
 
     final var username = request.username();
     if (username != null) {
@@ -109,14 +110,13 @@ public class AccountController {
       throw e;
     }
 
-    sessionContext.send(
-        new ServiceMessage()
-            .qualifier("updateAccount")
-            .data(AccountMappers.toAccountInfo(account)));
+    sessionContext.send(message.clone().data(AccountMappers.toAccountInfo(account)));
   }
 
-  @RequestHandler("v1/syemessenger/login")
-  public void login(SessionContext sessionContext, LoginAccountRequest request) {
+  @RequestHandler(value = "v1/syemessenger/login", requestType = LoginAccountRequest.class)
+  public void login(SessionContext sessionContext, ServiceMessage message) {
+    final var request = (LoginAccountRequest) message.data();
+
     final var username = request.username();
     final var email = request.email();
     if (username != null && email != null) {
@@ -135,14 +135,16 @@ public class AccountController {
 
     sessionContext.accountId(id);
 
-    sessionContext.send(new ServiceMessage().qualifier("login").data(id));
+    sessionContext.send(message.clone().data(id));
   }
 
-  @RequestHandler("v1/syemessenger/getAccount")
-  public void getAccount(SessionContext sessionContext, Long id) {
+  @RequestHandler(value = "v1/syemessenger/getAccount", requestType = Long.class)
+  public void getAccount(SessionContext sessionContext, ServiceMessage message) {
     if (!sessionContext.isLoggedIn()) {
       throw new ServiceException(401, "Not authenticated");
     }
+
+    final var id = (Long) message.data();
 
     if (id == null) {
       throw new ServiceException(400, "Missing or invalid: id");
@@ -150,15 +152,16 @@ public class AccountController {
 
     final var account = accountService.getAccount(id);
 
-    sessionContext.send(
-        new ServiceMessage().qualifier("getAccount").data(AccountMappers.toAccountInfo(account)));
+    sessionContext.send(message.clone().data(AccountMappers.toAccountInfo(account)));
   }
 
-  @RequestHandler("v1/syemessenger/getRooms")
-  public void getRooms(SessionContext sessionContext, GetRoomsRequest request) {
+  @RequestHandler(value = "v1/syemessenger/getRooms", requestType = GetRoomsRequest.class)
+  public void getRooms(SessionContext sessionContext, ServiceMessage message) {
     if (!sessionContext.isLoggedIn()) {
       throw new ServiceException(401, "Not authenticated");
     }
+
+    final var request = (GetRoomsRequest) message.data();
 
     final var offset = request.offset();
     if (offset != null && offset < 0) {
@@ -181,7 +184,7 @@ public class AccountController {
             .limit(limit)
             .totalCount(page.getTotalElements());
 
-    sessionContext.send(new ServiceMessage().qualifier("getRooms").data(response));
+    sessionContext.send(message.clone().data(response));
   }
 
   private static boolean isEmailValid(String email) {

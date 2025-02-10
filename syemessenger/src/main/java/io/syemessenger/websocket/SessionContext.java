@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import io.syemessenger.api.ErrorData;
 import io.syemessenger.api.ServiceMessage;
+import java.util.UUID;
 import org.eclipse.jetty.websocket.api.Callback;
 import org.eclipse.jetty.websocket.api.Session;
 
@@ -27,8 +28,12 @@ public class SessionContext {
     }
   }
 
-  public void sendError(int errorCode, String errorMessage) {
-    send(new ServiceMessage().qualifier("error").data(new ErrorData(errorCode, errorMessage)));
+  public void sendError(UUID cid, int errorCode, String errorMessage) {
+    send(
+        new ServiceMessage()
+            .cid(cid)
+            .qualifier("error")
+            .data(new ErrorData(errorCode, errorMessage)));
   }
 
   public Long accountId() {

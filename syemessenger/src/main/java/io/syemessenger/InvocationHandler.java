@@ -20,16 +20,16 @@ public class InvocationHandler {
 
   public void invoke(SessionContext sessionContext, ServiceMessage message) {
     try {
-      method.invoke(target, sessionContext, messageCodec.decode(message));
+      method.invoke(target, sessionContext, message.data(messageCodec.decode(message)));
     } catch (InvocationTargetException e) {
       final var th = e.getTargetException();
       if (th instanceof ServiceException ex) {
-        sessionContext.sendError(ex.errorCode(), ex.getMessage());
+        sessionContext.sendError(message.cid(), ex.errorCode(), ex.getMessage());
       } else {
-        sessionContext.sendError(500, "Internal service error: " + th);
+        sessionContext.sendError(message.cid(), 500, "Internal service error: " + th);
       }
     } catch (Exception ex) {
-      sessionContext.sendError(500, "Internal service error: " + ex);
+      sessionContext.sendError(message.cid(), 500, "Internal service error: " + ex);
     }
   }
 }

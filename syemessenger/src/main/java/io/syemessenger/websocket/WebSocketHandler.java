@@ -2,7 +2,9 @@ package io.syemessenger.websocket;
 
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import io.syemessenger.ServiceRegistry;
+import io.syemessenger.api.ServiceException;
 import io.syemessenger.api.ServiceMessage;
+import java.util.UUID;
 import org.eclipse.jetty.websocket.api.Session;
 import org.eclipse.jetty.websocket.api.annotations.OnWebSocketClose;
 import org.eclipse.jetty.websocket.api.annotations.OnWebSocketError;
@@ -45,24 +47,28 @@ public class WebSocketHandler {
   }
 
   @OnWebSocketMessage
-  public void onWebSocketText(String message) {
-    LOGGER.info("Received message [{}]", message);
+  public void onWebSocketText(String text) {
+    LOGGER.info("Received message [{}]", text);
+    UUID cid = null;
     try {
-      final var serviceMessage = jsonMapper.readValue(message, ServiceMessage.class);
-      final var qualifier = serviceMessage.qualifier();
+      final var message = jsonMapper.readValue(text, ServiceMessage.class);
+      cid = message.cid();
+      final var qualifier = message.qualifier();
 
       if (qualifier == null) {
-        throw new RuntimeException("Wrong message: qualifier is missing");
+        throw new ServiceException(400, "Wrong message: qualifier is missing");
       }
 
       final var invocationHandler = serviceRegistry.lookup(qualifier);
       if (invocationHandler == null) {
-        throw new RuntimeException("Wrong message: request handler is missing");
+        throw new ServiceException(400, "Wrong message: request handler is missing");
       }
 
-      invocationHandler.invoke(sessionContext, serviceMessage);
+      invocationHandler.invoke(sessionContext, message);
+    } catch (ServiceException ex) {
+      sessionContext.sendError(cid, ex.errorCode(), ex.getMessage());
     } catch (Exception e) {
-      LOGGER.error("[onWebSocketText] Exception onMessage [{}]", message, e);
+      LOGGER.error("[onWebSocketText] Exception onMessage [{}]", text, e);
       throw new RuntimeException(e);
     }
   }

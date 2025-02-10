@@ -12,4 +12,6 @@ import java.lang.annotation.Target;
 public @interface RequestHandler {
 
   String value();
+
+  Class<?> requestType();
 }

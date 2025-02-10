@@ -1,6 +1,5 @@
 package io.syemessenger.api.room;
 
-
 import io.syemessenger.annotations.RequestController;
 import io.syemessenger.annotations.RequestHandler;
 import io.syemessenger.api.ServiceException;
@@ -20,11 +19,13 @@ public class RoomController {
     this.roomService = roomService;
   }
 
-  @RequestHandler("v1/syemessenger/createRoom")
-  public void createRoom(SessionContext sessionContext, CreateRoomRequest request) {
+  @RequestHandler(value = "v1/syemessenger/createRoom", requestType = CreateRoomRequest.class)
+  public void createRoom(SessionContext sessionContext, ServiceMessage message) {
     if (!sessionContext.isLoggedIn()) {
       throw new ServiceException(401, "Not authenticated");
     }
+
+    final var request = (CreateRoomRequest) message.data();
 
     final var name = request.name();
     if (name == null) {
@@ -43,8 +44,7 @@ public class RoomController {
 
     try {
       final var room = roomService.createRoom(request, sessionContext.accountId());
-      sessionContext.send(
-          new ServiceMessage().qualifier("createRoom").data(RoomMappers.toRoomInfo(room)));
+      sessionContext.send(message.clone().data(RoomMappers.toRoomInfo(room)));
     } catch (DataAccessException e) {
       if (e.getMessage().contains("duplicate key value violates unique constraint")) {
         throw new ServiceException(400, "Cannot create room: already exists");
@@ -53,11 +53,13 @@ public class RoomController {
     }
   }
 
-  @RequestHandler("v1/syemessenger/updateRoom")
-  public void updateRoom(SessionContext sessionContext, UpdateRoomRequest request) {
+  @RequestHandler(value = "v1/syemessenger/updateRoom", requestType = UpdateRoomRequest.class)
+  public void updateRoom(SessionContext sessionContext, ServiceMessage message) {
     if (!sessionContext.isLoggedIn()) {
       throw new ServiceException(401, "Not authenticated");
     }
+
+    final var request = (UpdateRoomRequest) message.data();
 
     final var description = request.description();
     if (description == null) {
@@ -74,15 +76,16 @@ public class RoomController {
 
     final var room = roomService.updateRoom(request, sessionContext.accountId());
 
-    sessionContext.send(
-        new ServiceMessage().qualifier("updateRoom").data(RoomMappers.toRoomInfo(room)));
+    sessionContext.send(message.clone().data(RoomMappers.toRoomInfo(room)));
   }
 
-  @RequestHandler("v1/syemessenger/getRoom")
-  public void getRoom(SessionContext sessionContext, Long id) {
+  @RequestHandler(value = "v1/syemessenger/getRoom", requestType = Long.class)
+  public void getRoom(SessionContext sessionContext, ServiceMessage message) {
     if (!sessionContext.isLoggedIn()) {
       throw new ServiceException(401, "Not authenticated");
     }
+
+    final var id = (Long) message.data();
 
     if (id == null) {
       throw new ServiceException(400, "Missing or invalid: id");
@@ -90,15 +93,16 @@ public class RoomController {
 
     final var room = roomService.getRoom(id);
 
-    sessionContext.send(
-        new ServiceMessage().qualifier("getRoom").data(RoomMappers.toRoomInfo(room)));
+    sessionContext.send(message.clone().data(RoomMappers.toRoomInfo(room)));
   }
 
-  @RequestHandler("v1/syemessenger/joinRoom")
-  public void joinRoom(SessionContext sessionContext, String name) {
+  @RequestHandler(value = "v1/syemessenger/joinRoom", requestType = String.class)
+  public void joinRoom(SessionContext sessionContext, ServiceMessage message) {
     if (!sessionContext.isLoggedIn()) {
       throw new ServiceException(401, "Not authenticated");
     }
+
+    final var name = (String) message.data();
 
     if (name == null) {
       throw new ServiceException(400, "Missing or invalid: name");
@@ -109,7 +113,7 @@ public class RoomController {
 
     try {
       final var roomId = roomService.joinRoom(name, sessionContext.accountId());
-      sessionContext.send(new ServiceMessage().qualifier("joinRoom").data(roomId));
+      sessionContext.send(message.clone().data(roomId));
     } catch (DataAccessException e) {
       if (e.getMessage().contains("duplicate key value violates unique constraint")) {
         throw new ServiceException(400, "Cannot join room: already joined");
@@ -118,11 +122,13 @@ public class RoomController {
     }
   }
 
-  @RequestHandler("v1/syemessenger/leaveRoom")
-  public void leaveRoom(SessionContext sessionContext, Long id) {
+  @RequestHandler(value = "v1/syemessenger/leaveRoom", requestType = Long.class)
+  public void leaveRoom(SessionContext sessionContext, ServiceMessage message) {
     if (!sessionContext.isLoggedIn()) {
       throw new ServiceException(401, "Not authenticated");
     }
+
+    final var id = (Long) message.data();
 
     if (id == null) {
       throw new ServiceException(400, "Missing or invalid: id");
@@ -130,14 +136,18 @@ public class RoomController {
 
     final var roomId = roomService.leaveRoom(id, sessionContext.accountId());
 
-    sessionContext.send(new ServiceMessage().qualifier("leaveRoom").data(roomId));
+    sessionContext.send(message.clone().data(roomId));
   }
 
-  @RequestHandler("v1/syemessenger/removeRoomMembers")
-  public void removeRoomMembers(SessionContext sessionContext, RemoveMembersRequest request) {
+  @RequestHandler(
+      value = "v1/syemessenger/removeRoomMembers",
+      requestType = RemoveMembersRequest.class)
+  public void removeRoomMembers(SessionContext sessionContext, ServiceMessage message) {
     if (!sessionContext.isLoggedIn()) {
       throw new ServiceException(401, "Not authenticated");
     }
+
+    final var request = (RemoveMembersRequest) message.data();
 
     final var roomId = request.roomId();
     if (roomId == null) {
@@ -154,14 +164,18 @@ public class RoomController {
 
     roomService.removeRoomMembers(request, sessionContext.accountId());
 
-    sessionContext.send(new ServiceMessage().qualifier("removeRoomMembers").data(roomId));
+    sessionContext.send(message.clone().data(roomId));
   }
 
-  @RequestHandler("v1/syemessenger/blockRoomMembers")
-  public void blockRoomMembers(SessionContext sessionContext, BlockMembersRequest request) {
+  @RequestHandler(
+      value = "v1/syemessenger/blockRoomMembers",
+      requestType = BlockMembersRequest.class)
+  public void blockRoomMembers(SessionContext sessionContext, ServiceMessage message) {
     if (!sessionContext.isLoggedIn()) {
       throw new ServiceException(401, "Not authenticated");
     }
+
+    final var request = (BlockMembersRequest) message.data();
 
     final var roomId = request.roomId();
     if (roomId == null) {
@@ -178,7 +192,7 @@ public class RoomController {
 
     try {
       roomService.blockRoomMembers(request, sessionContext.accountId());
-      sessionContext.send(new ServiceMessage().qualifier("blockRoomMembers").data(roomId));
+      sessionContext.send(message.clone().data(roomId));
     } catch (Exception e) {
       if (e.getMessage().contains("is not present in table")) {
         throw new ServiceException(404, "Account not found");
@@ -187,11 +201,15 @@ public class RoomController {
     }
   }
 
-  @RequestHandler("v1/syemessenger/unblockRoomMembers")
-  public void unblockRoomMembers(SessionContext sessionContext, UnblockMembersRequest request) {
+  @RequestHandler(
+      value = "v1/syemessenger/unblockRoomMembers",
+      requestType = UnblockMembersRequest.class)
+  public void unblockRoomMembers(SessionContext sessionContext, ServiceMessage message) {
     if (!sessionContext.isLoggedIn()) {
       throw new ServiceException(401, "Not authenticated");
     }
+
+    final var request = (UnblockMembersRequest) message.data();
 
     final var roomId = request.roomId();
     if (roomId == null) {
@@ -208,14 +226,18 @@ public class RoomController {
 
     roomService.unblockRoomMembers(request, sessionContext.accountId());
 
-    sessionContext.send(new ServiceMessage().qualifier("unblockRoomMembers").data(roomId));
+    sessionContext.send(message.clone().data(roomId));
   }
 
-  @RequestHandler("v1/syemessenger/getBlockedMembers")
-  public void getBlockedMembers(SessionContext sessionContext, GetBlockedMembersRequest request) {
+  @RequestHandler(
+      value = "v1/syemessenger/getBlockedMembers",
+      requestType = GetBlockedMembersRequest.class)
+  public void getBlockedMembers(SessionContext sessionContext, ServiceMessage message) {
     if (!sessionContext.isLoggedIn()) {
       throw new ServiceException(401, "Not authenticated");
     }
+
+    final var request = (GetBlockedMembersRequest) message.data();
 
     final var offset = request.offset();
     if (offset != null && offset < 0) {
@@ -244,14 +266,16 @@ public class RoomController {
             .limit(limit)
             .totalCount(accountPage.getTotalElements());
 
-    sessionContext.send(new ServiceMessage().qualifier("getBlockedMembers").data(response));
+    sessionContext.send(message.clone().data(response));
   }
 
-  @RequestHandler("v1/syemessenger/listRooms")
-  public void listRooms(SessionContext sessionContext, ListRoomsRequest request) {
+  @RequestHandler(value = "v1/syemessenger/listRooms", requestType = ListRoomsRequest.class)
+  public void listRooms(SessionContext sessionContext, ServiceMessage message) {
     if (!sessionContext.isLoggedIn()) {
       throw new ServiceException(401, "Not authenticated");
     }
+
+    final var request = (ListRoomsRequest) message.data();
 
     final var offset = request.offset();
     if (offset != null && offset < 0) {
@@ -274,14 +298,18 @@ public class RoomController {
             .limit(limit)
             .totalCount(roomsPage.getTotalElements());
 
-    sessionContext.send(new ServiceMessage().qualifier("listRooms").data(listRoomsResponse));
+    sessionContext.send(message.clone().data(listRoomsResponse));
   }
 
-  @RequestHandler("v1/syemessenger/getRoomMembers")
-  public void getRoomMembers(SessionContext sessionContext, GetRoomMembersRequest request) {
+  @RequestHandler(
+      value = "v1/syemessenger/getRoomMembers",
+      requestType = GetRoomMembersRequest.class)
+  public void getRoomMembers(SessionContext sessionContext, ServiceMessage message) {
     if (!sessionContext.isLoggedIn()) {
       throw new ServiceException(401, "Not authenticated");
     }
+
+    final var request = (GetRoomMembersRequest) message.data();
 
     Long roomId = request.roomId();
     if (roomId == null) {
@@ -310,6 +338,6 @@ public class RoomController {
             .limit(limit)
             .totalCount(membersPage.getTotalElements());
 
-    sessionContext.send(new ServiceMessage().qualifier("getRoomMembers").data(response));
+    sessionContext.send(message.clone().data(response));
   }
 }
