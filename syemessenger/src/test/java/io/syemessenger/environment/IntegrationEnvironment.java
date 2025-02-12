@@ -6,10 +6,12 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import javax.sql.DataSource;
 import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.kafka.KafkaContainer;
 
 public class IntegrationEnvironment implements AutoCloseable {
 
   private PostgreSQLContainer postgres;
+  private KafkaContainer kafka;
   private ServiceBootstrap serviceBootstrap;
 
   public void start() {
@@ -17,6 +19,9 @@ public class IntegrationEnvironment implements AutoCloseable {
       postgres = new PostgreSQLContainer("postgres:16-alpine");
       postgres.withExposedPorts(5432);
       postgres.start();
+
+      kafka = new KafkaContainer("apache/kafka-native:3.8.0");
+      kafka.start();
 
       serviceBootstrap =
           new ServiceBootstrap(
@@ -59,6 +64,9 @@ public class IntegrationEnvironment implements AutoCloseable {
   public void close() {
     if (postgres != null) {
       postgres.close();
+    }
+    if (kafka != null) {
+      kafka.close();
     }
     if (serviceBootstrap != null) {
       serviceBootstrap.close();
