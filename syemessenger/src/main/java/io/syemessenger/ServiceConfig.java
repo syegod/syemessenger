@@ -8,6 +8,7 @@ public class ServiceConfig {
   private String dbUrl;
   private String dbUser;
   private String dbPassword;
+  private String kafka;
 
   public int port() {
     return port;
@@ -45,6 +46,15 @@ public class ServiceConfig {
     return this;
   }
 
+  public String kafka() {
+    return kafka;
+  }
+
+  public ServiceConfig kafka(String kafka) {
+    this.kafka = kafka;
+    return this;
+  }
+
   @Override
   public String toString() {
     return new StringJoiner(", ", ServiceConfig.class.getSimpleName() + "[", "]")
@@ -52,6 +62,7 @@ public class ServiceConfig {
         .add("dbUrl='" + dbUrl + "'")
         .add("dbUser='" + dbUser + "'")
         .add("dbPassword='" + dbPassword + "'")
+        .add("kafka='" + kafka + "'")
         .toString();
   }
 }

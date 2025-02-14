@@ -21,6 +21,7 @@ public class IntegrationEnvironment implements AutoCloseable {
       postgres.start();
 
       kafka = new KafkaContainer("apache/kafka-native:3.8.0");
+      kafka.withExposedPorts(9092);
       kafka.start();
 
       serviceBootstrap =
@@ -28,7 +29,8 @@ public class IntegrationEnvironment implements AutoCloseable {
               new ServiceConfig()
                   .dbUrl(postgres.getJdbcUrl())
                   .dbUser(postgres.getUsername())
-                  .dbPassword(postgres.getPassword()));
+                  .dbPassword(postgres.getPassword())
+                  .kafka(kafka.getBootstrapServers()));
 
       serviceBootstrap.start();
     } catch (Exception e) {

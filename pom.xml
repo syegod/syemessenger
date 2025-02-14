@@ -54,6 +54,7 @@
     <spring-data-bom.version>2024.1.2</spring-data-bom.version>
     <hibernate-core.version>6.6.4.Final</hibernate-core.version>
     <spring-security-crypto.version>6.4.2</spring-security-crypto.version>
+    <kafka-clients.version>3.8.0</kafka-clients.version>
   </properties>
 
   <dependencyManagement>
@@ -123,6 +124,13 @@
         <version>${jackson.version}</version>
         <type>pom</type>
         <scope>import</scope>
+      </dependency>
+
+      <!-- Kafka -->
+      <dependency>
+        <groupId>org.apache.kafka</groupId>
+        <artifactId>kafka-clients</artifactId>
+        <version>${kafka-clients.version}</version>
       </dependency>
 
       <!-- Postgres -->
