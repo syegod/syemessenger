@@ -30,7 +30,7 @@ public class IntegrationEnvironment implements AutoCloseable {
                   .dbUrl(postgres.getJdbcUrl())
                   .dbUser(postgres.getUsername())
                   .dbPassword(postgres.getPassword())
-                  .kafka(kafka.getBootstrapServers()));
+                  .kafkaBootstrapServers(kafka.getBootstrapServers()));
 
       serviceBootstrap.start();
     } catch (Exception e) {

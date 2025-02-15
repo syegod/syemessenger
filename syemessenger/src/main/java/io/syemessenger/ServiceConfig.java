@@ -8,7 +8,7 @@ public class ServiceConfig {
   private String dbUrl;
   private String dbUser;
   private String dbPassword;
-  private String kafka;
+  private String kafkaBootstrapServers;
 
   public int port() {
     return port;
@@ -46,12 +46,12 @@ public class ServiceConfig {
     return this;
   }
 
-  public String kafka() {
-    return kafka;
+  public String kafkaBootstrapServers() {
+    return kafkaBootstrapServers;
   }
 
-  public ServiceConfig kafka(String kafka) {
-    this.kafka = kafka;
+  public ServiceConfig kafkaBootstrapServers(String kafkaBootstrapServers) {
+    this.kafkaBootstrapServers = kafkaBootstrapServers;
     return this;
   }
 
@@ -62,7 +62,7 @@ public class ServiceConfig {
         .add("dbUrl='" + dbUrl + "'")
         .add("dbUser='" + dbUser + "'")
         .add("dbPassword='" + dbPassword + "'")
-        .add("kafka='" + kafka + "'")
+        .add("kafkaBootstrapServers='" + kafkaBootstrapServers + "'")
         .toString();
   }
 }
