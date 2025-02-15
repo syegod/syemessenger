@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sbe:messageSchema xmlns:sbe="http://fixprotocol.io/2016/sbe"
+  package="io.syemessenger.sbe"
+  id="1"
+  version="0"
+  semanticVersion="5.2"
+  byteOrder="littleEndian">
+
+  <types>
+    <composite name="messageHeader">
+      <type name="blockLength" primitiveType="uint16"/>
+      <type name="templateId" primitiveType="uint16"/>
+      <type name="schemaId" primitiveType="uint16"/>
+      <type name="version" primitiveType="uint16"/>
+    </composite>
+    <composite name="groupSizeEncoding">
+      <type name="blockLength" primitiveType="uint16"/>
+      <type name="numInGroup" primitiveType="uint16"/>
+    </composite>
+    <enum name="BooleanType" encodingType="int8">
+      <validValue name="FALSE">0</validValue>
+      <validValue name="TRUE">1</validValue>
+    </enum>
+  </types>
+
+  <sbe:message name="LeaveRoomEvent" id="1">
+    <field name="roomId" id="1" type="int64"/>
+    <field name="accountId" id="2" type="int64"/>
+    <field name="isOwner" id="3" type="BooleanType"/>
+  </sbe:message>
+
+  <sbe:message name="RemoveMembersEvent" id="2">
+    <field name="roomId" id="1" type="int64"/>
+    <group name="memberIds" id="2">
+      <field name="memberId" id="100" type="int64"/>
+    </group>
+  </sbe:message>
+
+  <sbe:message name="BlockMembersEvent" id="3">
+    <field name="roomId" id="1" type="int64"/>
+    <group name="memberIds" id="2">
+      <field name="memberId" id="100" type="int64"/>
+    </group>
+  </sbe:message>
+
+</sbe:messageSchema>

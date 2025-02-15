@@ -55,6 +55,8 @@
     <hibernate-core.version>6.6.4.Final</hibernate-core.version>
     <spring-security-crypto.version>6.4.2</spring-security-crypto.version>
     <kafka-clients.version>3.8.0</kafka-clients.version>
+    <agrona.version>2.0.1</agrona.version>
+    <sbe.version>1.34.1</sbe.version>
   </properties>
 
   <dependencyManagement>
@@ -131,6 +133,19 @@
         <groupId>org.apache.kafka</groupId>
         <artifactId>kafka-clients</artifactId>
         <version>${kafka-clients.version}</version>
+      </dependency>
+
+      <!-- Agrona -->
+      <dependency>
+        <groupId>org.agrona</groupId>
+        <artifactId>agrona</artifactId>
+        <version>${agrona.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>uk.co.real-logic</groupId>
+        <artifactId>sbe-tool</artifactId>
+        <version>${sbe.version}</version>
       </dependency>
 
       <!-- Postgres -->
