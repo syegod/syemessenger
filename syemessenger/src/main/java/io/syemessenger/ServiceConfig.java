@@ -9,14 +9,15 @@ public class ServiceConfig {
   private String dbUser;
   private String dbPassword;
   private String kafkaBootstrapServers;
-
-  public int port() {
-    return port;
-  }
+  private String kafkaConsumerGroup;
 
   public ServiceConfig port(int port) {
     this.port = port;
     return this;
+  }
+
+  public int port() {
+    return port;
   }
 
   public String dbUrl() {
@@ -55,6 +56,15 @@ public class ServiceConfig {
     return this;
   }
 
+  public String kafkaConsumerGroup() {
+    return kafkaConsumerGroup;
+  }
+
+  public ServiceConfig kafkaConsumerGroup(String kafkaConsumerGroup) {
+    this.kafkaConsumerGroup = kafkaConsumerGroup;
+    return this;
+  }
+
   @Override
   public String toString() {
     return new StringJoiner(", ", ServiceConfig.class.getSimpleName() + "[", "]")
@@ -63,6 +73,7 @@ public class ServiceConfig {
         .add("dbUser='" + dbUser + "'")
         .add("dbPassword='" + dbPassword + "'")
         .add("kafkaBootstrapServers='" + kafkaBootstrapServers + "'")
+        .add("kafkaConsumerGroup='" + kafkaConsumerGroup + "'")
         .toString();
   }
 }
