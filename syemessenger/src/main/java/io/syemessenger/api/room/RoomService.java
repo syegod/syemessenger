@@ -11,7 +11,9 @@ import io.syemessenger.api.room.repository.BlockedRepository;
 import io.syemessenger.api.room.repository.Room;
 import io.syemessenger.api.room.repository.RoomRepository;
 import io.syemessenger.kafka.KafkaMessageCodec;
+import io.syemessenger.kafka.dto.BlockMembersEvent;
 import io.syemessenger.kafka.dto.LeaveRoomEvent;
+import io.syemessenger.kafka.dto.RemoveMembersEvent;
 import jakarta.inject.Named;
 import java.nio.ByteBuffer;
 import java.time.Clock;
@@ -121,12 +123,14 @@ public class RoomService {
     }
 
     if (room.owner().id().equals(accountId)) {
-      kafkaTemplate.send("leave-room",
+      kafkaTemplate.send(
+          "leave-room",
           KafkaMessageCodec.encodeLeaveRoomEvent(
               new LeaveRoomEvent().roomId(roomId).accountId(accountId).isOwner(true)));
       roomRepository.deleteById(roomId);
     } else {
-      kafkaTemplate.send("leave-room",
+      kafkaTemplate.send(
+          "leave-room",
           KafkaMessageCodec.encodeLeaveRoomEvent(
               new LeaveRoomEvent().roomId(roomId).accountId(accountId).isOwner(false)));
       roomRepository.deleteRoomMember(roomId, accountId);
@@ -150,6 +154,10 @@ public class RoomService {
     }
 
     roomRepository.deleteRoomMembers(request.roomId(), request.memberIds());
+    kafkaTemplate.send(
+        "remove-members",
+        KafkaMessageCodec.encodeRemoveMembersEvent(
+            new RemoveMembersEvent().roomId(request.roomId()).memberIds(request.memberIds())));
     return request.roomId();
   }
 
@@ -174,6 +182,10 @@ public class RoomService {
 
     roomRepository.deleteRoomMembers(request.roomId(), request.memberIds());
     blockedRepository.saveAll(blockedMembers);
+    kafkaTemplate.send(
+        "block-members",
+        KafkaMessageCodec.encodeBlockMembersEvent(
+            new BlockMembersEvent().roomId(request.roomId()).memberIds(request.memberIds())));
     return room.id();
   }
 
