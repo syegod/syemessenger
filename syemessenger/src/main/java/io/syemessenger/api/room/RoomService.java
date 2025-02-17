@@ -10,12 +10,16 @@ import io.syemessenger.api.room.repository.BlockedMemberId;
 import io.syemessenger.api.room.repository.BlockedRepository;
 import io.syemessenger.api.room.repository.Room;
 import io.syemessenger.api.room.repository.RoomRepository;
+import io.syemessenger.kafka.KafkaMessageCodec;
+import io.syemessenger.kafka.dto.LeaveRoomEvent;
 import jakarta.inject.Named;
+import java.nio.ByteBuffer;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import org.springframework.data.domain.Page;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.transaction.annotation.Transactional;
 
 @Named
@@ -25,14 +29,17 @@ public class RoomService {
   private final RoomRepository roomRepository;
   private final AccountRepository accountRepository;
   private final BlockedRepository blockedRepository;
+  private KafkaTemplate<String, ByteBuffer> kafkaTemplate;
 
   public RoomService(
       RoomRepository roomRepository,
       AccountRepository accountRepository,
-      BlockedRepository blockedRepository) {
+      BlockedRepository blockedRepository,
+      KafkaTemplate<String, ByteBuffer> kafkaTemplate) {
     this.roomRepository = roomRepository;
     this.accountRepository = accountRepository;
     this.blockedRepository = blockedRepository;
+    this.kafkaTemplate = kafkaTemplate;
   }
 
   public Room createRoom(CreateRoomRequest request, Long accountId) {
@@ -114,8 +121,14 @@ public class RoomService {
     }
 
     if (room.owner().id().equals(accountId)) {
+      kafkaTemplate.send("leave-room",
+          KafkaMessageCodec.encodeLeaveRoomEvent(
+              new LeaveRoomEvent().roomId(roomId).accountId(accountId).isOwner(true)));
       roomRepository.deleteById(roomId);
     } else {
+      kafkaTemplate.send("leave-room",
+          KafkaMessageCodec.encodeLeaveRoomEvent(
+              new LeaveRoomEvent().roomId(roomId).accountId(accountId).isOwner(false)));
       roomRepository.deleteRoomMember(roomId, accountId);
     }
     return roomId;

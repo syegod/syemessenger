@@ -58,6 +58,12 @@
       <artifactId>spring-security-crypto</artifactId>
     </dependency>
 
+    <!-- Spring Kafka -->
+    <dependency>
+      <groupId>org.springframework.kafka</groupId>
+      <artifactId>spring-kafka</artifactId>
+    </dependency>
+
     <!-- Jakarta DI -->
     <dependency>
       <groupId>jakarta.inject</groupId>
@@ -76,12 +82,6 @@
     <dependency>
       <groupId>org.apache.logging.log4j</groupId>
       <artifactId>log4j-core</artifactId>
-    </dependency>
-
-    <!-- Kafka -->
-    <dependency>
-      <groupId>org.apache.kafka</groupId>
-      <artifactId>kafka-clients</artifactId>
     </dependency>
 
     <!-- Agrona -->

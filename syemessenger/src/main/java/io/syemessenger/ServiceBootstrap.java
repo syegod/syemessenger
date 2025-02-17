@@ -1,5 +1,6 @@
 package io.syemessenger;
 
+import io.syemessenger.kafka.KafkaConfiguration;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
 public class ServiceBootstrap {
@@ -15,6 +16,7 @@ public class ServiceBootstrap {
   public void start() {
     applicationContext = new AnnotationConfigApplicationContext();
     applicationContext.register(AppConfiguration.class);
+    applicationContext.register(KafkaConfiguration.class);
     applicationContext.registerBean(ServiceConfig.class, () -> config, bd -> {});
     applicationContext.refresh();
   }

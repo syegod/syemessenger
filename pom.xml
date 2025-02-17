@@ -54,9 +54,9 @@
     <spring-data-bom.version>2024.1.2</spring-data-bom.version>
     <hibernate-core.version>6.6.4.Final</hibernate-core.version>
     <spring-security-crypto.version>6.4.2</spring-security-crypto.version>
-    <kafka-clients.version>3.8.0</kafka-clients.version>
-    <agrona.version>2.0.1</agrona.version>
+    <agrona.version>1.23.0</agrona.version>
     <sbe.version>1.34.1</sbe.version>
+    <spring-kafka.version>3.3.2</spring-kafka.version>
   </properties>
 
   <dependencyManagement>
@@ -84,6 +84,13 @@
         <version>${spring-framework-bom.version}</version>
         <type>pom</type>
         <scope>import</scope>
+      </dependency>
+
+      <!-- Spring Kafka -->
+      <dependency>
+        <groupId>org.springframework.kafka</groupId>
+        <artifactId>spring-kafka</artifactId>
+        <version>${spring-kafka.version}</version>
       </dependency>
 
       <dependency>
@@ -126,13 +133,6 @@
         <version>${jackson.version}</version>
         <type>pom</type>
         <scope>import</scope>
-      </dependency>
-
-      <!-- Kafka -->
-      <dependency>
-        <groupId>org.apache.kafka</groupId>
-        <artifactId>kafka-clients</artifactId>
-        <version>${kafka-clients.version}</version>
       </dependency>
 
       <!-- Agrona -->

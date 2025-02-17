@@ -7,10 +7,12 @@ import io.syemessenger.api.account.repository.AccountRepository;
 import io.syemessenger.api.room.repository.Room;
 import io.syemessenger.api.room.repository.RoomRepository;
 import jakarta.inject.Named;
+import java.nio.ByteBuffer;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import org.springframework.data.domain.Page;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.transaction.annotation.Transactional;
 
 @Named
@@ -20,7 +22,9 @@ public class AccountService {
   private final AccountRepository accountRepository;
   private final RoomRepository roomRepository;
 
-  public AccountService(AccountRepository accountRepository, RoomRepository roomRepository) {
+  public AccountService(
+      AccountRepository accountRepository,
+      RoomRepository roomRepository) {
     this.accountRepository = accountRepository;
     this.roomRepository = roomRepository;
   }
