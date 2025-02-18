@@ -10,18 +10,12 @@ import io.syemessenger.api.room.repository.BlockedMemberId;
 import io.syemessenger.api.room.repository.BlockedRepository;
 import io.syemessenger.api.room.repository.Room;
 import io.syemessenger.api.room.repository.RoomRepository;
-import io.syemessenger.kafka.KafkaMessageCodec;
-import io.syemessenger.kafka.dto.BlockMembersEvent;
-import io.syemessenger.kafka.dto.LeaveRoomEvent;
-import io.syemessenger.kafka.dto.RemoveMembersEvent;
 import jakarta.inject.Named;
-import java.nio.ByteBuffer;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import org.springframework.data.domain.Page;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.transaction.annotation.Transactional;
 
 @Named
@@ -31,21 +25,17 @@ public class RoomService {
   private final RoomRepository roomRepository;
   private final AccountRepository accountRepository;
   private final BlockedRepository blockedRepository;
-  private KafkaTemplate<String, ByteBuffer> kafkaTemplate;
 
   public RoomService(
       RoomRepository roomRepository,
       AccountRepository accountRepository,
-      BlockedRepository blockedRepository,
-      KafkaTemplate<String, ByteBuffer> kafkaTemplate) {
+      BlockedRepository blockedRepository) {
     this.roomRepository = roomRepository;
     this.accountRepository = accountRepository;
     this.blockedRepository = blockedRepository;
-    this.kafkaTemplate = kafkaTemplate;
   }
 
   public Room createRoom(CreateRoomRequest request, Long accountId) {
-
     final var account = accountRepository.findById(accountId).orElse(null);
     if (account == null) {
       throw new ServiceException(404, "Account not found");
@@ -66,7 +56,6 @@ public class RoomService {
   }
 
   public Room updateRoom(UpdateRoomRequest request, Long accountId) {
-
     final var room = roomRepository.findById(request.roomId()).orElse(null);
     if (room == null) {
       throw new ServiceException(404, "Room not found");
@@ -92,7 +81,6 @@ public class RoomService {
   }
 
   public Long joinRoom(String name, Long accountId) {
-
     final var room = roomRepository.findByName(name);
     if (room == null) {
       throw new ServiceException(404, "Room not found");
@@ -123,23 +111,14 @@ public class RoomService {
     }
 
     if (room.owner().id().equals(accountId)) {
-      kafkaTemplate.send(
-          "leave-room",
-          KafkaMessageCodec.encodeLeaveRoomEvent(
-              new LeaveRoomEvent().roomId(roomId).accountId(accountId).isOwner(true)));
       roomRepository.deleteById(roomId);
     } else {
-      kafkaTemplate.send(
-          "leave-room",
-          KafkaMessageCodec.encodeLeaveRoomEvent(
-              new LeaveRoomEvent().roomId(roomId).accountId(accountId).isOwner(false)));
       roomRepository.deleteRoomMember(roomId, accountId);
     }
     return roomId;
   }
 
   public Long removeRoomMembers(RemoveMembersRequest request, Long accountId) {
-
     final var room = roomRepository.findById(request.roomId()).orElse(null);
     if (room == null) {
       throw new ServiceException(404, "Room not found");
@@ -154,10 +133,6 @@ public class RoomService {
     }
 
     roomRepository.deleteRoomMembers(request.roomId(), request.memberIds());
-    kafkaTemplate.send(
-        "remove-members",
-        KafkaMessageCodec.encodeRemoveMembersEvent(
-            new RemoveMembersEvent().roomId(request.roomId()).memberIds(request.memberIds())));
     return request.roomId();
   }
 
@@ -182,10 +157,6 @@ public class RoomService {
 
     roomRepository.deleteRoomMembers(request.roomId(), request.memberIds());
     blockedRepository.saveAll(blockedMembers);
-    kafkaTemplate.send(
-        "block-members",
-        KafkaMessageCodec.encodeBlockMembersEvent(
-            new BlockMembersEvent().roomId(request.roomId()).memberIds(request.memberIds())));
     return room.id();
   }
 
@@ -242,7 +213,6 @@ public class RoomService {
 
   @Transactional(readOnly = true)
   public Page<Account> getRoomMembers(GetRoomMembersRequest request, Long accountId) {
-
     final var roomMember = roomRepository.findRoomMember(request.roomId(), accountId);
     if (roomMember == null) {
       throw new ServiceException(403, "Not room member");
