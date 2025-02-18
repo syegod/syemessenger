@@ -11,10 +11,12 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.WebSocket;
 import java.net.http.WebSocket.Listener;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
@@ -28,7 +30,7 @@ public class ClientSdk implements AutoCloseable {
 
   private final WebSocket ws;
   private final JsonMapper objectMapper = JsonMappers.jsonMapper();
-  private final BlockingQueue<ServiceMessage> messageQueue = new ArrayBlockingQueue<>(64);
+  private final Map<UUID, BlockingQueue<Object>> messageQueues = new ConcurrentHashMap<>();
   private final CountDownLatch latch = new CountDownLatch(1);
 
   public ClientSdk() {
@@ -51,27 +53,22 @@ public class ClientSdk implements AutoCloseable {
         .thenRun(() -> System.out.println("WebSocket closed"));
   }
 
-  private Object pollResponse(UUID cid) {
-    final ServiceMessage response;
+  private Object poll(UUID cid, BlockingQueue<Object> queue) {
+    final Object data;
     try {
-      response = messageQueue.poll(3, TimeUnit.SECONDS);
+      data = queue.poll(3, TimeUnit.SECONDS);
     } catch (InterruptedException e) {
       throw new RuntimeException(e);
     }
-    if (response == null) {
+    if (data == null) {
       throw new RuntimeException("Poll failed");
     }
-
-    if (!response.cid().equals(cid)) {
-      throw new RuntimeException(
-          "Invalid cid: request = " + cid + ", response = " + response.cid());
-    }
-
-    final var data = messageCodec.decode(response);
 
     if (data instanceof ErrorData errorData) {
       throw new ServiceException(errorData.errorCode(), errorData.errorMessage());
     }
+
+    messageQueues.remove(cid);
 
     return data;
   }
@@ -101,8 +98,17 @@ public class ClientSdk implements AutoCloseable {
               final var request = args != null ? args[0] : null;
               final var name = method.getName();
               final var cid = UUID.randomUUID();
+
+              final var queue =
+                  messageQueues.computeIfAbsent(cid, uuid -> new ArrayBlockingQueue<>(64));
+
               sendText(new ServiceMessage().cid(cid).qualifier(name).data(request));
-              return pollResponse(cid);
+
+              if (method.getReturnType().isAssignableFrom(Flux.class)) {
+                return new Flux<>(cid, queue, messageQueues);
+              } else {
+                return poll(cid, queue);
+              }
             });
   }
 
@@ -136,7 +142,12 @@ public class ClientSdk implements AutoCloseable {
     public CompletionStage<?> onText(WebSocket webSocket, CharSequence data, boolean last) {
       try {
         final var message = objectMapper.readValue(data.toString(), ServiceMessage.class);
-        if (!messageQueue.offer(message, 3, TimeUnit.SECONDS)) {
+        final var messageQueue = messageQueues.get(message.cid());
+        if (messageQueue == null) {
+          throw new RuntimeException("Offer failed: message queue is null");
+        }
+        final var decoded = messageCodec.decode(message);
+        if (!messageQueue.offer(decoded, 3, TimeUnit.SECONDS)) {
           throw new RuntimeException("Offer failed");
         }
         return Listener.super.onText(webSocket, data, last);
