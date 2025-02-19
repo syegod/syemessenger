@@ -1,10 +1,11 @@
 package io.syemessenger.api.message;
 
-import io.syemessenger.api.Flux;
+
+import io.syemessenger.api.Receiver;
 
 public interface MessageSdk {
 
-  Flux<String> subscribe(Long roomId);
+  Receiver subscribe(Long roomId);
 
   void unsubscribe();
 
