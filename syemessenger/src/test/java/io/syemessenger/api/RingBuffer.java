@@ -12,8 +12,9 @@ public class RingBuffer<T> {
   }
 
   public void offer(T object) {
-    final int index = (int) (writePosition.getAndIncrement() % objects.length);
+    final int index = (int) (writePosition.get() % objects.length);
     objects[index] = object;
+    writePosition.incrementAndGet();
   }
 
   public Object[] objects() {

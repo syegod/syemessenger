@@ -3,7 +3,6 @@ package io.syemessenger.api;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import io.syemessenger.JsonMappers;
-import io.syemessenger.MessageCodec;
 import io.syemessenger.api.account.AccountSdk;
 import io.syemessenger.api.room.RoomSdk;
 import java.lang.reflect.Proxy;
@@ -22,9 +21,11 @@ public class ClientSdk implements AutoCloseable {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(ClientSdk.class);
 
+  private static final ClientCodec messageCodec = ClientCodec.getInstance();
+
   private final WebSocket ws;
   private final JsonMapper objectMapper = JsonMappers.jsonMapper();
-  private final RingBuffer<ServiceMessage> buffer = new RingBuffer<>(128);
+  private final RingBuffer<ServiceMessage> buffer = new RingBuffer<>(64);
   private final CountDownLatch latch = new CountDownLatch(1);
 
   public ClientSdk() {
@@ -80,19 +81,20 @@ public class ClientSdk implements AutoCloseable {
               }
 
               final var receiver = new Receiver(buffer);
-
               final var s = System.currentTimeMillis();
 
               while (true) {
                 final var message = receiver.poll(m -> m.cid().equals(cid));
                 if (message != null) {
-                  return message;
+                  if (message.data() instanceof ErrorData errorData) {
+                    throw new ServiceException(errorData.errorCode(), errorData.errorMessage());
+                  }
+                  return message.data();
                 }
                 if (System.currentTimeMillis() - s >= 3000) {
                   throw new RuntimeException("Timeout");
                 }
-                //noinspection BusyWait
-                Thread.sleep(10);
+                Thread.onSpinWait();
               }
             });
   }
@@ -128,7 +130,7 @@ public class ClientSdk implements AutoCloseable {
       try {
         final var message = objectMapper.readValue(data.toString(), ServiceMessage.class);
 
-        buffer.offer(message);
+        buffer.offer(message.data(messageCodec.decode(message)));
 
         return Listener.super.onText(webSocket, data, last);
       } catch (Exception e) {

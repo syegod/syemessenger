@@ -18,7 +18,10 @@ public class Receiver {
 
     if (writePosition - readPosition > length + 1) {
       throw new RuntimeException(
-          "Poll failed: write position: " + writePosition + ", read position: " + readPosition);
+          "Response has been overwritten: write position: "
+              + writePosition
+              + ", read position: "
+              + readPosition);
     }
 
     if (readPosition == writePosition) {
@@ -31,7 +34,10 @@ public class Receiver {
 
     if (ringBuffer.writePosition() - r > length + 1) {
       throw new RuntimeException(
-          "Poll failed: write position: " + writePosition + ", read position: " + readPosition);
+          "Response has been overwritten: write position: "
+              + writePosition
+              + ", read position: "
+              + readPosition);
     }
 
     if (predicate.test(result)) {
