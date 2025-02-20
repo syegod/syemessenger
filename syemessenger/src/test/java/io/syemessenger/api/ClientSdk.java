@@ -1,5 +1,7 @@
 package io.syemessenger.api;
 
+import static io.syemessenger.environment.AssertionUtils.byCid;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import io.syemessenger.JsonMappers;
@@ -81,7 +83,7 @@ public class ClientSdk implements AutoCloseable {
               final var s = System.currentTimeMillis();
 
               while (true) {
-                final var message = receiver.poll(m -> m.cid().equals(cid));
+                final var message = receiver.poll(byCid(cid));
                 if (message != null) {
                   if (message.data() instanceof ErrorData errorData) {
                     throw new ServiceException(errorData.errorCode(), errorData.errorMessage());

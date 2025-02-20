@@ -3,6 +3,7 @@ package io.syemessenger.api.message;
 import static io.syemessenger.api.account.AccountAssertions.login;
 import static io.syemessenger.api.room.RoomAssertions.createRoom;
 import static io.syemessenger.environment.AssertionUtils.awaitUntil;
+import static io.syemessenger.environment.AssertionUtils.byQualifier;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import io.syemessenger.api.ClientSdk;
@@ -29,7 +30,7 @@ public class SendMessageIT {
     assertEquals(roomInfo.id(), roomId, "roomId: " + roomId);
 
     final var message =
-        awaitUntil(() -> receiver.poll(m -> m.qualifier().equals("v1/syemessenger/send")), TIMEOUT);
+        awaitUntil(() -> receiver.poll(byQualifier("v1/syemessenger/messages")), TIMEOUT);
     assertEquals(text, message.data());
   }
 }

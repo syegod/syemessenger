@@ -1,5 +1,7 @@
 package io.syemessenger;
 
+import static io.syemessenger.environment.AssertionUtils.byCid;
+import static io.syemessenger.environment.AssertionUtils.byQualifier;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -33,13 +35,13 @@ public class ProducerConsumerTest {
     ringBuffer.offer(message2);
     ringBuffer.offer(message3);
 
-    ServiceMessage result1 = receiver.poll(msg -> msg.qualifier().equals(message1.qualifier()));
+    ServiceMessage result1 = receiver.poll(byQualifier(message1.qualifier()));
     assertEquals(message1, result1);
 
-    ServiceMessage result2 = receiver.poll(msg -> msg.qualifier().equals(message2.qualifier()));
+    ServiceMessage result2 = receiver.poll(byQualifier(message2.qualifier()));
     assertEquals(message2, result2);
 
-    ServiceMessage result3 = receiver.poll(msg -> msg.qualifier().equals(message3.qualifier()));
+    ServiceMessage result3 = receiver.poll(byQualifier(message3.qualifier()));
     assertEquals(message3, result3);
   }
 
@@ -48,13 +50,13 @@ public class ProducerConsumerTest {
     final var cid = UUID.randomUUID();
     ServiceMessage message = createServiceMessage(cid);
 
-    final var polled1 = receiver.poll(m -> m.cid().equals(cid));
+    final var polled1 = receiver.poll(byCid(cid));
 
     assertNull(polled1);
 
     ringBuffer.offer(message);
 
-    final var polled = receiver.poll(m -> m.cid().equals(cid));
+    final var polled = receiver.poll(byCid(cid));
 
     assertEquals(message, polled);
   }
@@ -73,7 +75,7 @@ public class ProducerConsumerTest {
       ringBuffer.offer(createServiceMessage("test" + i));
     }
 
-    ServiceMessage result = receiver.poll(msg -> msg.cid().equals(cid));
+    ServiceMessage result = receiver.poll(byCid(cid));
     assertNull(result, "Should be null");
   }
 
@@ -86,7 +88,7 @@ public class ProducerConsumerTest {
     }
 
     var thrown =
-        assertThrows(RuntimeException.class, () -> receiver.poll(msg -> msg.cid().equals(cid)));
+        assertThrows(RuntimeException.class, () -> receiver.poll(byCid(cid)));
 
     assertTrue(thrown.getMessage().contains("has been overwritten"));
   }
@@ -105,13 +107,13 @@ public class ProducerConsumerTest {
     ringBuffer.offer(message2);
     ringBuffer.offer(message3);
 
-    ServiceMessage result1 = receiver.poll(msg -> msg.cid().equals(cid1));
+    ServiceMessage result1 = receiver.poll(byCid(cid1));
     assertEquals(message1, result1);
 
-    ServiceMessage result2 = receiver.poll(msg -> msg.cid().equals(cid2));
+    ServiceMessage result2 = receiver.poll(byCid(cid2));
     assertEquals(message2, result2);
 
-    ServiceMessage result3 = receiver.poll(msg -> msg.cid().equals(cid3));
+    ServiceMessage result3 = receiver.poll(byCid(cid3));
     assertEquals(message3, result3);
   }
 
@@ -127,7 +129,7 @@ public class ProducerConsumerTest {
     ringBuffer.offer(message2);
 
     UUID nonexistentCid = UUID.randomUUID();
-    ServiceMessage result = receiver.poll(msg -> msg.cid().equals(nonexistentCid));
+    ServiceMessage result = receiver.poll(byCid(nonexistentCid));
 
     assertNull(result, "Non-existing cid");
   }

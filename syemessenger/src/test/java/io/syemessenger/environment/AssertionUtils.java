@@ -6,14 +6,16 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import io.syemessenger.api.OrderBy;
 import io.syemessenger.api.OrderBy.Direction;
+import io.syemessenger.api.ServiceMessage;
 import java.lang.reflect.Field;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.UUID;
 import java.util.function.BiConsumer;
-import java.util.function.BooleanSupplier;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 public class AssertionUtils {
@@ -73,5 +75,13 @@ public class AssertionUtils {
       }
       Thread.onSpinWait();
     }
+  }
+
+  public static Predicate<ServiceMessage> byCid(UUID cid) {
+    return message -> cid.equals(message.cid());
+  }
+
+  public static Predicate<ServiceMessage> byQualifier(String qualifier) {
+    return message -> qualifier.equals(message.qualifier());
   }
 }

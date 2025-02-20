@@ -4,6 +4,7 @@ import io.syemessenger.JsonMappers;
 import io.syemessenger.MessageCodec;
 import io.syemessenger.api.account.AccountInfo;
 import io.syemessenger.api.account.GetRoomsResponse;
+import io.syemessenger.api.message.MessageInfo;
 import io.syemessenger.api.room.GetBlockedMembersResponse;
 import io.syemessenger.api.room.GetRoomMembersResponse;
 import io.syemessenger.api.room.ListRoomsResponse;
@@ -36,6 +37,8 @@ public class ClientCodec extends MessageCodec {
     register("v1/syemessenger/subscribe", Long.class);
     register("v1/syemessenger/unsubscribe", Long.class);
     register("v1/syemessenger/send", Long.class);
+    //
+    register("v1/syemessenger/messages", MessageInfo.class);
     //
     register("v1/syemessenger/error", ErrorData.class);
   }
