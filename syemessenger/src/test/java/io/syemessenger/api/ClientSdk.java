@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import io.syemessenger.JsonMappers;
 import io.syemessenger.api.account.AccountSdk;
+import io.syemessenger.api.message.MessageSdk;
 import io.syemessenger.api.room.RoomSdk;
 import java.lang.reflect.Proxy;
 import java.net.URI;
@@ -105,6 +106,10 @@ public class ClientSdk implements AutoCloseable {
 
   public RoomSdk roomSdk() {
     return api(RoomSdk.class);
+  }
+
+  public MessageSdk messageSdk() {
+    return api(MessageSdk.class);
   }
 
   private Object toStringOrEqualsOrHashCode(String method, Class<?> api, Object... args) {
