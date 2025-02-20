@@ -1,13 +1,10 @@
 package io.syemessenger.api.message;
 
-
-import io.syemessenger.api.Receiver;
-
 public interface MessageSdk {
 
-  Receiver subscribe(Long roomId);
+  Long subscribe(Long roomId);
 
-  void unsubscribe();
+  Long unsubscribe();
 
-  void send(String message);
+  Long send(String message);
 }

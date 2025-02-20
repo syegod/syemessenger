@@ -12,6 +12,9 @@ public class RingBuffer<T> {
   }
 
   public void offer(T object) {
+    if (object == null) {
+      throw new IllegalArgumentException("Offer: object is null");
+    }
     final int index = (int) (writePosition.get() % objects.length);
     objects[index] = object;
     writePosition.incrementAndGet();

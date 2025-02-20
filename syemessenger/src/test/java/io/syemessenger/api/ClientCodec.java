@@ -33,9 +33,9 @@ public class ClientCodec extends MessageCodec {
     register("v1/syemessenger/getBlockedMembers", GetBlockedMembersResponse.class);
     register("v1/syemessenger/listRooms", ListRoomsResponse.class);
     //
-    register("v1/syemessenger/subscribe", String.class);
-    register("v1/syemessenger/unsubscribe", Void.class);
-    register("v1/syemessenger/send", String.class);
+    register("v1/syemessenger/subscribe", Long.class);
+    register("v1/syemessenger/unsubscribe", Long.class);
+    register("v1/syemessenger/send", Long.class);
     //
     register("v1/syemessenger/error", ErrorData.class);
   }

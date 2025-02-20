@@ -77,10 +77,6 @@ public class ClientSdk implements AutoCloseable {
 
               sendText(new ServiceMessage().cid(cid).qualifier(name).data(request));
 
-              if (method.getReturnType().isAssignableFrom(Receiver.class)) {
-                return new Receiver(buffer);
-              }
-
               final var receiver = new Receiver(buffer);
               final var s = System.currentTimeMillis();
 
@@ -110,6 +106,10 @@ public class ClientSdk implements AutoCloseable {
 
   public MessageSdk messageSdk() {
     return api(MessageSdk.class);
+  }
+
+  public Receiver receiver() {
+    return new Receiver(buffer);
   }
 
   private Object toStringOrEqualsOrHashCode(String method, Class<?> api, Object... args) {

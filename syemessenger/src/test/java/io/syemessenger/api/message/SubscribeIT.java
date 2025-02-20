@@ -3,16 +3,13 @@ package io.syemessenger.api.message;
 import static io.syemessenger.api.ErrorAssertions.assertError;
 import static io.syemessenger.api.account.AccountAssertions.login;
 import static io.syemessenger.api.room.RoomAssertions.createRoom;
-import static io.syemessenger.environment.AssertionUtils.awaitUntil;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import io.syemessenger.api.ClientSdk;
-import io.syemessenger.api.ServiceMessage;
 import io.syemessenger.api.account.AccountInfo;
 import io.syemessenger.environment.IntegrationEnvironmentExtension;
 import java.time.Duration;
-import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
@@ -33,26 +30,60 @@ public class SubscribeIT {
   }
 
   @Test
-  void testSubscribe(ClientSdk clientSdk, AccountInfo accountInfo) {
-    final var roomInfo = createRoom(accountInfo);
+  void testSubscribeNotExistingRoom(ClientSdk clientSdk, AccountInfo accountInfo) {
     login(clientSdk, accountInfo);
-
-    final var cid = UUID.randomUUID();
+    try {
+      clientSdk.messageSdk().subscribe(Long.MAX_VALUE);
+      fail("Expected exception");
+    } catch (Exception ex) {
+      assertError(ex, 404, "Room not found");
+    }
   }
 
   @Test
-  void testReceiveMessages(ClientSdk clientSdk, AccountInfo accountInfo) {
+  void testSubscribeNotMember(
+      ClientSdk clientSdk, AccountInfo accountInfo, AccountInfo anotherAccountInfo) {
+    try {
+      final var roomInfo = createRoom(accountInfo);
+      login(clientSdk, anotherAccountInfo);
+      clientSdk.messageSdk().subscribe(roomInfo.id());
+      fail("Expected exception");
+    } catch (Exception ex) {
+      assertError(ex, 403, "Not a room member");
+    }
+  }
+
+  @Test
+  void testSubscribeBlocked(ClientSdk clientSdk, AccountInfo accountInfo) {
+    fail("Implement");
+  }
+
+  @Test
+  void testSubscribeRemoved(ClientSdk clientSdk, AccountInfo accountInfo) {
+    fail("Implement");
+  }
+
+  @Test
+  void testSubscribeLeaved(ClientSdk clientSdk, AccountInfo accountInfo) {
+    fail("Implement");
+  }
+
+  @Test
+  void testSubscribe(ClientSdk clientSdk, AccountInfo accountInfo) {
     final var roomInfo = createRoom(accountInfo);
     login(clientSdk, accountInfo);
-    final var subscribe = clientSdk.messageSdk().subscribe(roomInfo.id());
+    final var roomId = clientSdk.messageSdk().subscribe(roomInfo.id());
+    assertEquals(roomInfo.id(), roomId, "roomId: " + roomId);
+  }
 
-    final var expected = "Test";
-    clientSdk.messageSdk().send(expected);
+  @Test
+  void testSubscribeRepeatedly(ClientSdk clientSdk, AccountInfo accountInfo) {
+    final var roomInfo = createRoom(accountInfo);
+    login(clientSdk, accountInfo);
+    final var roomId1 = clientSdk.messageSdk().subscribe(roomInfo.id());
+    final var roomId2 = clientSdk.messageSdk().subscribe(roomInfo.id());
 
-    final ServiceMessage message =
-        awaitUntil(
-            () -> subscribe.poll(m -> m.qualifier().equals("v1/syemessenger/send")), TIMEOUT);
-
-    assertEquals(expected, message.data());
+    assertEquals(roomInfo.id(), roomId1, "roomId1: " + roomId1);
+    assertEquals(roomInfo.id(), roomId2, "roomId2: " + roomId2);
   }
 }
