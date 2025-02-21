@@ -215,7 +215,7 @@ public class RoomService {
   public Page<Account> getRoomMembers(GetRoomMembersRequest request, Long accountId) {
     final var roomMember = roomRepository.findRoomMember(request.roomId(), accountId);
     if (roomMember == null) {
-      throw new ServiceException(403, "Not room member");
+      throw new ServiceException(403, "Not a room member");
     }
 
     return roomRepository.findRoomMembers(
