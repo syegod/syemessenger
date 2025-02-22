@@ -7,6 +7,10 @@
   byteOrder="littleEndian">
 
   <types>
+    <composite name="varStringEncoding">
+      <type name="length" primitiveType="uint32" />
+      <type name="varData" primitiveType="uint8" presence="optional" />
+    </composite>
     <composite name="messageHeader">
       <type name="blockLength" primitiveType="uint16"/>
       <type name="templateId" primitiveType="uint16"/>
@@ -41,6 +45,12 @@
     <group name="memberIds" id="2">
       <field name="memberId" id="100" type="int64"/>
     </group>
+  </sbe:message>
+
+  <sbe:message name="RoomMessage" id="4">
+    <field name="message" id="1" type="varStringEncoding"/>
+    <field name="roomId" id="2" type="int64"/>
+    <field name="senderId" id="3" type="int64"/>
   </sbe:message>
 
 </sbe:messageSchema>

@@ -1,5 +1,6 @@
 package io.syemessenger.kafka;
 
+import io.syemessenger.api.message.MessageInfo;
 import io.syemessenger.kafka.dto.BlockMembersEvent;
 import io.syemessenger.kafka.dto.LeaveRoomEvent;
 import io.syemessenger.kafka.dto.RemoveMembersEvent;
@@ -12,7 +13,10 @@ import io.syemessenger.sbe.MessageHeaderDecoder;
 import io.syemessenger.sbe.MessageHeaderEncoder;
 import io.syemessenger.sbe.RemoveMembersEventDecoder;
 import io.syemessenger.sbe.RemoveMembersEventEncoder;
+import io.syemessenger.sbe.RoomMessageDecoder;
+import io.syemessenger.sbe.RoomMessageEncoder;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import org.agrona.concurrent.UnsafeBuffer;
 
@@ -30,20 +34,15 @@ public class KafkaMessageCodec {
       new BlockMembersEventEncoder();
   private static final BlockMembersEventDecoder blockMembersDecoder =
       new BlockMembersEventDecoder();
+  private static final RoomMessageEncoder roomMessageEncoder = new RoomMessageEncoder();
+  private static final RoomMessageDecoder roomMessageDecoder = new RoomMessageDecoder();
 
   public static ByteBuffer encodeLeaveRoomEvent(LeaveRoomEvent leaveRoomEvent) {
     final var byteBuffer = ByteBuffer.allocate(512);
     final var directBuffer = new UnsafeBuffer(byteBuffer);
 
-    headerEncoder
-        .wrap(directBuffer, 0)
-        .blockLength(leaveRoomEncoder.sbeBlockLength())
-        .templateId(leaveRoomEncoder.sbeTemplateId())
-        .schemaId(leaveRoomEncoder.sbeSchemaId())
-        .version(leaveRoomEncoder.sbeSchemaVersion());
-
     leaveRoomEncoder
-        .wrap(directBuffer, headerEncoder.encodedLength())
+        .wrapAndApplyHeader(directBuffer, 0, headerEncoder)
         .roomId(leaveRoomEvent.roomId())
         .accountId(leaveRoomEvent.accountId())
         .isOwner(leaveRoomEvent.isOwner() ? BooleanType.TRUE : BooleanType.FALSE);
@@ -54,13 +53,8 @@ public class KafkaMessageCodec {
 
   public static LeaveRoomEvent decodeLeaveRoomEvent(ByteBuffer byteBuffer) {
     final var directBuffer = new UnsafeBuffer(byteBuffer);
-    headerDecoder.wrap(directBuffer, 0);
 
-    leaveRoomDecoder.wrap(
-        directBuffer,
-        headerDecoder.encodedLength(),
-        headerDecoder.blockLength(),
-        headerDecoder.version());
+    leaveRoomDecoder.wrapAndApplyHeader(directBuffer, 0, headerDecoder);
 
     return new LeaveRoomEvent()
         .roomId(leaveRoomDecoder.roomId())
@@ -72,15 +66,8 @@ public class KafkaMessageCodec {
     final var byteBuffer = ByteBuffer.allocate(512);
     final var directBuffer = new UnsafeBuffer(byteBuffer);
 
-    headerEncoder
-        .wrap(directBuffer, 0)
-        .blockLength(removeMembersEncoder.sbeBlockLength())
-        .templateId(removeMembersEncoder.sbeTemplateId())
-        .schemaId(removeMembersEncoder.sbeSchemaId())
-        .version(removeMembersEncoder.sbeSchemaVersion());
-
     removeMembersEncoder
-        .wrap(directBuffer, headerEncoder.encodedLength())
+        .wrapAndApplyHeader(directBuffer, 0, headerEncoder)
         .roomId(removeMembersEvent.roomId());
 
     RemoveMembersEventEncoder.MemberIdsEncoder memberIdsEncoder =
@@ -95,13 +82,8 @@ public class KafkaMessageCodec {
 
   public static RemoveMembersEvent decodeRemoveMembersEvent(ByteBuffer byteBuffer) {
     final var directBuffer = new UnsafeBuffer(byteBuffer);
-    headerDecoder.wrap(directBuffer, 0);
 
-    removeMembersDecoder.wrap(
-        directBuffer,
-        headerDecoder.encodedLength(),
-        headerDecoder.blockLength(),
-        headerDecoder.version());
+    removeMembersDecoder.wrapAndApplyHeader(directBuffer, 0, headerDecoder);
 
     final var memberIds = new ArrayList<Long>();
     for (var memberId : removeMembersDecoder.memberIds()) {
@@ -115,15 +97,8 @@ public class KafkaMessageCodec {
     final var byteBuffer = ByteBuffer.allocate(512);
     final var directBuffer = new UnsafeBuffer(byteBuffer);
 
-    headerEncoder
-        .wrap(directBuffer, 0)
-        .blockLength(blockMembersEncoder.sbeBlockLength())
-        .templateId(blockMembersEncoder.sbeTemplateId())
-        .schemaId(blockMembersEncoder.sbeSchemaId())
-        .version(blockMembersEncoder.sbeSchemaVersion());
-
     blockMembersEncoder
-        .wrap(directBuffer, headerEncoder.encodedLength())
+        .wrapAndApplyHeader(directBuffer, 0, headerEncoder)
         .roomId(blockMembersEvent.roomId());
 
     var memberIdsEncoder = blockMembersEncoder.memberIdsCount(blockMembersEvent.memberIds().size());
@@ -137,13 +112,8 @@ public class KafkaMessageCodec {
 
   public static BlockMembersEvent decodeBlockMembersEvent(ByteBuffer byteBuffer) {
     final var directBuffer = new UnsafeBuffer(byteBuffer);
-    headerDecoder.wrap(directBuffer, 0);
 
-    blockMembersDecoder.wrap(
-        directBuffer,
-        headerDecoder.encodedLength(),
-        headerDecoder.blockLength(),
-        headerDecoder.version());
+    blockMembersDecoder.wrapAndApplyHeader(directBuffer, 0, headerDecoder);
 
     final var memberIds = new ArrayList<Long>();
     for (var memberId : blockMembersDecoder.memberIds()) {
@@ -151,5 +121,40 @@ public class KafkaMessageCodec {
     }
 
     return new BlockMembersEvent().roomId(blockMembersDecoder.roomId()).memberIds(memberIds);
+  }
+
+  public static ByteBuffer encodeRoomMessage(MessageInfo messageInfo) {
+    final var byteBuffer = ByteBuffer.allocate(512);
+    final var directBuffer = new UnsafeBuffer(byteBuffer);
+
+    byte[] stringData = messageInfo.message().getBytes(StandardCharsets.UTF_16);
+
+    final var varStringEncoding = roomMessageEncoder.message();
+    directBuffer.putBytes(varStringEncoding.offset(), stringData, 0, stringData.length);
+
+    roomMessageEncoder
+        .wrapAndApplyHeader(directBuffer, 0, headerEncoder)
+        .roomId(messageInfo.roomId())
+        .senderId(messageInfo.senderId())
+        .message()
+        .length(stringData.length);
+    return byteBuffer;
+  }
+
+  public static MessageInfo decodeMessageInfo(ByteBuffer byteBuffer) {
+    final var unsafeBuffer = new UnsafeBuffer(byteBuffer);
+    roomMessageDecoder.wrapAndApplyHeader(unsafeBuffer, 0, headerDecoder);
+
+    final var varStringEncoding = roomMessageDecoder.message();
+
+    final var length = (int) varStringEncoding.length();
+    final var stringBytes = new byte[length];
+
+    unsafeBuffer.getBytes(varStringEncoding.offset(), stringBytes, 0, length);
+
+    return new MessageInfo()
+        .message(new String(stringBytes, StandardCharsets.UTF_16))
+        .roomId(roomMessageDecoder.roomId())
+        .senderId(roomMessageDecoder.senderId());
   }
 }
