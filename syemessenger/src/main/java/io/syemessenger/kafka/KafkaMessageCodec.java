@@ -16,7 +16,6 @@ import io.syemessenger.sbe.RemoveMembersEventEncoder;
 import io.syemessenger.sbe.RoomMessageDecoder;
 import io.syemessenger.sbe.RoomMessageEncoder;
 import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import org.agrona.concurrent.UnsafeBuffer;
 
@@ -127,33 +126,21 @@ public class KafkaMessageCodec {
     final var byteBuffer = ByteBuffer.allocate(512);
     final var directBuffer = new UnsafeBuffer(byteBuffer);
 
-    byte[] stringData = messageInfo.message().getBytes(StandardCharsets.UTF_16);
-
-    final var varStringEncoding = roomMessageEncoder.message();
-    directBuffer.putBytes(varStringEncoding.offset(), stringData, 0, stringData.length);
-
     roomMessageEncoder
         .wrapAndApplyHeader(directBuffer, 0, headerEncoder)
         .roomId(messageInfo.roomId())
-        .senderId(messageInfo.senderId())
-        .message()
-        .length(stringData.length);
+        .message(messageInfo.message())
+        .senderId(messageInfo.senderId());
+    byteBuffer.limit(roomMessageEncoder.encodedLength() + headerEncoder.encodedLength());
     return byteBuffer;
   }
 
-  public static MessageInfo decodeMessageInfo(ByteBuffer byteBuffer) {
+  public static MessageInfo decodeRoomMessage(ByteBuffer byteBuffer) {
     final var unsafeBuffer = new UnsafeBuffer(byteBuffer);
     roomMessageDecoder.wrapAndApplyHeader(unsafeBuffer, 0, headerDecoder);
 
-    final var varStringEncoding = roomMessageDecoder.message();
-
-    final var length = (int) varStringEncoding.length();
-    final var stringBytes = new byte[length];
-
-    unsafeBuffer.getBytes(varStringEncoding.offset(), stringBytes, 0, length);
-
     return new MessageInfo()
-        .message(new String(stringBytes, StandardCharsets.UTF_16))
+        .message(roomMessageDecoder.message())
         .roomId(roomMessageDecoder.roomId())
         .senderId(roomMessageDecoder.senderId());
   }
