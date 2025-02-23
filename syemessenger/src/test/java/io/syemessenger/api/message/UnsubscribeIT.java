@@ -22,6 +22,16 @@ public class UnsubscribeIT {
   public static final Duration TIMEOUT = Duration.ofMillis(3000);
 
   @Test
+  void testUnsubscribeNotLogged(ClientSdk clientSdk, AccountInfo accountInfo) {
+    try {
+      clientSdk.messageSdk().unsubscribe();
+      fail("Expected exception");
+    } catch (Exception ex) {
+      assertError(ex, 401, "Not authenticated");
+    }
+  }
+
+  @Test
   void testUnsubscribeNotSubscribed(ClientSdk clientSdk, AccountInfo accountInfo) {
     login(clientSdk, accountInfo);
     try {

@@ -1,5 +1,6 @@
 package io.syemessenger;
 
+import io.syemessenger.api.ServiceException;
 import io.syemessenger.api.message.MessageInfo;
 import io.syemessenger.websocket.SessionContext;
 import jakarta.inject.Named;
@@ -12,23 +13,39 @@ import java.util.concurrent.ConcurrentHashMap;
 public class SubscriptionRegistry {
 
   private final Map<Long, List<SessionContext>> registry = new ConcurrentHashMap<>();
+  private final Map<SessionContext, Long> sessions = new ConcurrentHashMap<>();
 
   public void subscribe(Long roomId, SessionContext sessionContext) {
-    registry.compute(
-        roomId,
-        (k, list) -> {
-          if (list == null) {
-            list = new ArrayList<>();
+    sessions.compute(
+        sessionContext,
+        (k, currentRoomId) -> {
+          List<SessionContext> list;
+          if (currentRoomId != null) {
+            list = registry.get(currentRoomId);
+            list.remove(sessionContext);
+          } else {
+            list = registry.computeIfAbsent(roomId, l -> new ArrayList<>());
           }
-          if (!list.contains(sessionContext)) {
-            list.add(sessionContext);
-          }
-          return list;
+          list.add(sessionContext);
+          return roomId;
         });
   }
 
-  public void unsubscribe(Long roomId, SessionContext sessionContext) {
-    // TODO: implement
+  public Long unsubscribe(SessionContext sessionContext) {
+    final var roomId = sessions.get(sessionContext);
+    if (roomId == null) {
+      throw new ServiceException(400, "Not subscribed");
+    }
+    sessions.compute(
+        sessionContext,
+        (k, currentRoomId) -> {
+          if (currentRoomId != null) {
+            registry.get(currentRoomId).remove(sessionContext);
+          }
+          return null;
+        }
+    );
+    return roomId;
   }
 
   public void send(Long roomId, MessageInfo messageInfo) {

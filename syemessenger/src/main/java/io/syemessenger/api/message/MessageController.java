@@ -32,4 +32,15 @@ public class MessageController {
 
     sessionContext.send(serviceMessage.clone().data(roomId));
   }
+
+  @RequestHandler(value = "v1/syemessenger/unsubscribe", requestType = Void.class)
+  public void unsubscribe(SessionContext sessionContext, ServiceMessage serviceMessage) {
+    if (!sessionContext.isLoggedIn()) {
+      throw new ServiceException(401, "Not authenticated");
+    }
+
+    final var roomId = messageService.unsubscribe(sessionContext);
+
+    sessionContext.send(serviceMessage.clone().data(roomId));
+  }
 }

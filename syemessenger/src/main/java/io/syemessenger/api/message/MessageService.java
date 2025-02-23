@@ -45,4 +45,8 @@ public class MessageService {
 
     subscriptionRegistry.subscribe(roomId, sessionContext);
   }
+
+  public Long unsubscribe(SessionContext sessionContext) {
+    return subscriptionRegistry.unsubscribe(sessionContext);
+  }
 }
