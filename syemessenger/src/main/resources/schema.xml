@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <sbe:messageSchema xmlns:sbe="http://fixprotocol.io/2016/sbe"
   package="io.syemessenger.sbe"
-  id="1"
+  id="100"
   version="0"
   semanticVersion="5.2"
   byteOrder="littleEndian">
