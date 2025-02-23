@@ -62,7 +62,7 @@ public class SubscriptionRegistry {
     }
   }
 
-  public void leaveRoom(Long roomId, Long accountInfo, Boolean isOwner) {
+  public void leaveRoom(Long roomId, Long accountId, Boolean isOwner) {
     // TODO: implement
   }
 
