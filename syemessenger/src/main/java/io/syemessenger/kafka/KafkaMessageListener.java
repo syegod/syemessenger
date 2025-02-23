@@ -1,5 +1,6 @@
 package io.syemessenger.kafka;
 
+import io.syemessenger.SubscriptionRegistry;
 import io.syemessenger.api.message.MessageInfo;
 import io.syemessenger.kafka.dto.BlockMembersEvent;
 import io.syemessenger.kafka.dto.LeaveRoomEvent;
@@ -16,6 +17,12 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class KafkaMessageListener {
+
+  private final SubscriptionRegistry subscriptionRegistry;
+
+  public KafkaMessageListener(SubscriptionRegistry subscriptionRegistry) {
+    this.subscriptionRegistry = subscriptionRegistry;
+  }
 
   @KafkaListener(topics = "messages")
   public void listenMessages(ByteBuffer byteBuffer) {
@@ -60,6 +67,6 @@ public class KafkaMessageListener {
   }
 
   private void onRoomMessage(MessageInfo messageInfo) {
-    // TODO: implement
+    subscriptionRegistry.onRoomMessage(messageInfo);
   }
 }

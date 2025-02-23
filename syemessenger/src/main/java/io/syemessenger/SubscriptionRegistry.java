@@ -1,6 +1,7 @@
 package io.syemessenger;
 
 import io.syemessenger.api.ServiceException;
+import io.syemessenger.api.ServiceMessage;
 import io.syemessenger.api.message.MessageInfo;
 import io.syemessenger.websocket.SessionContext;
 import jakarta.inject.Named;
@@ -32,10 +33,7 @@ public class SubscriptionRegistry {
   }
 
   public Long unsubscribe(SessionContext sessionContext) {
-    final var roomId = sessions.get(sessionContext);
-    if (roomId == null) {
-      throw new ServiceException(400, "Not subscribed");
-    }
+    final var roomId = roomId(sessionContext);
     sessions.compute(
         sessionContext,
         (k, currentRoomId) -> {
@@ -43,13 +41,25 @@ public class SubscriptionRegistry {
             registry.get(currentRoomId).remove(sessionContext);
           }
           return null;
-        }
-    );
+        });
     return roomId;
   }
 
-  public void send(Long roomId, MessageInfo messageInfo) {
-    // TODO: implement
+  public Long roomId(SessionContext sessionContext) {
+    final var roomId = sessions.get(sessionContext);
+    if (roomId == null) {
+      throw new ServiceException(400, "Not subscribed");
+    }
+    return roomId;
+  }
+
+  public void onRoomMessage(MessageInfo messageInfo) {
+    final var list = registry.get(messageInfo.roomId());
+    if (list != null) {
+      for (var sessionContext : list) {
+        sessionContext.send(new ServiceMessage().qualifier("messages").data(messageInfo));
+      }
+    }
   }
 
   public void leaveRoom(Long roomId, Long accountInfo, Boolean isOwner) {

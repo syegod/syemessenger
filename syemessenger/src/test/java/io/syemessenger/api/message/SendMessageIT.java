@@ -44,7 +44,7 @@ public class SendMessageIT {
       clientSdk.messageSdk().send("test");
       fail("Expected exception");
     } catch (Exception ex) {
-      assertError(ex, 403, "Not a room member");
+      assertError(ex, 403, "Cannot subscribe: not a member");
     }
   }
 

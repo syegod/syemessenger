@@ -5,20 +5,27 @@ import io.syemessenger.api.ServiceException;
 import io.syemessenger.api.room.repository.BlockedMemberId;
 import io.syemessenger.api.room.repository.BlockedRepository;
 import io.syemessenger.api.room.repository.RoomRepository;
+import io.syemessenger.kafka.KafkaMessageCodec;
 import io.syemessenger.websocket.SessionContext;
+import java.nio.ByteBuffer;
+import java.util.concurrent.TimeUnit;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
 @Service
 public class MessageService {
 
+  private final KafkaTemplate<Long, ByteBuffer> kafkaTemplate;
   private final RoomRepository roomRepository;
   private final BlockedRepository blockedRepository;
   private final SubscriptionRegistry subscriptionRegistry;
 
   public MessageService(
+      KafkaTemplate<Long, ByteBuffer> kafkaTemplate,
       RoomRepository roomRepository,
       BlockedRepository blockedRepository,
       SubscriptionRegistry subscriptionRegistry) {
+    this.kafkaTemplate = kafkaTemplate;
     this.roomRepository = roomRepository;
     this.blockedRepository = blockedRepository;
     this.subscriptionRegistry = subscriptionRegistry;
@@ -48,5 +55,21 @@ public class MessageService {
 
   public Long unsubscribe(SessionContext sessionContext) {
     return subscriptionRegistry.unsubscribe(sessionContext);
+  }
+
+  public Long send(SessionContext sessionContext, String messageText) {
+    final var roomId = subscriptionRegistry.roomId(sessionContext);
+    final var messageInfo =
+        new MessageInfo().roomId(roomId).message(messageText).senderId(sessionContext.accountId());
+
+    try {
+      kafkaTemplate
+          .send("messages", roomId, KafkaMessageCodec.encodeRoomMessage(messageInfo))
+          .get(3, TimeUnit.SECONDS);
+    } catch (Exception ex) {
+      throw new RuntimeException("Failed to send message", ex);
+    }
+
+    return roomId;
   }
 }

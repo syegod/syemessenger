@@ -43,4 +43,24 @@ public class MessageController {
 
     sessionContext.send(serviceMessage.clone().data(roomId));
   }
+
+  @RequestHandler(value = "v1/syemessenger/send", requestType = String.class)
+  public void send(SessionContext sessionContext, ServiceMessage serviceMessage) {
+    if (!sessionContext.isLoggedIn()) {
+      throw new ServiceException(401, "Not authenticated");
+    }
+
+    final var messageText = (String) serviceMessage.data();
+    if (messageText == null) {
+      throw new ServiceException(400, "Missing or invalid: messageText");
+    }
+
+    if (messageText.length() > 500) {
+      throw new ServiceException(400, "Missing or invalid: messageText");
+    }
+
+    final var roomId = messageService.send(sessionContext, messageText);
+
+    sessionContext.send(serviceMessage.clone().data(roomId));
+  }
 }
