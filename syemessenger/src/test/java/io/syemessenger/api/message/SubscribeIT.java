@@ -50,7 +50,7 @@ public class SubscribeIT {
       clientSdk.messageSdk().subscribe(roomInfo.id());
       fail("Expected exception");
     } catch (Exception ex) {
-      assertError(ex, 403, "Not a room member");
+      assertError(ex, 403, "Cannot subscribe: not a member");
     }
   }
 

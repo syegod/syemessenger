@@ -30,17 +30,17 @@ public class MessageService {
       throw new ServiceException(404, "Room not found");
     }
 
-    final var roomMember = roomRepository.findRoomMember(roomId, accountId);
-    if (roomMember == null) {
-      throw new ServiceException(403, "Not a room member");
-    }
-
     final var blockedMember =
         blockedRepository
             .findById(new BlockedMemberId().roomId(roomId).accountId(accountId))
             .orElse(null);
     if (blockedMember != null) {
-      throw new ServiceException(400, "Cannot subscribe: blocked");
+      throw new ServiceException(403, "Cannot subscribe: blocked");
+    }
+
+    final var roomMember = roomRepository.findRoomMember(roomId, accountId);
+    if (roomMember == null) {
+      throw new ServiceException(403, "Cannot subscribe: not a member");
     }
 
     subscriptionRegistry.subscribe(roomId, sessionContext);
