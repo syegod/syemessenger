@@ -69,11 +69,11 @@ public class KafkaMessageCodec {
         .wrapAndApplyHeader(directBuffer, 0, headerEncoder)
         .roomId(removeMembersEvent.roomId());
 
-    RemoveMembersEventEncoder.MemberIdsEncoder memberIdsEncoder =
+    final var memberIdsEncoder =
         removeMembersEncoder.memberIdsCount(removeMembersEvent.memberIds().size());
 
     for (var i : removeMembersEvent.memberIds()) {
-      memberIdsEncoder.memberId(i);
+      memberIdsEncoder.next().memberId(i);
     }
     byteBuffer.limit(removeMembersEncoder.encodedLength() + headerEncoder.encodedLength());
     return byteBuffer;
@@ -103,7 +103,7 @@ public class KafkaMessageCodec {
     var memberIdsEncoder = blockMembersEncoder.memberIdsCount(blockMembersEvent.memberIds().size());
 
     for (var i : blockMembersEvent.memberIds()) {
-      memberIdsEncoder.memberId(i);
+      memberIdsEncoder.next().memberId(i);
     }
     byteBuffer.limit(blockMembersEncoder.encodedLength() + headerEncoder.encodedLength());
     return byteBuffer;
