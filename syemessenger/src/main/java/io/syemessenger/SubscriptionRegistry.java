@@ -25,6 +25,7 @@ public class SubscriptionRegistry {
   }
 
   public void subscribe(Long roomId, SessionContext sessionContext) {
+    final var x = sessionContext.accountId();
     sessions.compute(
         sessionContext,
         (k, currentRoomId) -> {

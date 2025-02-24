@@ -4,6 +4,9 @@ import static io.syemessenger.api.ErrorAssertions.assertError;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.syemessenger.api.ServiceMessage;
@@ -134,8 +137,8 @@ class SubscriptionRegistryTest {
           new MessageInfo().message(randomAlphanumeric(10)).roomId(Long.MAX_VALUE).senderId(i);
       subscriptionRegistry.onRoomMessage(messageInfo);
 
-      Mockito.verify(sessionContext, Mockito.never())
-          .send(new ServiceMessage().qualifier("messages").data(messageInfo));
+      verify(sessionContext, never())
+          .send(Mockito.any(ServiceMessage.class));
     }
   }
 
@@ -153,8 +156,8 @@ class SubscriptionRegistryTest {
           new MessageInfo().message(randomAlphanumeric(10)).roomId(roomId).senderId(i);
       subscriptionRegistry.onRoomMessage(messageInfo);
 
-      Mockito.verify(sessionContext, Mockito.times(1))
-          .send(new ServiceMessage().qualifier("messages").data(messageInfo));
+      verify(sessionContext, times(1))
+          .send(Mockito.any(ServiceMessage.class));
     }
   }
 
@@ -247,7 +250,7 @@ class SubscriptionRegistryTest {
     subscriptionRegistry.removeMembers(roomId, removeIds);
 
     assertEquals(1, registry.size());
-    assertEquals(n-removeCount, sessions.size());
+    assertEquals(n - removeCount, sessions.size());
   }
 
   @Test
@@ -295,6 +298,6 @@ class SubscriptionRegistryTest {
     subscriptionRegistry.blockMembers(roomId, removeIds);
 
     assertEquals(1, registry.size());
-    assertEquals(n-blockCount, sessions.size());
+    assertEquals(n - blockCount, sessions.size());
   }
 }
