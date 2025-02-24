@@ -96,7 +96,7 @@ public class GetRoomMembersIT {
       clientSdk.roomSdk().getRoomMembers(new GetRoomMembersRequest().roomId(roomInfo.id()));
       fail("Expected exception");
     } catch (Exception ex) {
-      assertError(ex, 403, "Not room member");
+      assertError(ex, 403, "Not a room member");
     }
   }
 

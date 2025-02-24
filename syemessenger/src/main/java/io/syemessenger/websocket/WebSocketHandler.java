@@ -61,7 +61,7 @@ public class WebSocketHandler {
 
       final var invocationHandler = serviceRegistry.lookup(qualifier);
       if (invocationHandler == null) {
-        throw new ServiceException(400, "Wrong message: request handler is missing");
+        throw new ServiceException(404, "Wrong message: request handler is missing");
       }
 
       invocationHandler.invoke(sessionContext, message);

@@ -36,7 +36,6 @@ public class RoomService {
   }
 
   public Room createRoom(CreateRoomRequest request, Long accountId) {
-
     final var account = accountRepository.findById(accountId).orElse(null);
     if (account == null) {
       throw new ServiceException(404, "Account not found");
@@ -57,7 +56,6 @@ public class RoomService {
   }
 
   public Room updateRoom(UpdateRoomRequest request, Long accountId) {
-
     final var room = roomRepository.findById(request.roomId()).orElse(null);
     if (room == null) {
       throw new ServiceException(404, "Room not found");
@@ -83,7 +81,6 @@ public class RoomService {
   }
 
   public Long joinRoom(String name, Long accountId) {
-
     final var room = roomRepository.findByName(name);
     if (room == null) {
       throw new ServiceException(404, "Room not found");
@@ -122,7 +119,6 @@ public class RoomService {
   }
 
   public Long removeRoomMembers(RemoveMembersRequest request, Long accountId) {
-
     final var room = roomRepository.findById(request.roomId()).orElse(null);
     if (room == null) {
       throw new ServiceException(404, "Room not found");
@@ -217,10 +213,9 @@ public class RoomService {
 
   @Transactional(readOnly = true)
   public Page<Account> getRoomMembers(GetRoomMembersRequest request, Long accountId) {
-
     final var roomMember = roomRepository.findRoomMember(request.roomId(), accountId);
     if (roomMember == null) {
-      throw new ServiceException(403, "Not room member");
+      throw new ServiceException(403, "Not a room member");
     }
 
     return roomRepository.findRoomMembers(

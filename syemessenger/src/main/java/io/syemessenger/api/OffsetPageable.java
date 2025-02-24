@@ -60,7 +60,6 @@ public class OffsetPageable implements Pageable {
     return offset > 0;
   }
 
-  // TODO: deal with it
   @Override
   public Pageable withPage(int offset) {
     offset += offset;
