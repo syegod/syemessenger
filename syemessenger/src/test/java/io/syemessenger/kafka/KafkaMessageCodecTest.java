@@ -2,31 +2,20 @@ package io.syemessenger.kafka;
 
 import static io.syemessenger.environment.AssertionUtils.assertCollections;
 import static io.syemessenger.kafka.KafkaMessageCodec.*;
+import static org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
 import static org.junit.jupiter.api.Assertions.*;
 
 import io.syemessenger.api.message.MessageInfo;
 import io.syemessenger.kafka.dto.BlockMembersEvent;
 import io.syemessenger.kafka.dto.LeaveRoomEvent;
 import io.syemessenger.kafka.dto.RemoveMembersEvent;
+import java.time.Clock;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
 class KafkaMessageCodecTest {
-
-  @Test
-  void testRoomMessage() {
-    long roomId = Long.MAX_VALUE;
-    long senderId = Long.MAX_VALUE;
-    String message = "Test message";
-    final var messageInfo = new MessageInfo().roomId(senderId).senderId(roomId).message(message);
-
-    final var buffer = encodeRoomMessage(messageInfo);
-    final var decodedMessageInfo = decodeRoomMessage(buffer);
-
-    assertEquals(messageInfo.roomId(), decodedMessageInfo.roomId());
-    assertEquals(messageInfo.senderId(), decodedMessageInfo.senderId());
-    assertEquals(messageInfo.message(), decodedMessageInfo.message());
-  }
 
   @Test
   void testLeaveRoomEvent() {
@@ -70,5 +59,24 @@ class KafkaMessageCodecTest {
     assertEquals(blockMembersEvent.roomId(), decodedBlockMembersEvent.roomId());
     assertCollections(
         blockMembersEvent.memberIds(), decodedBlockMembersEvent.memberIds(), Long::equals);
+  }
+
+  @Test
+  void testRoomMessage() {
+    long roomId = Long.MAX_VALUE;
+    long senderId = Long.MAX_VALUE;
+    String message = randomAlphanumeric(10);
+    final var timestamp = LocalDateTime.now(Clock.systemUTC()).truncatedTo(ChronoUnit.MILLIS);
+
+    final var messageInfo =
+        new MessageInfo().roomId(senderId).senderId(roomId).message(message).timestamp(timestamp);
+
+    final var buffer = encodeRoomMessage(messageInfo);
+    final var decodedMessageInfo = decodeRoomMessage(buffer);
+
+    assertEquals(roomId, decodedMessageInfo.roomId());
+    assertEquals(senderId, decodedMessageInfo.senderId());
+    assertEquals(message, decodedMessageInfo.message());
+    assertEquals(timestamp, decodedMessageInfo.timestamp());
   }
 }

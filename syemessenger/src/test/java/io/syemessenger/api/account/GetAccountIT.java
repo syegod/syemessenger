@@ -24,7 +24,8 @@ public class GetAccountIT {
   }
 
   @Test
-  void testGetForeignAccount(ClientSdk clientSdk, AccountInfo accountInfo, AccountInfo anotherAccountInfo) {
+  void testGetForeignAccount(
+      ClientSdk clientSdk, AccountInfo accountInfo, AccountInfo anotherAccountInfo) {
     login(clientSdk, accountInfo);
     final var id = anotherAccountInfo.id();
     assertAccount(anotherAccountInfo, clientSdk.accountSdk().getAccount(id));

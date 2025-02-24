@@ -16,6 +16,9 @@ import io.syemessenger.sbe.RemoveMembersEventEncoder;
 import io.syemessenger.sbe.RoomMessageDecoder;
 import io.syemessenger.sbe.RoomMessageEncoder;
 import java.nio.ByteBuffer;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import org.agrona.concurrent.UnsafeBuffer;
 
@@ -130,7 +133,8 @@ public class KafkaMessageCodec {
         .wrapAndApplyHeader(directBuffer, 0, headerEncoder)
         .roomId(messageInfo.roomId())
         .message(messageInfo.message())
-        .senderId(messageInfo.senderId());
+        .senderId(messageInfo.senderId())
+        .timestamp(messageInfo.timestamp().toInstant(ZoneOffset.UTC).toEpochMilli());
     byteBuffer.limit(roomMessageEncoder.encodedLength() + headerEncoder.encodedLength());
     return byteBuffer;
   }
@@ -142,6 +146,9 @@ public class KafkaMessageCodec {
     return new MessageInfo()
         .message(roomMessageDecoder.message())
         .roomId(roomMessageDecoder.roomId())
-        .senderId(roomMessageDecoder.senderId());
+        .senderId(roomMessageDecoder.senderId())
+        .timestamp(
+            LocalDateTime.ofInstant(
+                Instant.ofEpochMilli(roomMessageDecoder.timestamp()), ZoneOffset.UTC));
   }
 }

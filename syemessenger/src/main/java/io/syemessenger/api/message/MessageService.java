@@ -2,13 +2,13 @@ package io.syemessenger.api.message;
 
 import io.syemessenger.SubscriptionRegistry;
 import io.syemessenger.api.ServiceException;
-import io.syemessenger.api.account.repository.Account;
 import io.syemessenger.api.room.repository.BlockedMemberId;
 import io.syemessenger.api.room.repository.BlockedRepository;
 import io.syemessenger.api.room.repository.RoomRepository;
 import io.syemessenger.kafka.KafkaMessageCodec;
 import io.syemessenger.websocket.SessionContext;
 import java.nio.ByteBuffer;
+import java.time.LocalDateTime;
 import java.util.concurrent.TimeUnit;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
@@ -67,7 +67,11 @@ public class MessageService {
     }
 
     final var messageInfo =
-        new MessageInfo().roomId(roomId).message(messageText).senderId(sessionContext.accountId());
+        new MessageInfo()
+            .roomId(roomId)
+            .message(messageText)
+            .senderId(sessionContext.accountId())
+            .timestamp(LocalDateTime.now());
 
     try {
       kafkaTemplate
