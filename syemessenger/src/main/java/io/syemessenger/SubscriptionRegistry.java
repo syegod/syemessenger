@@ -16,6 +16,14 @@ public class SubscriptionRegistry {
   private final Map<Long, List<SessionContext>> registry = new ConcurrentHashMap<>();
   private final Map<SessionContext, Long> sessions = new ConcurrentHashMap<>();
 
+  public Map<Long, List<SessionContext>> registry() {
+    return registry;
+  }
+
+  public Map<SessionContext, Long> sessions() {
+    return sessions;
+  }
+
   public void subscribe(Long roomId, SessionContext sessionContext) {
     sessions.compute(
         sessionContext,
@@ -45,14 +53,6 @@ public class SubscriptionRegistry {
     return roomId;
   }
 
-  public Long roomId(SessionContext sessionContext) {
-    final var roomId = sessions.get(sessionContext);
-    if (roomId == null) {
-      throw new ServiceException(400, "Not subscribed");
-    }
-    return roomId;
-  }
-
   public void onRoomMessage(MessageInfo messageInfo) {
     final var list = registry.get(messageInfo.roomId());
     if (list != null) {
@@ -63,14 +63,47 @@ public class SubscriptionRegistry {
   }
 
   public void leaveRoom(Long roomId, Long accountId, Boolean isOwner) {
-    // TODO: implement
+    final var sessionContext = sessionContext(accountId);
+    if (isOwner) {
+      registry.remove(roomId);
+      for (var kvPair : sessions.entrySet()) {
+        if (roomId.equals(kvPair.getValue())) {
+          sessions.entrySet().remove(kvPair);
+        }
+      }
+    } else {
+      unsubscribe(sessionContext);
+    }
   }
 
   public void removeMembers(Long roomId, List<Long> memberIds) {
-    // TODO: implement
+    registry.computeIfPresent(
+        roomId,
+        (k, list) -> list.stream().filter(e -> !memberIds.contains(e.accountId())).toList());
+    for (Long memberId : memberIds) {
+      sessions.remove(sessionContext(memberId), roomId);
+    }
   }
 
   public void blockMembers(Long roomId, List<Long> memberIds) {
-    // TODO: implement
+    removeMembers(roomId, memberIds);
+  }
+
+  public Long roomId(SessionContext sessionContext) {
+    final var roomId = sessions.get(sessionContext);
+    if (roomId == null) {
+      throw new ServiceException(400, "Not subscribed");
+    }
+    return roomId;
+  }
+
+  private SessionContext sessionContext(Long accountId) {
+    final var sessionContext =
+        sessions.keySet().stream().filter(e -> accountId.equals(e.accountId())).toList().getFirst();
+    if (sessionContext == null) {
+      throw new ServiceException(400, "Not subscribed");
+    }
+
+    return sessionContext;
   }
 }

@@ -1,5 +1,6 @@
 package io.syemessenger.api;
 
+import java.util.Objects;
 import java.util.StringJoiner;
 import java.util.UUID;
 
@@ -43,6 +44,20 @@ public class ServiceMessage implements Cloneable {
     } catch (CloneNotSupportedException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (o == null || getClass() != o.getClass())
+      return false;
+    ServiceMessage message = (ServiceMessage) o;
+    return Objects.equals(cid, message.cid) && Objects.equals(qualifier, message.qualifier)
+        && Objects.equals(data, message.data);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(cid, qualifier, data);
   }
 
   @Override

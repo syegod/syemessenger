@@ -55,15 +55,16 @@ public class KafkaMessageListener {
   }
 
   private void onLeaveRoomEvent(LeaveRoomEvent leaveRoomEvent) {
-    // TODO: implement
+    subscriptionRegistry.leaveRoom(
+        leaveRoomEvent.roomId(), leaveRoomEvent.accountId(), leaveRoomEvent.isOwner());
   }
 
   private void onRemoveMembersEvent(RemoveMembersEvent removeMembersEvent) {
-    // TODO: implement
+    subscriptionRegistry.removeMembers(removeMembersEvent.roomId(), removeMembersEvent.memberIds());
   }
 
   private void onBlockMembersEvent(BlockMembersEvent blockMembersEvent) {
-    // TODO: implement
+    subscriptionRegistry.blockMembers(blockMembersEvent.roomId(), blockMembersEvent.memberIds());
   }
 
   private void onRoomMessage(MessageInfo messageInfo) {
