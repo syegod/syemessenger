@@ -82,6 +82,16 @@
     </createTable>
   </changeSet>
 
+  <changeSet id="7" author="Oleh Vysochyn">
+    <createTable tableName="outbox_room_events">
+      <column name="id" type="bigserial">
+        <constraints primaryKey="true"/>
+      </column>
+      <column name="room_id" type="bigint"/>
+      <column name="data" type="bytea"/>
+    </createTable>
+  </changeSet>
+
   <changeSet id="tag" author="Oleh Vysochyn">
     <tagDatabase tag="init"/>
   </changeSet>
