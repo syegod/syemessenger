@@ -99,7 +99,10 @@ public class SubscriptionRegistry {
 
   private SessionContext sessionContext(Long accountId) {
     final var sessionContext =
-        sessions.keySet().stream().filter(e -> accountId.equals(e.accountId())).toList().getFirst();
+        sessions.keySet().stream()
+            .filter(e -> accountId.equals(e.accountId()))
+            .findFirst()
+            .orElse(null);
     if (sessionContext == null) {
       throw new ServiceException(400, "Not subscribed");
     }

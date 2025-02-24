@@ -1,5 +1,6 @@
 package io.syemessenger;
 
+import static io.syemessenger.api.ErrorAssertions.assertError;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
@@ -8,6 +9,7 @@ import static org.mockito.Mockito.when;
 import io.syemessenger.api.ServiceMessage;
 import io.syemessenger.api.message.MessageInfo;
 import io.syemessenger.websocket.SessionContext;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
@@ -119,6 +121,25 @@ class SubscriptionRegistryTest {
   }
 
   @Test
+  void testOnRoomMessageWrongRoomId() {
+    final var n = 25;
+    final var roomId = 1L;
+
+    SessionContext sessionContext = mock(SessionContext.class);
+    for (long i = 0; i < n; i++) {
+      when(sessionContext.accountId()).thenReturn(i);
+      subscriptionRegistry.subscribe(roomId, sessionContext);
+
+      final var messageInfo =
+          new MessageInfo().message(randomAlphanumeric(10)).roomId(Long.MAX_VALUE).senderId(i);
+      subscriptionRegistry.onRoomMessage(messageInfo);
+
+      Mockito.verify(sessionContext, Mockito.never())
+          .send(new ServiceMessage().qualifier("messages").data(messageInfo));
+    }
+  }
+
+  @Test
   void testOnRoomMessage() {
     final var n = 25;
     final var roomId = 1L;
@@ -132,8 +153,43 @@ class SubscriptionRegistryTest {
           new MessageInfo().message(randomAlphanumeric(10)).roomId(roomId).senderId(i);
       subscriptionRegistry.onRoomMessage(messageInfo);
 
-      Mockito.verify(sessionContext)
+      Mockito.verify(sessionContext, Mockito.times(1))
           .send(new ServiceMessage().qualifier("messages").data(messageInfo));
+    }
+  }
+
+  @Test
+  void testFailedLeaveRoomWrongAccountId() {
+    final var roomId = 1L;
+    final var sessionContext = mock(SessionContext.class);
+    when(sessionContext.accountId()).thenReturn(Long.MAX_VALUE);
+
+    subscriptionRegistry.subscribe(roomId, sessionContext);
+
+    try {
+      subscriptionRegistry.leaveRoom(roomId, Long.MIN_VALUE, false);
+      fail("Expected exception");
+    } catch (Exception ex) {
+      assertError(ex, 400, "Not subscribed");
+    }
+  }
+
+  // TODO: we dont need roomId
+  @Test
+  void testFailedLeaveRoomWrongRoomId() {
+    final var accountId = Long.MAX_VALUE;
+    final var roomId = 1L;
+    final var sessionContext = mock(SessionContext.class);
+
+    when(sessionContext.accountId()).thenReturn(accountId);
+
+    subscriptionRegistry.subscribe(roomId, sessionContext);
+
+    try {
+      subscriptionRegistry.leaveRoom(Long.MAX_VALUE, accountId, false);
+      fail("Expected exception");
+    } catch (Exception ex) {
+      assertError(ex, 400, "Not subscribed");
     }
   }
 
@@ -168,5 +224,77 @@ class SubscriptionRegistryTest {
 
     assertEquals(0, registry.size());
     assertEquals(0, sessions.size());
+  }
+
+  @Test
+  void testRemoveMembers() {
+    final var n = 25;
+    final var roomId = 1L;
+    final var removeCount = 5;
+
+    for (long i = 0; i < n; i++) {
+      SessionContext sessionContext = mock(SessionContext.class);
+      when(sessionContext.accountId()).thenReturn(i);
+      subscriptionRegistry.subscribe(roomId, sessionContext);
+    }
+
+    final var removeIds = new ArrayList<Long>();
+
+    for (long i = 0; i < removeCount; i++) {
+      removeIds.add(i);
+    }
+
+    subscriptionRegistry.removeMembers(roomId, removeIds);
+
+    assertEquals(1, registry.size());
+    assertEquals(n-removeCount, sessions.size());
+  }
+
+  @Test
+  void testRemoveMembersWrongRoomId() {
+    final var n = 25;
+    final var roomId = 1L;
+    final var removeCount = 5;
+
+    for (long i = 0; i < n; i++) {
+      SessionContext sessionContext = mock(SessionContext.class);
+      when(sessionContext.accountId()).thenReturn(i);
+      subscriptionRegistry.subscribe(roomId, sessionContext);
+    }
+
+    final var removeIds = new ArrayList<Long>();
+
+    for (long i = 0; i < removeCount; i++) {
+      removeIds.add(i);
+    }
+
+    subscriptionRegistry.removeMembers(Long.MAX_VALUE, removeIds);
+
+    assertEquals(1, registry.size());
+    assertEquals(n, sessions.size());
+  }
+
+  @Test
+  void testBlockMembers() {
+    final var n = 25;
+    final var roomId = 1L;
+    final var blockCount = 5;
+
+    for (long i = 0; i < n; i++) {
+      SessionContext sessionContext = mock(SessionContext.class);
+      when(sessionContext.accountId()).thenReturn(i);
+      subscriptionRegistry.subscribe(roomId, sessionContext);
+    }
+
+    final var removeIds = new ArrayList<Long>();
+
+    for (long i = 0; i < blockCount; i++) {
+      removeIds.add(i);
+    }
+
+    subscriptionRegistry.blockMembers(roomId, removeIds);
+
+    assertEquals(1, registry.size());
+    assertEquals(n-blockCount, sessions.size());
   }
 }

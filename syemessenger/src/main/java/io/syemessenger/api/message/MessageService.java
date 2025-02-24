@@ -2,6 +2,7 @@ package io.syemessenger.api.message;
 
 import io.syemessenger.SubscriptionRegistry;
 import io.syemessenger.api.ServiceException;
+import io.syemessenger.api.account.repository.Account;
 import io.syemessenger.api.room.repository.BlockedMemberId;
 import io.syemessenger.api.room.repository.BlockedRepository;
 import io.syemessenger.api.room.repository.RoomRepository;
@@ -59,6 +60,12 @@ public class MessageService {
 
   public Long send(SessionContext sessionContext, String messageText) {
     final var roomId = subscriptionRegistry.roomId(sessionContext);
+
+    final var roomMember = roomRepository.findRoomMember(roomId, sessionContext.accountId());
+    if (roomMember == null) {
+      throw new ServiceException(403, "Cannot send message: not a member");
+    }
+
     final var messageInfo =
         new MessageInfo().roomId(roomId).message(messageText).senderId(sessionContext.accountId());
 
