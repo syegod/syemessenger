@@ -25,7 +25,6 @@ public class SubscriptionRegistry {
   }
 
   public void subscribe(Long roomId, SessionContext sessionContext) {
-    final var x = sessionContext.accountId();
     sessions.compute(
         sessionContext,
         (k, currentRoomId) -> {
@@ -65,13 +64,12 @@ public class SubscriptionRegistry {
 
   public void leaveRoom(Long roomId, Long accountId, Boolean isOwner) {
     final var sessionContext = sessionContext(accountId);
+    if (sessionContext == null) {
+      return;
+    }
     if (isOwner) {
       registry.remove(roomId);
-      for (var kvPair : sessions.entrySet()) {
-        if (roomId.equals(kvPair.getValue())) {
-          sessions.entrySet().remove(kvPair);
-        }
-      }
+      sessions.entrySet().removeIf(pair -> roomId.equals(pair.getValue()));
     } else {
       unsubscribe(sessionContext);
     }
@@ -82,7 +80,10 @@ public class SubscriptionRegistry {
         roomId,
         (k, list) -> list.stream().filter(e -> !memberIds.contains(e.accountId())).toList());
     for (Long memberId : memberIds) {
-      sessions.remove(sessionContext(memberId), roomId);
+      final var sessionContext = sessionContext(memberId);
+      if (sessionContext != null) {
+        sessions.remove(sessionContext, roomId);
+      }
     }
   }
 
@@ -99,15 +100,9 @@ public class SubscriptionRegistry {
   }
 
   private SessionContext sessionContext(Long accountId) {
-    final var sessionContext =
-        sessions.keySet().stream()
-            .filter(e -> accountId.equals(e.accountId()))
-            .findFirst()
-            .orElse(null);
-    if (sessionContext == null) {
-      throw new ServiceException(400, "Not subscribed");
-    }
-
-    return sessionContext;
+    return sessions.keySet().stream()
+        .filter(e -> accountId.equals(e.accountId()))
+        .findFirst()
+        .orElse(null);
   }
 }

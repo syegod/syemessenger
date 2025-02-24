@@ -1,6 +1,5 @@
 package io.syemessenger;
 
-import static io.syemessenger.api.ErrorAssertions.assertError;
 import static org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
@@ -23,7 +22,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
-@ExtendWith({MockitoExtension.class})
+@ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 class SubscriptionRegistryTest {
 
@@ -137,8 +136,7 @@ class SubscriptionRegistryTest {
           new MessageInfo().message(randomAlphanumeric(10)).roomId(Long.MAX_VALUE).senderId(i);
       subscriptionRegistry.onRoomMessage(messageInfo);
 
-      verify(sessionContext, never())
-          .send(Mockito.any(ServiceMessage.class));
+      verify(sessionContext, never()).send(Mockito.any(ServiceMessage.class));
     }
   }
 
@@ -156,43 +154,7 @@ class SubscriptionRegistryTest {
           new MessageInfo().message(randomAlphanumeric(10)).roomId(roomId).senderId(i);
       subscriptionRegistry.onRoomMessage(messageInfo);
 
-      verify(sessionContext, times(1))
-          .send(Mockito.any(ServiceMessage.class));
-    }
-  }
-
-  @Test
-  void testFailedLeaveRoomWrongAccountId() {
-    final var roomId = 1L;
-    final var sessionContext = mock(SessionContext.class);
-    when(sessionContext.accountId()).thenReturn(Long.MAX_VALUE);
-
-    subscriptionRegistry.subscribe(roomId, sessionContext);
-
-    try {
-      subscriptionRegistry.leaveRoom(roomId, Long.MIN_VALUE, false);
-      fail("Expected exception");
-    } catch (Exception ex) {
-      assertError(ex, 400, "Not subscribed");
-    }
-  }
-
-  // TODO: we dont need roomId
-  @Test
-  void testFailedLeaveRoomWrongRoomId() {
-    final var accountId = Long.MAX_VALUE;
-    final var roomId = 1L;
-    final var sessionContext = mock(SessionContext.class);
-
-    when(sessionContext.accountId()).thenReturn(accountId);
-
-    subscriptionRegistry.subscribe(roomId, sessionContext);
-
-    try {
-      subscriptionRegistry.leaveRoom(Long.MAX_VALUE, accountId, false);
-      fail("Expected exception");
-    } catch (Exception ex) {
-      assertError(ex, 400, "Not subscribed");
+      verify(sessionContext, times(1)).send(Mockito.any(ServiceMessage.class));
     }
   }
 
