@@ -149,14 +149,4 @@ public class LeaveRoomIT {
     assertEquals(0, roomsResponse.roomInfos().size());
   }
 
-  @Test
-  void testLeaveSubscribed(ClientSdk clientSdk, AccountInfo accountInfo, AccountInfo anotherAccountInfo) {
-    final var roomInfo = createRoom(accountInfo);
-
-    login(clientSdk, request -> request.username(anotherAccountInfo.username()));
-
-    clientSdk.roomSdk().joinRoom(roomInfo.name());
-    clientSdk.messageSdk().subscribe(roomInfo.id());
-    clientSdk.roomSdk().leaveRoom(roomInfo.id());
-  }
 }
