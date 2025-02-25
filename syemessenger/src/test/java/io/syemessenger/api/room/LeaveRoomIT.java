@@ -13,7 +13,6 @@ import io.syemessenger.api.account.GetRoomsRequest;
 import io.syemessenger.environment.IntegrationEnvironmentExtension;
 import java.util.List;
 import java.util.stream.Stream;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -148,5 +147,16 @@ public class LeaveRoomIT {
     final var roomsResponse = clientSdk.accountSdk().getRooms(new GetRoomsRequest());
     assertNotNull(roomsResponse.roomInfos(), "roomInfos");
     assertEquals(0, roomsResponse.roomInfos().size());
+  }
+
+  @Test
+  void testLeaveSubscribed(ClientSdk clientSdk, AccountInfo accountInfo, AccountInfo anotherAccountInfo) {
+    final var roomInfo = createRoom(accountInfo);
+
+    login(clientSdk, request -> request.username(anotherAccountInfo.username()));
+
+    clientSdk.roomSdk().joinRoom(roomInfo.name());
+    clientSdk.messageSdk().subscribe(roomInfo.id());
+    clientSdk.roomSdk().leaveRoom(roomInfo.id());
   }
 }

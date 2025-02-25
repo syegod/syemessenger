@@ -10,6 +10,7 @@ public class ServiceConfig {
   private String dbPassword;
   private String kafkaBootstrapServers;
   private String kafkaConsumerGroup;
+  private boolean shouldRunOutboxProcessor;
 
   public ServiceConfig port(int port) {
     this.port = port;
@@ -65,6 +66,15 @@ public class ServiceConfig {
     return this;
   }
 
+  public boolean shouldRunOutboxProcessor() {
+    return shouldRunOutboxProcessor;
+  }
+
+  public ServiceConfig shouldRunOutboxProcessor(boolean shouldRunOutboxProcessor) {
+    this.shouldRunOutboxProcessor = shouldRunOutboxProcessor;
+    return this;
+  }
+
   @Override
   public String toString() {
     return new StringJoiner(", ", ServiceConfig.class.getSimpleName() + "[", "]")
@@ -74,6 +84,7 @@ public class ServiceConfig {
         .add("dbPassword='" + dbPassword + "'")
         .add("kafkaBootstrapServers='" + kafkaBootstrapServers + "'")
         .add("kafkaConsumerGroup='" + kafkaConsumerGroup + "'")
+        .add("shouldRunOutboxProcessor=" + shouldRunOutboxProcessor)
         .toString();
   }
 }

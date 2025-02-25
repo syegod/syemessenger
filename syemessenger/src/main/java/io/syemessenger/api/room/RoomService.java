@@ -10,6 +10,12 @@ import io.syemessenger.api.room.repository.BlockedMemberId;
 import io.syemessenger.api.room.repository.BlockedRepository;
 import io.syemessenger.api.room.repository.Room;
 import io.syemessenger.api.room.repository.RoomRepository;
+import io.syemessenger.kafka.KafkaMessageCodec;
+import io.syemessenger.kafka.dto.BlockMembersEvent;
+import io.syemessenger.kafka.dto.LeaveRoomEvent;
+import io.syemessenger.kafka.dto.RemoveMembersEvent;
+import io.syemessenger.outboxprocessor.repository.OutboxRoomEvent;
+import io.syemessenger.outboxprocessor.repository.RoomEventRepository;
 import jakarta.inject.Named;
 import java.time.Clock;
 import java.time.LocalDateTime;
@@ -25,14 +31,17 @@ public class RoomService {
   private final RoomRepository roomRepository;
   private final AccountRepository accountRepository;
   private final BlockedRepository blockedRepository;
+  private final RoomEventRepository roomEventRepository;
 
   public RoomService(
       RoomRepository roomRepository,
       AccountRepository accountRepository,
-      BlockedRepository blockedRepository) {
+      BlockedRepository blockedRepository,
+      RoomEventRepository roomEventRepository) {
     this.roomRepository = roomRepository;
     this.accountRepository = accountRepository;
     this.blockedRepository = blockedRepository;
+    this.roomEventRepository = roomEventRepository;
   }
 
   public Room createRoom(CreateRoomRequest request, Long accountId) {
@@ -112,8 +121,22 @@ public class RoomService {
 
     if (room.owner().id().equals(accountId)) {
       roomRepository.deleteById(roomId);
+
+      final var encodedLeaveRoomEvent =
+          KafkaMessageCodec.encodeLeaveRoomEvent(
+              new LeaveRoomEvent().roomId(roomId).accountId(accountId).isOwner(true));
+
+      roomEventRepository.save(
+          new OutboxRoomEvent().roomId(roomId).data(encodedLeaveRoomEvent.array()));
     } else {
       roomRepository.deleteRoomMember(roomId, accountId);
+
+      final var encodedLeaveRoomEvent =
+          KafkaMessageCodec.encodeLeaveRoomEvent(
+              new LeaveRoomEvent().roomId(roomId).accountId(accountId).isOwner(false));
+
+      roomEventRepository.save(
+          new OutboxRoomEvent().roomId(roomId).data(encodedLeaveRoomEvent.array()));
     }
     return roomId;
   }
@@ -133,6 +156,12 @@ public class RoomService {
     }
 
     roomRepository.deleteRoomMembers(request.roomId(), request.memberIds());
+
+    final var encodedRemoveMembersEvent =
+        KafkaMessageCodec.encodeRemoveMembersEvent(
+            new RemoveMembersEvent().roomId(request.roomId()).memberIds(request.memberIds()));
+    roomEventRepository.save(
+        new OutboxRoomEvent().roomId(request.roomId()).data(encodedRemoveMembersEvent.array()));
     return request.roomId();
   }
 
@@ -157,6 +186,13 @@ public class RoomService {
 
     roomRepository.deleteRoomMembers(request.roomId(), request.memberIds());
     blockedRepository.saveAll(blockedMembers);
+
+    final var encodedBlockMembersEvent =
+        KafkaMessageCodec.encodeBlockMembersEvent(
+            new BlockMembersEvent().roomId(request.roomId()).memberIds(request.memberIds()));
+    roomEventRepository.save(
+        new OutboxRoomEvent().roomId(request.roomId()).data(encodedBlockMembersEvent.array()));
+
     return room.id();
   }
 

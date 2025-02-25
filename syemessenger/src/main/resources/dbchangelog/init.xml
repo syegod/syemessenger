@@ -92,6 +92,15 @@
     </createTable>
   </changeSet>
 
+  <changeSet id="8" author="Oleh Vysochyn">
+    <createTable tableName="outbox_position">
+      <column name="id" type="int">
+        <constraints primaryKey="true"/>
+      </column>
+      <column name="position" type="bigint"/>
+    </createTable>
+  </changeSet>
+
   <changeSet id="tag" author="Oleh Vysochyn">
     <tagDatabase tag="init"/>
   </changeSet>
