@@ -1,4 +1,4 @@
-package io.syemessenger.outboxprocessor.repository;
+package io.syemessenger.api.room.outbox.repository;
 
 import java.util.List;
 import org.springframework.data.jpa.repository.NativeQuery;

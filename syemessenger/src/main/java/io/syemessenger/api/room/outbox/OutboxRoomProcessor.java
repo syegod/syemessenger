@@ -1,8 +1,7 @@
-package io.syemessenger.outboxprocessor;
+package io.syemessenger.api.room.outbox;
 
-
-import io.syemessenger.outboxprocessor.repository.OutboxRoomEvent;
-import io.syemessenger.outboxprocessor.repository.RoomEventRepository;
+import io.syemessenger.api.room.outbox.repository.OutboxRoomEvent;
+import io.syemessenger.api.room.outbox.repository.RoomEventRepository;
 import jakarta.annotation.PostConstruct;
 import jakarta.inject.Named;
 import java.nio.ByteBuffer;
@@ -14,9 +13,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 
 @Named
-public class OutboxProcessor implements AutoCloseable {
+public class OutboxRoomProcessor implements AutoCloseable {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(OutboxProcessor.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(OutboxRoomProcessor.class);
 
   private final RoomEventRepository roomEventRepository;
   private final KafkaTemplate<Long, ByteBuffer> kafkaTemplate;
@@ -24,7 +23,7 @@ public class OutboxProcessor implements AutoCloseable {
   private ExecutorService executorService;
   private boolean isStopped;
 
-  public OutboxProcessor(
+  public OutboxRoomProcessor(
       RoomEventRepository roomEventRepository, KafkaTemplate<Long, ByteBuffer> kafkaTemplate) {
     this.roomEventRepository = roomEventRepository;
     this.kafkaTemplate = kafkaTemplate;

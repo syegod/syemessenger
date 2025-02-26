@@ -1,4 +1,4 @@
-package io.syemessenger.outboxprocessor.repository;
+package io.syemessenger.api.room.outbox.repository;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
