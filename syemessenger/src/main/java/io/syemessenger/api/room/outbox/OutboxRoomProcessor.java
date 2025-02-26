@@ -1,5 +1,7 @@
 package io.syemessenger.api.room.outbox;
 
+import io.syemessenger.IdleStrategy;
+import io.syemessenger.ServiceConfig;
 import io.syemessenger.api.room.outbox.repository.OutboxRoomEvent;
 import io.syemessenger.api.room.outbox.repository.RoomEventRepository;
 import jakarta.annotation.PostConstruct;
@@ -17,6 +19,8 @@ public class OutboxRoomProcessor implements AutoCloseable {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(OutboxRoomProcessor.class);
 
+  private final ServiceConfig config;
+  private final IdleStrategy sleepStrategy;
   private final RoomEventRepository roomEventRepository;
   private final KafkaTemplate<Long, ByteBuffer> kafkaTemplate;
 
@@ -24,7 +28,12 @@ public class OutboxRoomProcessor implements AutoCloseable {
   private boolean isStopped;
 
   public OutboxRoomProcessor(
-      RoomEventRepository roomEventRepository, KafkaTemplate<Long, ByteBuffer> kafkaTemplate) {
+      ServiceConfig config,
+      IdleStrategy sleepStrategy,
+      RoomEventRepository roomEventRepository,
+      KafkaTemplate<Long, ByteBuffer> kafkaTemplate) {
+    this.config = config;
+    this.sleepStrategy = sleepStrategy;
     this.roomEventRepository = roomEventRepository;
     this.kafkaTemplate = kafkaTemplate;
   }
@@ -35,21 +44,17 @@ public class OutboxRoomProcessor implements AutoCloseable {
     executorService.execute(this::doWork);
   }
 
-  private void doWork() {
+  void doWork() {
     while (!isStopped) {
+      long delay;
       try {
         run();
-        Thread.sleep(100);
-      } catch (InterruptedException ex) {
-        throw new RuntimeException(ex);
+        delay = config.roomOutboxProcessorRunDelay();
       } catch (Exception ex) {
         LOGGER.error("[doWork] Exception occurred", ex);
-        try {
-          Thread.sleep(3000);
-        } catch (InterruptedException e) {
-          throw new RuntimeException(e);
-        }
+        delay = config.roomOutboxProcessorRunDelay() * 10L;
       }
+      sleepStrategy.idle(delay);
     }
   }
 
@@ -58,7 +63,7 @@ public class OutboxRoomProcessor implements AutoCloseable {
     if (position == null) {
       position = 0L;
     }
-    var events = roomEventRepository.listEvents(position);
+    final var events = roomEventRepository.listEvents(position);
     for (var event : events) {
       onEvent(event);
     }

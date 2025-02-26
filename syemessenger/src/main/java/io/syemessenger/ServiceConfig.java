@@ -10,7 +10,8 @@ public class ServiceConfig {
   private String dbPassword;
   private String kafkaBootstrapServers;
   private String kafkaConsumerGroup;
-  private boolean shouldRunOutboxProcessor;
+  private boolean shouldRunRoomOutboxProcessor;
+  private int roomOutboxProcessorRunDelay = 300;
 
   public ServiceConfig port(int port) {
     this.port = port;
@@ -66,12 +67,21 @@ public class ServiceConfig {
     return this;
   }
 
-  public boolean shouldRunOutboxProcessor() {
-    return shouldRunOutboxProcessor;
+  public boolean shouldRunRoomOutboxProcessor() {
+    return shouldRunRoomOutboxProcessor;
   }
 
-  public ServiceConfig shouldRunOutboxProcessor(boolean shouldRunOutboxProcessor) {
-    this.shouldRunOutboxProcessor = shouldRunOutboxProcessor;
+  public ServiceConfig shouldRunRoomOutboxProcessor(boolean shouldRunRoomOutboxProcessor) {
+    this.shouldRunRoomOutboxProcessor = shouldRunRoomOutboxProcessor;
+    return this;
+  }
+
+  public int roomOutboxProcessorRunDelay() {
+    return roomOutboxProcessorRunDelay;
+  }
+
+  public ServiceConfig roomOutboxProcessorRunDelay(int roomOutboxProcessorRunDelay) {
+    this.roomOutboxProcessorRunDelay = roomOutboxProcessorRunDelay;
     return this;
   }
 
@@ -84,7 +94,8 @@ public class ServiceConfig {
         .add("dbPassword='" + dbPassword + "'")
         .add("kafkaBootstrapServers='" + kafkaBootstrapServers + "'")
         .add("kafkaConsumerGroup='" + kafkaConsumerGroup + "'")
-        .add("shouldRunOutboxProcessor=" + shouldRunOutboxProcessor)
+        .add("shouldRunRoomOutboxProcessor=" + shouldRunRoomOutboxProcessor)
+        .add("roomOutboxProcessorRunDelay=" + roomOutboxProcessorRunDelay)
         .toString();
   }
 }
