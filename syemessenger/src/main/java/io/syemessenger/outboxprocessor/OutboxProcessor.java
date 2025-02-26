@@ -33,17 +33,16 @@ public class OutboxProcessor implements AutoCloseable {
   @PostConstruct
   public void init() {
     executorService = Executors.newSingleThreadExecutor();
-    executorService.execute(() -> doWork());
+    executorService.execute(this::doWork);
   }
 
   private void doWork() {
-    while (true) {
-      if (isStopped) {
-        break;
-      }
+    while (!isStopped) {
       try {
         run();
         Thread.sleep(100);
+      } catch (InterruptedException ex) {
+        throw new RuntimeException(ex);
       } catch (Exception ex) {
         LOGGER.error("[doWork] Exception occurred", ex);
         try {
@@ -60,7 +59,7 @@ public class OutboxProcessor implements AutoCloseable {
     if (position == null) {
       position = 0L;
     }
-    var events = roomEventRepository.findOutboxRoomEvents(position);
+    var events = roomEventRepository.listEvents(position);
     for (var event : events) {
       onEvent(event);
     }
@@ -71,7 +70,7 @@ public class OutboxProcessor implements AutoCloseable {
       kafkaTemplate
           .send("messages", event.roomId(), ByteBuffer.wrap(event.data()))
           .get(3, TimeUnit.SECONDS);
-      roomEventRepository.saveRoomEventPosition(event.id());
+      roomEventRepository.savePosition(event.id());
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
