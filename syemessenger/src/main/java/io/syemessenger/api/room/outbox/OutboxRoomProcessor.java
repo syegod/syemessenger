@@ -41,24 +41,28 @@ public class OutboxRoomProcessor implements AutoCloseable {
   @PostConstruct
   public void init() {
     executorService = Executors.newSingleThreadExecutor();
-    executorService.execute(this::doWork);
+    executorService.execute(this::run);
   }
 
   void doWork() {
-    while (!isStopped) {
-      long delay;
-      try {
-        run();
-        delay = config.roomOutboxProcessorRunDelay();
-      } catch (Exception ex) {
-        LOGGER.error("[doWork] Exception occurred", ex);
-        delay = config.roomOutboxProcessorRunDelay() * 10L;
-      }
-      sleepStrategy.idle(delay);
+    long delay;
+    try {
+      handleEvents();
+      delay = config.roomOutboxProcessorRunDelay();
+    } catch (Exception ex) {
+      LOGGER.error("[doWork] Exception occurred", ex);
+      delay = config.roomOutboxProcessorRunDelay() * 10L;
     }
+    sleepStrategy.idle(delay);
   }
 
   private void run() {
+    while (!isStopped) {
+      doWork();
+    }
+  }
+
+  private void handleEvents() {
     Long position = roomEventRepository.getPosition();
     if (position == null) {
       position = 0L;
