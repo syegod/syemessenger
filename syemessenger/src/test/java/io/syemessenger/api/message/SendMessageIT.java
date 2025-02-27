@@ -4,7 +4,9 @@ import static io.syemessenger.api.ErrorAssertions.assertError;
 import static io.syemessenger.api.account.AccountAssertions.login;
 import static io.syemessenger.api.room.RoomAssertions.createRoom;
 import static io.syemessenger.environment.AssertionUtils.awaitUntil;
+import static io.syemessenger.environment.AssertionUtils.awaitUntilAsync;
 import static io.syemessenger.environment.AssertionUtils.byQualifier;
+import static io.syemessenger.environment.AssertionUtils.getAwaited;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -169,5 +171,35 @@ public class SendMessageIT {
                   .data();
       assertEquals(text, message.message());
     }
+  }
+
+  @Test
+  void testSendMessageAmongMultipleClientConnection(
+      ClientSdk clientSdk,
+      AccountInfo accountInfo,
+      ClientSdk anotherClientSdk,
+      AccountInfo anotherAccountInfo) {
+    final var roomInfo = createRoom(accountInfo);
+
+    login(clientSdk, accountInfo);
+    login(anotherClientSdk, anotherAccountInfo);
+
+    anotherClientSdk.roomSdk().joinRoom(roomInfo.name());
+
+    clientSdk.messageSdk().subscribe(roomInfo.id());
+    anotherClientSdk.messageSdk().subscribe(roomInfo.id());
+
+    final var anotherReceiver = anotherClientSdk.receiver();
+
+    final var message =
+        awaitUntilAsync(
+            () -> anotherReceiver.poll(byQualifier("v1/syemessenger/messages")),
+            Duration.ofSeconds(5));
+
+    final var text = "Test message";
+    clientSdk.messageSdk().send(text);
+
+    final var messageInfo = (MessageInfo) getAwaited(message, TIMEOUT).data();
+    assertEquals(text, messageInfo.message());
   }
 }

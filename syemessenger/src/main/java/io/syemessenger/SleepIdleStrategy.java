@@ -1,5 +1,8 @@
 package io.syemessenger;
 
+import jakarta.inject.Named;
+
+@Named
 public class SleepIdleStrategy implements IdleStrategy {
 
   @Override

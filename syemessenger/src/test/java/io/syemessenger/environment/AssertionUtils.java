@@ -14,6 +14,8 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -74,6 +76,35 @@ public class AssertionUtils {
         throw new RuntimeException("Timeout");
       }
       Thread.onSpinWait();
+    }
+  }
+
+  public static <T> CompletableFuture awaitUntilAsync(Supplier<T> supplier, Duration timeout) {
+    try {
+      return CompletableFuture.supplyAsync(
+          () -> {
+            final var s = System.currentTimeMillis();
+            while (true) {
+              final var obj = supplier.get();
+              if (obj != null) {
+                return obj;
+              }
+              if (System.currentTimeMillis() - s >= timeout.toMillis()) {
+                throw new RuntimeException("Timeout");
+              }
+              Thread.onSpinWait();
+            }
+          });
+    } catch (Exception ex) {
+      throw new RuntimeException(ex);
+    }
+  }
+
+  public static ServiceMessage getAwaited(CompletableFuture<ServiceMessage> future, Duration timeout) {
+    try {
+      return future.get(timeout.toMillis(), TimeUnit.MILLISECONDS);
+    } catch (Exception ex) {
+      throw new RuntimeException(ex);
     }
   }
 
