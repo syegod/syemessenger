@@ -4,22 +4,19 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.atLeastOnce;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.syemessenger.IdleStrategy;
 import io.syemessenger.ServiceConfig;
-import io.syemessenger.SleepIdleStrategy;
 import io.syemessenger.api.room.outbox.repository.OutboxRoomEvent;
 import io.syemessenger.api.room.outbox.repository.RoomEventRepository;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -42,7 +39,6 @@ class OutboxRoomProcessorTest {
 
   @BeforeEach
   void beforeEach() {
-    sleepStrategy = mock(SleepIdleStrategy.class);
     outboxRoomProcessor =
         new OutboxRoomProcessor(config, sleepStrategy, roomEventRepository, kafkaTemplate);
     when(config.roomOutboxProcessorRunDelay()).thenReturn(10);
@@ -61,6 +57,11 @@ class OutboxRoomProcessorTest {
     verify(roomEventRepository).listEvents(0L);
 
     verify(kafkaTemplate, never()).send(anyString(), anyLong(), any(ByteBuffer.class));
+
+    verify(sleepStrategy).idle(config.roomOutboxProcessorRunDelay());
+    verify(sleepStrategy, never()).idle(config.roomOutboxProcessorRunDelay() * 10L);
+
+    verify(roomEventRepository, never()).savePosition(anyLong());
   }
 
   @Test
@@ -70,13 +71,10 @@ class OutboxRoomProcessorTest {
     final var eventId = 6L;
     final var data = new byte[] {1, 2, 3};
 
-    OutboxRoomEvent mockEvent = mock(OutboxRoomEvent.class);
-    when(mockEvent.roomId()).thenReturn(roomId);
-    when(mockEvent.data()).thenReturn(data);
-    when(mockEvent.id()).thenReturn(eventId);
+    OutboxRoomEvent event = new OutboxRoomEvent().roomId(roomId).data(data).id(eventId);
 
     when(roomEventRepository.getPosition()).thenReturn(position);
-    when(roomEventRepository.listEvents(position)).thenReturn(List.of(mockEvent));
+    when(roomEventRepository.listEvents(position)).thenReturn(List.of(event));
 
     outboxRoomProcessor.doWork();
 
@@ -87,7 +85,37 @@ class OutboxRoomProcessorTest {
 
     verify(roomEventRepository).savePosition(eventId);
 
-    verify(sleepStrategy).idle(eq((long) config.roomOutboxProcessorRunDelay()));
+    verify(sleepStrategy).idle(config.roomOutboxProcessorRunDelay());
+
+    verify(sleepStrategy, never()).idle(config.roomOutboxProcessorRunDelay() * 10L);
+  }
+
+  @Test
+  void testMultipleEvents() {
+    final var position = 0L;
+    final var n = 25;
+    final var roomId = 100L;
+    final var data = new byte[] {1, 2, 3};
+    final var roomEvents = new ArrayList<OutboxRoomEvent>();
+
+    for (long i = 1; i <= n; i++) {
+      final var event = new OutboxRoomEvent().roomId(roomId).data(data).id(i);
+      roomEvents.add(event);
+    }
+
+    when(roomEventRepository.getPosition()).thenReturn(position);
+    when(roomEventRepository.listEvents(position)).thenReturn(roomEvents);
+
+    outboxRoomProcessor.doWork();
+
+    verify(roomEventRepository).getPosition();
+    verify(roomEventRepository).listEvents(position);
+
+    verify(kafkaTemplate, times(n)).send("messages", roomId, ByteBuffer.wrap(data));
+
+    for (long i = 1; i <= n; i++) {
+      verify(roomEventRepository).savePosition(i);
+    }
   }
 
   @Test
@@ -97,13 +125,10 @@ class OutboxRoomProcessorTest {
     final var eventId = 6L;
     final var data = new byte[] {1, 2, 3};
 
-    OutboxRoomEvent mockEvent = mock(OutboxRoomEvent.class);
-    when(mockEvent.roomId()).thenReturn(roomId);
-    when(mockEvent.data()).thenReturn(data);
-    when(mockEvent.id()).thenReturn(eventId);
+    OutboxRoomEvent event = new OutboxRoomEvent().roomId(roomId).data(data).id(eventId);
 
     when(roomEventRepository.getPosition()).thenReturn(position);
-    when(roomEventRepository.listEvents(position)).thenReturn(List.of(mockEvent));
+    when(roomEventRepository.listEvents(position)).thenReturn(List.of(event));
     when(kafkaTemplate.send(anyString(), anyLong(), any(ByteBuffer.class)))
         .thenThrow(new RuntimeException("Test exception"));
 
@@ -114,7 +139,7 @@ class OutboxRoomProcessorTest {
 
     verify(roomEventRepository, never()).savePosition(anyLong());
 
-    verify(sleepStrategy).idle(eq(config.roomOutboxProcessorRunDelay() * 10L));
+    verify(sleepStrategy).idle(config.roomOutboxProcessorRunDelay() * 10L);
   }
 
   @Test
@@ -125,6 +150,10 @@ class OutboxRoomProcessorTest {
 
     verify(kafkaTemplate, never()).send(anyString(), anyLong(), any(ByteBuffer.class));
 
-    verify(sleepStrategy, atLeastOnce()).idle(config.roomOutboxProcessorRunDelay() * 10L);
+    verify(sleepStrategy).idle(config.roomOutboxProcessorRunDelay() * 10L);
+
+    verify(sleepStrategy, never()).idle(config.roomOutboxProcessorRunDelay());
+
+    verify(roomEventRepository, never()).savePosition(anyLong());
   }
 }
