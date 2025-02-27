@@ -79,35 +79,6 @@ public class AssertionUtils {
     }
   }
 
-  public static <T> CompletableFuture awaitUntilAsync(Supplier<T> supplier, Duration timeout) {
-    try {
-      return CompletableFuture.supplyAsync(
-          () -> {
-            final var s = System.currentTimeMillis();
-            while (true) {
-              final var obj = supplier.get();
-              if (obj != null) {
-                return obj;
-              }
-              if (System.currentTimeMillis() - s >= timeout.toMillis()) {
-                throw new RuntimeException("Timeout");
-              }
-              Thread.onSpinWait();
-            }
-          });
-    } catch (Exception ex) {
-      throw new RuntimeException(ex);
-    }
-  }
-
-  public static ServiceMessage getAwaited(CompletableFuture<ServiceMessage> future, Duration timeout) {
-    try {
-      return future.get(timeout.toMillis(), TimeUnit.MILLISECONDS);
-    } catch (Exception ex) {
-      throw new RuntimeException(ex);
-    }
-  }
-
   public static Predicate<ServiceMessage> byCid(UUID cid) {
     return message -> cid.equals(message.cid());
   }

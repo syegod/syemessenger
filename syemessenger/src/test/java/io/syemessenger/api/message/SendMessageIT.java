@@ -4,9 +4,7 @@ import static io.syemessenger.api.ErrorAssertions.assertError;
 import static io.syemessenger.api.account.AccountAssertions.login;
 import static io.syemessenger.api.room.RoomAssertions.createRoom;
 import static io.syemessenger.environment.AssertionUtils.awaitUntil;
-import static io.syemessenger.environment.AssertionUtils.awaitUntilAsync;
 import static io.syemessenger.environment.AssertionUtils.byQualifier;
-import static io.syemessenger.environment.AssertionUtils.getAwaited;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -191,15 +189,16 @@ public class SendMessageIT {
 
     final var anotherReceiver = anotherClientSdk.receiver();
 
-    final var message =
-        awaitUntilAsync(
-            () -> anotherReceiver.poll(byQualifier("v1/syemessenger/messages")),
-            Duration.ofSeconds(5));
-
     final var text = "Test message";
     clientSdk.messageSdk().send(text);
 
-    final var messageInfo = (MessageInfo) getAwaited(message, TIMEOUT).data();
-    assertEquals(text, messageInfo.message());
+    final var message =
+        (MessageInfo)
+            awaitUntil(
+                    () -> anotherReceiver.poll(byQualifier("v1/syemessenger/messages")),
+                    Duration.ofSeconds(5))
+                .data();
+
+    assertEquals(text, message.message());
   }
 }
