@@ -172,7 +172,7 @@ public class SendMessageIT {
   }
 
   @Test
-  void testSendMessageAmongMultipleClientConnection(
+  void testSendMessageAmongMultipleClientConnections(
       ClientSdk clientSdk,
       AccountInfo accountInfo,
       ClientSdk anotherClientSdk,
