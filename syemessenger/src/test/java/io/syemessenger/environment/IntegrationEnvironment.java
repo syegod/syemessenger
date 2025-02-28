@@ -33,6 +33,7 @@ public class IntegrationEnvironment implements AutoCloseable {
                   .kafkaBootstrapServers(kafka.getBootstrapServers())
                   .kafkaConsumerGroup("test-group"));
 
+
       serviceBootstrap.start();
     } catch (Exception e) {
       close();
