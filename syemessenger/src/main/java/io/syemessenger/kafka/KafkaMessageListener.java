@@ -31,7 +31,7 @@ public class KafkaMessageListener {
   }
 
   @KafkaListener(topics = "messages")
-  public void listenMessages(ByteBuffer byteBuffer) {
+  public void handleMessage(ByteBuffer byteBuffer) {
     final var headerDecoder = new MessageHeaderDecoder();
     final var directBuffer = new UnsafeBuffer(byteBuffer);
     headerDecoder.wrap(directBuffer, 0);
@@ -61,13 +61,25 @@ public class KafkaMessageListener {
   }
 
   @KafkaListener(topics = "messages", groupId = "message-history-group")
-  public void listenRoomMessages(ByteBuffer byteBuffer) {
+  public void handleMessageHistory(ByteBuffer byteBuffer) {
     final var headerDecoder = new MessageHeaderDecoder();
     final var directBuffer = new UnsafeBuffer(byteBuffer);
     headerDecoder.wrap(directBuffer, 0);
 
     if (RoomMessageDecoder.TEMPLATE_ID == headerDecoder.templateId()) {
-      messageHistoryService.saveMessage(KafkaMessageCodec.decodeRoomMessage(byteBuffer));
+      final var messageInfo = KafkaMessageCodec.decodeRoomMessage(byteBuffer);
+      while (true) {
+        try {
+          messageHistoryService.saveMessage(messageInfo);
+          break;
+        } catch (Exception ex) {
+          try {
+            Thread.sleep(3000);
+          } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+          }
+        }
+      }
     }
   }
 
