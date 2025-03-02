@@ -30,7 +30,7 @@ public class KafkaMessageListener {
     this.messageHistoryService = messageHistoryService;
   }
 
-  @KafkaListener(topics = "messages", groupId = "1")
+  @KafkaListener(topics = "messages")
   public void listenMessages(ByteBuffer byteBuffer) {
     final var headerDecoder = new MessageHeaderDecoder();
     final var directBuffer = new UnsafeBuffer(byteBuffer);
@@ -60,7 +60,7 @@ public class KafkaMessageListener {
     }
   }
 
-  @KafkaListener(topics = "messages", groupId = "2")
+  @KafkaListener(topics = "messages", groupId = "message-history-group")
   public void listenRoomMessages(ByteBuffer byteBuffer) {
     final var headerDecoder = new MessageHeaderDecoder();
     final var directBuffer = new UnsafeBuffer(byteBuffer);

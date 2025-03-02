@@ -31,7 +31,7 @@ public class IntegrationEnvironment implements AutoCloseable {
                   .dbUser(postgres.getUsername())
                   .dbPassword(postgres.getPassword())
                   .kafkaBootstrapServers(kafka.getBootstrapServers())
-                  .kafkaConsumerGroup("test-group")
+                  .kafkaConsumerGroup("messages-group0")
                   .roomOutboxProcessorRunDelay(300)
                   .shouldRunRoomOutboxProcessor(true));
 
