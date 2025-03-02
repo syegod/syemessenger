@@ -13,7 +13,6 @@ import io.syemessenger.api.account.GetRoomsRequest;
 import io.syemessenger.environment.IntegrationEnvironmentExtension;
 import java.util.List;
 import java.util.stream.Stream;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -88,7 +87,7 @@ public class LeaveRoomIT {
       clientSdk.roomSdk().leaveRoom(roomInfo.id());
       fail("Expected exception");
     } catch (Exception ex) {
-      assertError(ex, 400, "Cannot leave room: not joined");
+      assertError(ex, 400, "Not a room member");
     }
   }
 
@@ -115,7 +114,7 @@ public class LeaveRoomIT {
       clientSdk.roomSdk().leaveRoom(roomInfo.id());
       fail("Expected exception");
     } catch (Exception ex) {
-      assertError(ex, 400, "Cannot leave room: not joined");
+      assertError(ex, 400, "Not a room member");
     }
   }
 
@@ -132,7 +131,7 @@ public class LeaveRoomIT {
       clientSdk.roomSdk().leaveRoom(roomInfo.id());
       fail("Expected exception");
     } catch (Exception ex) {
-      assertError(ex, 400, "Cannot leave room: not joined");
+      assertError(ex, 400, "Not a room member");
     }
   }
 
@@ -149,4 +148,5 @@ public class LeaveRoomIT {
     assertNotNull(roomsResponse.roomInfos(), "roomInfos");
     assertEquals(0, roomsResponse.roomInfos().size());
   }
+
 }

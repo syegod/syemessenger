@@ -175,6 +175,23 @@ class SubscriptionRegistryTest {
   }
 
   @Test
+  void testLeaveRoomNotOwnerRepeatedly() {
+    final var id = 1L;
+
+    SessionContext sessionContext = mock(SessionContext.class);
+    when(sessionContext.accountId()).thenReturn(id);
+
+    subscriptionRegistry.subscribe(id, sessionContext);
+
+    subscriptionRegistry.leaveRoom(id, id, false);
+    assertDoesNotThrow(() -> subscriptionRegistry.leaveRoom(id, id, false));
+
+    assertEquals(1, registry.size());
+    assertEquals(0, sessions.size());
+    assertFalse(registry.get(id).contains(sessionContext));
+  }
+
+  @Test
   void testLeaveRoomOwner() {
     final var n = 25;
     final var roomId = 1L;
@@ -186,6 +203,24 @@ class SubscriptionRegistryTest {
     }
 
     subscriptionRegistry.leaveRoom(roomId, 1L, true);
+
+    assertEquals(0, registry.size());
+    assertEquals(0, sessions.size());
+  }
+
+  @Test
+  void testLeaveRoomOwnerRepeatedly() {
+    final var n = 25;
+    final var roomId = 1L;
+
+    for (long i = 0; i < n; i++) {
+      SessionContext sessionContext = mock(SessionContext.class);
+      when(sessionContext.accountId()).thenReturn(i);
+      subscriptionRegistry.subscribe(roomId, sessionContext);
+    }
+
+    subscriptionRegistry.leaveRoom(roomId, 1L, true);
+    assertDoesNotThrow(() -> subscriptionRegistry.leaveRoom(roomId, 1L, true));
 
     assertEquals(0, registry.size());
     assertEquals(0, sessions.size());
@@ -240,6 +275,31 @@ class SubscriptionRegistryTest {
   }
 
   @Test
+  void testRemoveMembersRepeatedly() {
+    final var n = 25;
+    final var roomId = 1L;
+    final var removeCount = 5;
+
+    for (long i = 0; i < n; i++) {
+      SessionContext sessionContext = mock(SessionContext.class);
+      when(sessionContext.accountId()).thenReturn(i);
+      subscriptionRegistry.subscribe(roomId, sessionContext);
+    }
+
+    final var removeIds = new ArrayList<Long>();
+
+    for (long i = 0; i < removeCount; i++) {
+      removeIds.add(i);
+    }
+
+    subscriptionRegistry.removeMembers(roomId, removeIds);
+    assertDoesNotThrow(() -> subscriptionRegistry.removeMembers(roomId, removeIds));
+
+    assertEquals(1, registry.size());
+    assertEquals(n - removeCount, sessions.size());
+  }
+
+  @Test
   void testBlockMembers() {
     final var n = 25;
     final var roomId = 1L;
@@ -258,6 +318,31 @@ class SubscriptionRegistryTest {
     }
 
     subscriptionRegistry.blockMembers(roomId, removeIds);
+
+    assertEquals(1, registry.size());
+    assertEquals(n - blockCount, sessions.size());
+  }
+
+  @Test
+  void testBlockMembersRepeatedly() {
+    final var n = 25;
+    final var roomId = 1L;
+    final var blockCount = 5;
+
+    for (long i = 0; i < n; i++) {
+      SessionContext sessionContext = mock(SessionContext.class);
+      when(sessionContext.accountId()).thenReturn(i);
+      subscriptionRegistry.subscribe(roomId, sessionContext);
+    }
+
+    final var removeIds = new ArrayList<Long>();
+
+    for (long i = 0; i < blockCount; i++) {
+      removeIds.add(i);
+    }
+
+    subscriptionRegistry.blockMembers(roomId, removeIds);
+    assertDoesNotThrow(() -> subscriptionRegistry.blockMembers(roomId, removeIds));
 
     assertEquals(1, registry.size());
     assertEquals(n - blockCount, sessions.size());

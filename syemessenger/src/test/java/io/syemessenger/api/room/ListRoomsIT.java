@@ -57,7 +57,12 @@ public class ListRoomsIT {
   }
 
   private record FailedArgs(
-      String test, ListRoomsRequest request, int errorCode, String errorMessage) {}
+      String test, ListRoomsRequest request, int errorCode, String errorMessage) {
+    @Override
+    public String toString() {
+      return test;
+    }
+  }
 
   private static Stream<?> testListRoomsFailedMethodSource() {
     return Stream.of(

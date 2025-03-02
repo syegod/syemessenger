@@ -82,6 +82,25 @@
     </createTable>
   </changeSet>
 
+  <changeSet id="7" author="Oleh Vysochyn">
+    <createTable tableName="outbox_room_events">
+      <column name="id" type="bigserial">
+        <constraints primaryKey="true"/>
+      </column>
+      <column name="room_id" type="bigint"/>
+      <column name="data" type="bytea"/>
+    </createTable>
+  </changeSet>
+
+  <changeSet id="8" author="Oleh Vysochyn">
+    <createTable tableName="outbox_position">
+      <column name="id" type="int">
+        <constraints primaryKey="true"/>
+      </column>
+      <column name="position" type="bigint"/>
+    </createTable>
+  </changeSet>
+
   <changeSet id="tag" author="Oleh Vysochyn">
     <tagDatabase tag="init"/>
   </changeSet>

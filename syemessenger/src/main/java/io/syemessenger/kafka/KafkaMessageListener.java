@@ -2,6 +2,9 @@ package io.syemessenger.kafka;
 
 import io.syemessenger.SubscriptionRegistry;
 import io.syemessenger.api.message.MessageInfo;
+import io.syemessenger.api.message.MessageService;
+import io.syemessenger.api.messagehistory.MessageHistoryService;
+import io.syemessenger.api.messagehistory.repository.MessageRepository;
 import io.syemessenger.kafka.dto.BlockMembersEvent;
 import io.syemessenger.kafka.dto.LeaveRoomEvent;
 import io.syemessenger.kafka.dto.RemoveMembersEvent;
@@ -19,12 +22,15 @@ import org.springframework.stereotype.Service;
 public class KafkaMessageListener {
 
   private final SubscriptionRegistry subscriptionRegistry;
+  private final MessageHistoryService messageHistoryService;
 
-  public KafkaMessageListener(SubscriptionRegistry subscriptionRegistry) {
+  public KafkaMessageListener(SubscriptionRegistry subscriptionRegistry,
+      MessageHistoryService messageHistoryService) {
     this.subscriptionRegistry = subscriptionRegistry;
+    this.messageHistoryService = messageHistoryService;
   }
 
-  @KafkaListener(topics = "messages")
+  @KafkaListener(topics = "messages", groupId = "1")
   public void listenMessages(ByteBuffer byteBuffer) {
     final var headerDecoder = new MessageHeaderDecoder();
     final var directBuffer = new UnsafeBuffer(byteBuffer);
@@ -51,6 +57,17 @@ public class KafkaMessageListener {
         break;
       default:
         throw new IllegalArgumentException("Wrong templateId: " + headerDecoder.templateId());
+    }
+  }
+
+  @KafkaListener(topics = "messages", groupId = "2")
+  public void listenRoomMessages(ByteBuffer byteBuffer) {
+    final var headerDecoder = new MessageHeaderDecoder();
+    final var directBuffer = new UnsafeBuffer(byteBuffer);
+    headerDecoder.wrap(directBuffer, 0);
+
+    if (RoomMessageDecoder.TEMPLATE_ID == headerDecoder.templateId()) {
+      messageHistoryService.saveMessage(KafkaMessageCodec.decodeRoomMessage(byteBuffer));
     }
   }
 

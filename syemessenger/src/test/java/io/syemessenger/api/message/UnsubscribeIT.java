@@ -11,6 +11,8 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import io.syemessenger.api.ClientSdk;
 import io.syemessenger.api.account.AccountInfo;
+import io.syemessenger.api.room.BlockMembersRequest;
+import io.syemessenger.api.room.RemoveMembersRequest;
 import io.syemessenger.environment.IntegrationEnvironmentExtension;
 import java.time.Duration;
 import org.junit.jupiter.api.Test;
@@ -79,6 +81,96 @@ public class UnsubscribeIT {
 
     try {
       awaitUntil(() -> receiver.poll(byQualifier("v1/syemessenger/messages")), TIMEOUT);
+      fail("Expected exception");
+    } catch (Exception ex) {
+      assertInstanceOf(RuntimeException.class, ex);
+      assertEquals("Timeout", ex.getMessage());
+    }
+  }
+
+  @Test
+  void testStopReceivingMessagesLeaveRoom(
+      ClientSdk clientSdk,
+      AccountInfo accountInfo,
+      ClientSdk anotherClientSdk,
+      AccountInfo anotherAccountInfo) {
+    final var roomInfo = createRoom(accountInfo);
+
+    login(clientSdk, accountInfo);
+    login(anotherClientSdk, anotherAccountInfo);
+
+    anotherClientSdk.roomSdk().joinRoom(roomInfo.name());
+
+    anotherClientSdk.messageSdk().subscribe(roomInfo.id());
+
+    final var anotherReceiver = anotherClientSdk.receiver();
+
+    anotherClientSdk.roomSdk().leaveRoom(roomInfo.id());
+
+    try {
+      awaitUntil(() -> anotherReceiver.poll(byQualifier("v1/syemessenger/messages")), TIMEOUT);
+      fail("Expected exception");
+    } catch (Exception ex) {
+      assertInstanceOf(RuntimeException.class, ex);
+      assertEquals("Timeout", ex.getMessage());
+    }
+  }
+
+  @Test
+  void testStopReceivingMessagesRemoved(
+      ClientSdk clientSdk,
+      AccountInfo accountInfo,
+      ClientSdk anotherClientSdk,
+      AccountInfo anotherAccountInfo) {
+    final var roomInfo = createRoom(accountInfo);
+
+    login(clientSdk, accountInfo);
+    login(anotherClientSdk, anotherAccountInfo);
+
+    anotherClientSdk.roomSdk().joinRoom(roomInfo.name());
+
+    anotherClientSdk.messageSdk().subscribe(roomInfo.id());
+
+    final var anotherReceiver = anotherClientSdk.receiver();
+
+    clientSdk
+        .roomSdk()
+        .removeRoomMembers(
+            new RemoveMembersRequest().roomId(roomInfo.id()).memberIds(anotherAccountInfo.id()));
+
+    try {
+      awaitUntil(() -> anotherReceiver.poll(byQualifier("v1/syemessenger/messages")), TIMEOUT);
+      fail("Expected exception");
+    } catch (Exception ex) {
+      assertInstanceOf(RuntimeException.class, ex);
+      assertEquals("Timeout", ex.getMessage());
+    }
+  }
+
+  @Test
+  void testStopReceivingMessagesBlocked(
+      ClientSdk clientSdk,
+      AccountInfo accountInfo,
+      ClientSdk anotherClientSdk,
+      AccountInfo anotherAccountInfo) {
+    final var roomInfo = createRoom(accountInfo);
+
+    login(clientSdk, accountInfo);
+    login(anotherClientSdk, anotherAccountInfo);
+
+    anotherClientSdk.roomSdk().joinRoom(roomInfo.name());
+
+    anotherClientSdk.messageSdk().subscribe(roomInfo.id());
+
+    final var anotherReceiver = anotherClientSdk.receiver();
+
+    clientSdk
+        .roomSdk()
+        .blockRoomMembers(
+            new BlockMembersRequest().roomId(roomInfo.id()).memberIds(anotherAccountInfo.id()));
+
+    try {
+      awaitUntil(() -> anotherReceiver.poll(byQualifier("v1/syemessenger/messages")), TIMEOUT);
       fail("Expected exception");
     } catch (Exception ex) {
       assertInstanceOf(RuntimeException.class, ex);

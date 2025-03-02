@@ -170,4 +170,35 @@ public class SendMessageIT {
       assertEquals(text, message.message());
     }
   }
+
+  @Test
+  void testSendMessageAmongMultipleClientConnections(
+      ClientSdk clientSdk,
+      AccountInfo accountInfo,
+      ClientSdk anotherClientSdk,
+      AccountInfo anotherAccountInfo) {
+    final var roomInfo = createRoom(accountInfo);
+
+    login(clientSdk, accountInfo);
+    login(anotherClientSdk, anotherAccountInfo);
+
+    anotherClientSdk.roomSdk().joinRoom(roomInfo.name());
+
+    clientSdk.messageSdk().subscribe(roomInfo.id());
+    anotherClientSdk.messageSdk().subscribe(roomInfo.id());
+
+    final var anotherReceiver = anotherClientSdk.receiver();
+
+    final var text = "Test message";
+    clientSdk.messageSdk().send(text);
+
+    final var message =
+        (MessageInfo)
+            awaitUntil(
+                    () -> anotherReceiver.poll(byQualifier("v1/syemessenger/messages")),
+                    Duration.ofSeconds(5))
+                .data();
+
+    assertEquals(text, message.message());
+  }
 }

@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.json.JsonMapper;
 import io.syemessenger.JsonMappers;
 import io.syemessenger.api.account.AccountSdk;
 import io.syemessenger.api.message.MessageSdk;
+import io.syemessenger.api.messagehistory.MessageHistorySdk;
 import io.syemessenger.api.room.RoomSdk;
 import java.lang.reflect.Proxy;
 import java.net.URI;
@@ -112,6 +113,10 @@ public class ClientSdk implements AutoCloseable {
 
   public Receiver receiver() {
     return new Receiver(buffer);
+  }
+
+  public MessageHistorySdk messageHistorySdk() {
+    return api(MessageHistorySdk.class);
   }
 
   private Object toStringOrEqualsOrHashCode(String method, Class<?> api, Object... args) {
