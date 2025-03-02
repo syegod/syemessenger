@@ -2,9 +2,7 @@ package io.syemessenger.kafka;
 
 import io.syemessenger.SubscriptionRegistry;
 import io.syemessenger.api.message.MessageInfo;
-import io.syemessenger.api.message.MessageService;
 import io.syemessenger.api.messagehistory.MessageHistoryService;
-import io.syemessenger.api.messagehistory.repository.MessageRepository;
 import io.syemessenger.kafka.dto.BlockMembersEvent;
 import io.syemessenger.kafka.dto.LeaveRoomEvent;
 import io.syemessenger.kafka.dto.RemoveMembersEvent;

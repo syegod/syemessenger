@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "messages")
-public class Message {
+public class HistoryMessage {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
@@ -36,7 +36,7 @@ public class Message {
     return id;
   }
 
-  public Message id(Long id) {
+  public HistoryMessage id(Long id) {
     this.id = id;
     return this;
   }
@@ -45,7 +45,7 @@ public class Message {
     return sender;
   }
 
-  public Message sender(Account sender) {
+  public HistoryMessage sender(Account sender) {
     this.sender = sender;
     return this;
   }
@@ -54,7 +54,7 @@ public class Message {
     return room;
   }
 
-  public Message room(Room room) {
+  public HistoryMessage room(Room room) {
     this.room = room;
     return this;
   }
@@ -63,7 +63,7 @@ public class Message {
     return message;
   }
 
-  public Message message(String message) {
+  public HistoryMessage message(String message) {
     this.message = message;
     return this;
   }
@@ -72,7 +72,7 @@ public class Message {
     return timestamp;
   }
 
-  public Message timestamp(LocalDateTime timestamp) {
+  public HistoryMessage timestamp(LocalDateTime timestamp) {
     this.timestamp = timestamp;
     return this;
   }

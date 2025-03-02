@@ -5,8 +5,8 @@ import static io.syemessenger.api.Pageables.toPageable;
 import io.syemessenger.api.ServiceException;
 import io.syemessenger.api.account.repository.AccountRepository;
 import io.syemessenger.api.message.MessageInfo;
-import io.syemessenger.api.messagehistory.repository.Message;
-import io.syemessenger.api.messagehistory.repository.MessageRepository;
+import io.syemessenger.api.messagehistory.repository.HistoryMessage;
+import io.syemessenger.api.messagehistory.repository.HistoryMessageRepository;
 import io.syemessenger.api.room.repository.RoomRepository;
 import io.syemessenger.websocket.SessionContext;
 import java.time.Clock;
@@ -14,23 +14,25 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class MessageHistoryService {
 
   private final RoomRepository roomRepository;
   private final AccountRepository accountRepository;
-  private final MessageRepository messageRepository;
+  private final HistoryMessageRepository historyMessageRepository;
 
   public MessageHistoryService(
       RoomRepository roomRepository,
       AccountRepository accountRepository,
-      MessageRepository messageRepository) {
+      HistoryMessageRepository historyMessageRepository) {
     this.roomRepository = roomRepository;
     this.accountRepository = accountRepository;
-    this.messageRepository = messageRepository;
+    this.historyMessageRepository = historyMessageRepository;
   }
 
+  @Transactional
   public void saveMessage(MessageInfo messageInfo) {
     final var room = roomRepository.findById(messageInfo.roomId()).orElse(null);
     if (room == null) {
@@ -44,14 +46,19 @@ public class MessageHistoryService {
 
     final var now = LocalDateTime.now(Clock.systemUTC()).truncatedTo(ChronoUnit.MILLIS);
     try {
-      messageRepository.save(
-          new Message().room(room).sender(sender).message(messageInfo.message()).timestamp(now));
+      historyMessageRepository.save(
+          new HistoryMessage()
+              .room(room)
+              .sender(sender)
+              .message(messageInfo.message())
+              .timestamp(now));
     } catch (Exception ex) {
       throw new RuntimeException(ex.getMessage());
     }
   }
 
-  public Page<Message> listMessages(SessionContext sessionContext, ListMessagesRequest request) {
+  public Page<HistoryMessage> listMessages(
+      SessionContext sessionContext, ListMessagesRequest request) {
     final var room = roomRepository.findById(request.roomId()).orElse(null);
     if (room == null) {
       throw new ServiceException(404, "Room not found");
@@ -66,11 +73,11 @@ public class MessageHistoryService {
     final var pageable = toPageable(request.offset(), request.limit(), request.orderBy());
 
     final var keyword = request.keyword();
-    Page<Message> messagePage;
+    Page<HistoryMessage> messagePage;
     if (keyword == null) {
-      messagePage = messageRepository.findAll(pageable);
+      messagePage = historyMessageRepository.findAll(pageable);
     } else {
-      messagePage = messageRepository.findByMessageContaining(keyword, pageable);
+      messagePage = historyMessageRepository.findByMessageContaining(keyword, pageable);
     }
 
     return messagePage;

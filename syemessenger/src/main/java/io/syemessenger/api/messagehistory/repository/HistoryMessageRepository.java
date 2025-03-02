@@ -7,10 +7,10 @@ import org.springframework.data.repository.CrudRepository;
 import org.springframework.transaction.annotation.Transactional;
 
 @Transactional
-public interface MessageRepository extends CrudRepository<Message, Long> {
+public interface HistoryMessageRepository extends CrudRepository<HistoryMessage, Long> {
 
   @NativeQuery("SELECT * FROM messages")
-  Page<Message> findAll(Pageable pageable);
+  Page<HistoryMessage> findAll(Pageable pageable);
 
-  Page<Message> findByMessageContaining(String keyword, Pageable pageable);
+  Page<HistoryMessage> findByMessageContaining(String keyword, Pageable pageable);
 }

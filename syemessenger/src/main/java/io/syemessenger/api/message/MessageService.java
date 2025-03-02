@@ -3,17 +3,14 @@ package io.syemessenger.api.message;
 import io.syemessenger.SubscriptionRegistry;
 import io.syemessenger.api.ServiceException;
 import io.syemessenger.api.account.repository.AccountRepository;
-import io.syemessenger.api.messagehistory.repository.Message;
-import io.syemessenger.api.messagehistory.repository.MessageRepository;
+import io.syemessenger.api.messagehistory.repository.HistoryMessageRepository;
 import io.syemessenger.api.room.repository.BlockedMemberId;
 import io.syemessenger.api.room.repository.BlockedRepository;
 import io.syemessenger.api.room.repository.RoomRepository;
 import io.syemessenger.kafka.KafkaMessageCodec;
 import io.syemessenger.websocket.SessionContext;
 import java.nio.ByteBuffer;
-import java.time.Clock;
 import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.concurrent.TimeUnit;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
@@ -31,7 +28,7 @@ public class MessageService {
       RoomRepository roomRepository,
       BlockedRepository blockedRepository,
       SubscriptionRegistry subscriptionRegistry,
-      MessageRepository messageRepository,
+      HistoryMessageRepository historyMessageRepository,
       AccountRepository accountRepository) {
     this.kafkaTemplate = kafkaTemplate;
     this.roomRepository = roomRepository;

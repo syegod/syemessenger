@@ -2,25 +2,41 @@ package io.syemessenger.api.messagehistory;
 
 import static io.syemessenger.environment.CounterUtils.nextLong;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import io.syemessenger.LocalDateTimeConverter;
 import io.syemessenger.api.message.MessageInfo;
+import java.sql.SQLException;
 import java.time.LocalDateTime;
+import java.util.List;
+import javax.sql.DataSource;
 
 public class MessageHistoryAssertions {
-
-  public static MessageInfo createMessageInfo(
-      String message, Long senderId, Long roomId, LocalDateTime timestamp) {
-    return new MessageInfo()
-        .id(nextLong())
-        .message(message)
-        .senderId(senderId)
-        .roomId(roomId)
-        .timestamp(timestamp);
-  }
 
   public static void assertMessage(MessageInfo expected, MessageInfo actual) {
     assertEquals(expected.message(), actual.message(), "actual.message: " + actual.message());
     assertEquals(expected.senderId(), actual.senderId(), "actual.senderId: " + actual.senderId());
     assertEquals(expected.roomId(), actual.roomId(), "actual.roomId: " + actual.roomId());
+    assertNotNull(actual.timestamp());
+  }
+
+  public static void insertRecords(DataSource dataSource, List<MessageRecord> messageRecords)
+      throws SQLException {
+    try (final var connection = dataSource.getConnection()) {
+      connection.setAutoCommit(false);
+      for (var record : messageRecords) {
+        String query =
+            "INSERT INTO messages (sender_id, room_id, message, timestamp) VALUES (?, ?, ?, ?)";
+        try (final var preparedStatement = connection.prepareStatement(query)) {
+          preparedStatement.setLong(1, record.senderId());
+          preparedStatement.setLong(2, record.roomId());
+          preparedStatement.setString(3, record.message());
+          preparedStatement.setTimestamp(
+              4, new LocalDateTimeConverter().convertToDatabaseColumn(record.timestamp()));
+          preparedStatement.executeUpdate();
+          connection.commit();
+        }
+      }
+    }
   }
 }

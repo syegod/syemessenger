@@ -2,7 +2,7 @@ package io.syemessenger.api.messagehistory;
 
 import static io.syemessenger.api.ErrorAssertions.assertError;
 import static io.syemessenger.api.account.AccountAssertions.login;
-import static io.syemessenger.api.messagehistory.MessageHistoryAssertions.createMessageInfo;
+import static io.syemessenger.api.messagehistory.MessageHistoryAssertions.insertRecords;
 import static io.syemessenger.api.room.RoomAssertions.createRoom;
 import static io.syemessenger.environment.AssertionUtils.assertCollections;
 import static io.syemessenger.environment.AssertionUtils.getFields;
@@ -22,6 +22,7 @@ import io.syemessenger.api.room.RemoveMembersRequest;
 import io.syemessenger.api.room.RoomInfo;
 import io.syemessenger.environment.IntegrationEnvironmentExtension;
 import io.syemessenger.environment.OffsetLimit;
+import java.sql.SQLException;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
@@ -213,7 +214,9 @@ public class ListMessagesIT {
   @SuppressWarnings("unchecked")
   @ParameterizedTest(name = "{0}")
   @MethodSource("testListMessagesMethodSource")
-  void testListMessages(SuccessArgs args, ClientSdk clientSdk, AccountInfo accountInfo) {
+  void testListMessages(
+      SuccessArgs args, ClientSdk clientSdk, AccountInfo accountInfo, DataSource dataSource)
+      throws SQLException {
     final var roomInfo = createRoom(accountInfo);
     final int n = 25;
 
@@ -223,20 +226,19 @@ public class ListMessagesIT {
     final var limit = request.limit() != null ? request.limit() : 50;
 
     login(clientSdk, accountInfo);
-    clientSdk.messageSdk().subscribe(roomInfo.id());
 
-    List<MessageInfo> messageInfos = new ArrayList<>();
-
+    List<MessageRecord> messageRecords = new ArrayList<>();
     for (int i = 1; i <= n; i++) {
       final var message = "test@" + i;
-      clientSdk.messageSdk().send(message);
       final var now = LocalDateTime.now(Clock.systemUTC()).truncatedTo(ChronoUnit.MILLIS);
-      final var newMessageInfo = createMessageInfo(message, accountInfo.id(), roomInfo.id(), now);
-      messageInfos.add(newMessageInfo);
+      final var newMessageRecord = new MessageRecord(accountInfo.id(), roomInfo.id(), message, now);
+      messageRecords.add(newMessageRecord);
     }
 
+    insertRecords(dataSource, messageRecords);
+
     final var expectedMessageInfos =
-        messageInfos.stream()
+        messageRecords.stream()
             .filter(
                 messageInfo -> {
                   if (keyword != null) {
@@ -250,14 +252,8 @@ public class ListMessagesIT {
             .limit(limit)
             .toList();
 
-    try {
-      Thread.sleep(500);
-    } catch (InterruptedException e) {
-      throw new RuntimeException(e);
-    }
-
     final var response = clientSdk.messageHistorySdk().listMessages(request);
-    assertEquals(messageInfos.size(), response.totalCount(), "totalCount");
+    assertEquals(messageRecords.size(), response.totalCount(), "totalCount");
     assertCollections(
         expectedMessageInfos, response.messages(), MessageHistoryAssertions::assertMessage);
   }
