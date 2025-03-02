@@ -235,12 +235,6 @@ public class ListMessagesIT {
       messageInfos.add(newMessageInfo);
     }
 
-    try {
-      Thread.sleep(1000);
-    } catch (InterruptedException e) {
-      throw new RuntimeException(e);
-    }
-
     final var expectedMessageInfos =
         messageInfos.stream()
             .filter(
@@ -255,6 +249,12 @@ public class ListMessagesIT {
             .skip(offset)
             .limit(limit)
             .toList();
+
+    try {
+      Thread.sleep(500);
+    } catch (InterruptedException e) {
+      throw new RuntimeException(e);
+    }
 
     final var response = clientSdk.messageHistorySdk().listMessages(request);
     assertEquals(messageInfos.size(), response.totalCount(), "totalCount");
