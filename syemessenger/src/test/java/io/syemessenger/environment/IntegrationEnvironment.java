@@ -54,9 +54,9 @@ public class IntegrationEnvironment implements AutoCloseable {
   public static void cleanTables(DataSource dataSource) {
     try (final var connection = dataSource.getConnection()) {
       String truncateQuery =
-          "TRUNCATE TABLE accounts CASCADE; "
-              + "TRUNCATE TABLE rooms CASCADE; "
-              + "TRUNCATE TABLE messages CASCADE;";
+          "TRUNCATE TABLE accounts RESTART IDENTITY CASCADE; "
+              + "TRUNCATE TABLE rooms RESTART IDENTITY CASCADE; "
+              + "TRUNCATE TABLE messages RESTART IDENTITY CASCADE;";
 
       try (PreparedStatement statement = connection.prepareStatement(truncateQuery)) {
         statement.executeUpdate();

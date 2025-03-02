@@ -218,7 +218,7 @@ public class ListMessagesIT {
       SuccessArgs args, ClientSdk clientSdk, AccountInfo accountInfo, DataSource dataSource)
       throws SQLException {
     final var roomInfo = createRoom(accountInfo);
-    final int n = 25;
+    final long n = 25;
 
     final var request = args.request.apply(roomInfo);
     final var keyword = request.keyword();
@@ -228,25 +228,27 @@ public class ListMessagesIT {
     login(clientSdk, accountInfo);
 
     List<MessageRecord> messageRecords = new ArrayList<>();
-    for (int i = 1; i <= n; i++) {
+    for (long i = 1; i <= n; i++) {
       final var message = "test@" + i;
       final var now = LocalDateTime.now(Clock.systemUTC()).truncatedTo(ChronoUnit.MILLIS);
-      final var newMessageRecord = new MessageRecord(accountInfo.id(), roomInfo.id(), message, now);
+      final var newMessageRecord =
+          new MessageRecord(i, accountInfo.id(), roomInfo.id(), message, now);
       messageRecords.add(newMessageRecord);
     }
 
+    messageRecords = messageRecords.stream().filter(
+        messageInfo -> {
+          if (keyword != null) {
+            return messageInfo.message().contains(keyword);
+          } else {
+            return true;
+          }
+        }).toList();
+
     insertRecords(dataSource, messageRecords);
 
-    final var expectedMessageInfos =
+    final var expectedMessageRecords =
         messageRecords.stream()
-            .filter(
-                messageInfo -> {
-                  if (keyword != null) {
-                    return messageInfo.message().contains(keyword);
-                  } else {
-                    return true;
-                  }
-                })
             .sorted(args.comparator)
             .skip(offset)
             .limit(limit)
@@ -254,8 +256,12 @@ public class ListMessagesIT {
 
     final var response = clientSdk.messageHistorySdk().listMessages(request);
     assertEquals(messageRecords.size(), response.totalCount(), "totalCount");
+
+    final var actualRecords =
+        response.messages().stream().map(MessageHistoryAssertions::toMessageRecord).toList();
+
     assertCollections(
-        expectedMessageInfos, response.messages(), MessageHistoryAssertions::assertMessage);
+        expectedMessageRecords, actualRecords, MessageHistoryAssertions::assertMessageRecord);
   }
 
   @SuppressWarnings("rawtypes")
@@ -294,7 +300,7 @@ public class ListMessagesIT {
           new SuccessArgs(
               "Keyword: " + keyword,
               roomInfo -> new ListMessagesRequest().roomId(roomInfo.id()).keyword(keyword),
-              Comparator.<MessageInfo, Long>comparing(MessageInfo::id)));
+              Comparator.comparing(MessageRecord::id)));
     }
 
     // Pagination
@@ -316,7 +322,7 @@ public class ListMessagesIT {
               "Offset: " + offset + ", limit: " + limit,
               roomInfo ->
                   new ListMessagesRequest().roomId(roomInfo.id()).offset(offset).limit(limit),
-              Comparator.<MessageInfo, Long>comparing(MessageInfo::id)));
+              Comparator.comparing(MessageRecord::id)));
     }
 
     return builder.build();

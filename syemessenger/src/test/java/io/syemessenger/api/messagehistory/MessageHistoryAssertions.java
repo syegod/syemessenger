@@ -1,23 +1,30 @@
 package io.syemessenger.api.messagehistory;
 
-import static io.syemessenger.environment.CounterUtils.nextLong;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import io.syemessenger.LocalDateTimeConverter;
 import io.syemessenger.api.message.MessageInfo;
 import java.sql.SQLException;
-import java.time.LocalDateTime;
 import java.util.List;
 import javax.sql.DataSource;
 
 public class MessageHistoryAssertions {
 
-  public static void assertMessage(MessageInfo expected, MessageInfo actual) {
+  public static void assertMessageRecord(MessageRecord expected, MessageRecord actual) {
     assertEquals(expected.message(), actual.message(), "actual.message: " + actual.message());
     assertEquals(expected.senderId(), actual.senderId(), "actual.senderId: " + actual.senderId());
     assertEquals(expected.roomId(), actual.roomId(), "actual.roomId: " + actual.roomId());
     assertNotNull(actual.timestamp());
+  }
+
+  public static MessageRecord toMessageRecord(MessageInfo messageInfo) {
+    return new MessageRecord(
+        messageInfo.id(),
+        messageInfo.senderId(),
+        messageInfo.roomId(),
+        messageInfo.message(),
+        messageInfo.timestamp());
   }
 
   public static void insertRecords(DataSource dataSource, List<MessageRecord> messageRecords)
