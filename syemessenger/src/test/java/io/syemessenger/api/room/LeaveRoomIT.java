@@ -87,7 +87,7 @@ public class LeaveRoomIT {
       clientSdk.roomSdk().leaveRoom(roomInfo.id());
       fail("Expected exception");
     } catch (Exception ex) {
-      assertError(ex, 400, "Cannot leave room: not joined");
+      assertError(ex, 400, "Not a room member");
     }
   }
 
@@ -114,7 +114,7 @@ public class LeaveRoomIT {
       clientSdk.roomSdk().leaveRoom(roomInfo.id());
       fail("Expected exception");
     } catch (Exception ex) {
-      assertError(ex, 400, "Cannot leave room: not joined");
+      assertError(ex, 400, "Not a room member");
     }
   }
 
@@ -131,7 +131,7 @@ public class LeaveRoomIT {
       clientSdk.roomSdk().leaveRoom(roomInfo.id());
       fail("Expected exception");
     } catch (Exception ex) {
-      assertError(ex, 400, "Cannot leave room: not joined");
+      assertError(ex, 400, "Not a room member");
     }
   }
 

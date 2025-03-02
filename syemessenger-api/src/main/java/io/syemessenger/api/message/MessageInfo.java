@@ -5,10 +5,20 @@ import java.util.StringJoiner;
 
 public class MessageInfo {
 
+  private Long id;
   private Long senderId;
   private Long roomId;
   private String message;
   private LocalDateTime timestamp;
+
+  public Long id() {
+    return id;
+  }
+
+  public MessageInfo id(Long id) {
+    this.id = id;
+    return this;
+  }
 
   public Long senderId() {
     return senderId;
@@ -49,6 +59,7 @@ public class MessageInfo {
   @Override
   public String toString() {
     return new StringJoiner(", ", MessageInfo.class.getSimpleName() + "[", "]")
+        .add("id=" + id)
         .add("senderId=" + senderId)
         .add("roomId=" + roomId)
         .add("message='" + message + "'")

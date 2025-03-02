@@ -116,7 +116,7 @@ public class RoomService {
 
     final var roomMember = roomRepository.findRoomMember(roomId, accountId);
     if (roomMember == null) {
-      throw new ServiceException(400, "Cannot leave room: not joined");
+      throw new ServiceException(400, "Not a room member");
     }
 
     if (room.owner().id().equals(accountId)) {

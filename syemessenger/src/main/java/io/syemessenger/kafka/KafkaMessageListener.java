@@ -3,7 +3,8 @@ package io.syemessenger.kafka;
 import io.syemessenger.SubscriptionRegistry;
 import io.syemessenger.api.message.MessageInfo;
 import io.syemessenger.api.message.MessageService;
-import io.syemessenger.api.message.repository.MessageRepository;
+import io.syemessenger.api.messagehistory.MessageHistoryService;
+import io.syemessenger.api.messagehistory.repository.MessageRepository;
 import io.syemessenger.kafka.dto.BlockMembersEvent;
 import io.syemessenger.kafka.dto.LeaveRoomEvent;
 import io.syemessenger.kafka.dto.RemoveMembersEvent;
@@ -21,14 +22,12 @@ import org.springframework.stereotype.Service;
 public class KafkaMessageListener {
 
   private final SubscriptionRegistry subscriptionRegistry;
-  private final MessageService messageService;
+  private final MessageHistoryService messageHistoryService;
 
-  public KafkaMessageListener(
-      SubscriptionRegistry subscriptionRegistry,
-      MessageRepository messageRepository,
-      MessageService messageService) {
+  public KafkaMessageListener(SubscriptionRegistry subscriptionRegistry,
+      MessageHistoryService messageHistoryService) {
     this.subscriptionRegistry = subscriptionRegistry;
-    this.messageService = messageService;
+    this.messageHistoryService = messageHistoryService;
   }
 
   @KafkaListener(topics = "messages", groupId = "1")
@@ -68,7 +67,7 @@ public class KafkaMessageListener {
     headerDecoder.wrap(directBuffer, 0);
 
     if (RoomMessageDecoder.TEMPLATE_ID == headerDecoder.templateId()) {
-      messageService.saveMessage(KafkaMessageCodec.decodeRoomMessage(byteBuffer));
+      messageHistoryService.saveMessage(KafkaMessageCodec.decodeRoomMessage(byteBuffer));
     }
   }
 

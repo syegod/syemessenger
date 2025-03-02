@@ -3,8 +3,8 @@ package io.syemessenger.api.message;
 import io.syemessenger.SubscriptionRegistry;
 import io.syemessenger.api.ServiceException;
 import io.syemessenger.api.account.repository.AccountRepository;
-import io.syemessenger.api.message.repository.Message;
-import io.syemessenger.api.message.repository.MessageRepository;
+import io.syemessenger.api.messagehistory.repository.Message;
+import io.syemessenger.api.messagehistory.repository.MessageRepository;
 import io.syemessenger.api.room.repository.BlockedMemberId;
 import io.syemessenger.api.room.repository.BlockedRepository;
 import io.syemessenger.api.room.repository.RoomRepository;
@@ -25,8 +25,6 @@ public class MessageService {
   private final RoomRepository roomRepository;
   private final BlockedRepository blockedRepository;
   private final SubscriptionRegistry subscriptionRegistry;
-  private final MessageRepository messageRepository;
-  private final AccountRepository accountRepository;
 
   public MessageService(
       KafkaTemplate<Long, ByteBuffer> kafkaTemplate,
@@ -39,8 +37,6 @@ public class MessageService {
     this.roomRepository = roomRepository;
     this.blockedRepository = blockedRepository;
     this.subscriptionRegistry = subscriptionRegistry;
-    this.messageRepository = messageRepository;
-    this.accountRepository = accountRepository;
   }
 
   public void subscribe(Long roomId, Long accountId, SessionContext sessionContext) {
@@ -93,25 +89,5 @@ public class MessageService {
     }
 
     return roomId;
-  }
-
-  public void saveMessage(MessageInfo messageInfo) {
-    final var room = roomRepository.findById(messageInfo.roomId()).orElse(null);
-    if (room == null) {
-      throw new RuntimeException("Room not found");
-    }
-
-    final var sender = accountRepository.findById(messageInfo.senderId()).orElse(null);
-    if (sender == null) {
-      throw new RuntimeException("Account not found");
-    }
-
-    final var now = LocalDateTime.now(Clock.systemUTC()).truncatedTo(ChronoUnit.MILLIS);
-    try {
-      messageRepository.save(
-          new Message().room(room).sender(sender).message(messageInfo.message()).timestamp(now));
-    } catch (Exception ex) {
-      throw new RuntimeException(ex.getMessage());
-    }
   }
 }

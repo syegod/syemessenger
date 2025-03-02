@@ -1,4 +1,4 @@
-package io.syemessenger.api.message.repository;
+package io.syemessenger.api.messagehistory.repository;
 
 import io.syemessenger.api.account.repository.Account;
 import io.syemessenger.api.room.repository.Room;
