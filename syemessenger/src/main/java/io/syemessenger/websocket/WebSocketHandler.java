@@ -2,6 +2,7 @@ package io.syemessenger.websocket;
 
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import io.syemessenger.ServiceRegistry;
+import io.syemessenger.SubscriptionRegistry;
 import io.syemessenger.api.ServiceException;
 import io.syemessenger.api.ServiceMessage;
 import java.util.UUID;
@@ -21,16 +22,22 @@ public class WebSocketHandler {
 
   private final JsonMapper jsonMapper;
   private final ServiceRegistry serviceRegistry;
+  private final SubscriptionRegistry subscriptionRegistry;
 
   private SessionContext sessionContext;
 
-  public WebSocketHandler(JsonMapper jsonMapper, ServiceRegistry serviceRegistry) {
+  public WebSocketHandler(
+      JsonMapper jsonMapper,
+      ServiceRegistry serviceRegistry,
+      SubscriptionRegistry subscriptionRegistry) {
     this.jsonMapper = jsonMapper;
     this.serviceRegistry = serviceRegistry;
+    this.subscriptionRegistry = subscriptionRegistry;
   }
 
   @OnWebSocketClose
   public void onWebSocketClose(int statusCode, String reason) {
+    subscriptionRegistry.unsubscribe(sessionContext);
     sessionContext = null;
     LOGGER.info("WebSocket Close: {} - {}", statusCode, reason);
   }

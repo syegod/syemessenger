@@ -9,10 +9,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.fail;
 
+import io.syemessenger.SubscriptionRegistry;
 import io.syemessenger.api.ClientSdk;
 import io.syemessenger.api.account.AccountInfo;
 import io.syemessenger.api.room.BlockMembersRequest;
 import io.syemessenger.api.room.RemoveMembersRequest;
+import io.syemessenger.environment.IntegrationEnvironment;
 import io.syemessenger.environment.IntegrationEnvironmentExtension;
 import java.time.Duration;
 import org.junit.jupiter.api.Test;
@@ -176,5 +178,20 @@ public class UnsubscribeIT {
       assertInstanceOf(RuntimeException.class, ex);
       assertEquals("Timeout", ex.getMessage());
     }
+  }
+
+  @Test
+  void testUnsubscribeOnConnectionClose(
+      ClientSdk clientSdk, AccountInfo accountInfo, IntegrationEnvironment environment) {
+    final var subscriptionRegistry = environment.getBean(SubscriptionRegistry.class);
+    final var roomInfo = createRoom(accountInfo);
+    login(clientSdk, accountInfo);
+
+    final var size = subscriptionRegistry.sessions().size();
+    clientSdk.messageSdk().subscribe(roomInfo.id());
+    assertEquals(size + 1, subscriptionRegistry.sessions().size(), "sessions.size");
+
+    clientSdk.close();
+    awaitUntil(() -> subscriptionRegistry.sessions().size() == size, Duration.ofSeconds(3));
   }
 }
