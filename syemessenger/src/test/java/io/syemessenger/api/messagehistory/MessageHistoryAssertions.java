@@ -12,6 +12,7 @@ import javax.sql.DataSource;
 public class MessageHistoryAssertions {
 
   public static void assertMessageRecord(MessageRecord expected, MessageRecord actual) {
+    assertEquals(expected.id(), actual.id(), "actual.id: " + actual.id());
     assertEquals(expected.message(), actual.message(), "actual.message: " + actual.message());
     assertEquals(expected.senderId(), actual.senderId(), "actual.senderId: " + actual.senderId());
     assertEquals(expected.roomId(), actual.roomId(), "actual.roomId: " + actual.roomId());

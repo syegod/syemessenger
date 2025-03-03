@@ -2,8 +2,6 @@ package io.syemessenger.api.message;
 
 import io.syemessenger.SubscriptionRegistry;
 import io.syemessenger.api.ServiceException;
-import io.syemessenger.api.account.repository.AccountRepository;
-import io.syemessenger.api.messagehistory.repository.HistoryMessageRepository;
 import io.syemessenger.api.room.repository.BlockedMemberId;
 import io.syemessenger.api.room.repository.BlockedRepository;
 import io.syemessenger.api.room.repository.RoomRepository;
@@ -27,9 +25,7 @@ public class MessageService {
       KafkaTemplate<Long, ByteBuffer> kafkaTemplate,
       RoomRepository roomRepository,
       BlockedRepository blockedRepository,
-      SubscriptionRegistry subscriptionRegistry,
-      HistoryMessageRepository historyMessageRepository,
-      AccountRepository accountRepository) {
+      SubscriptionRegistry subscriptionRegistry) {
     this.kafkaTemplate = kafkaTemplate;
     this.roomRepository = roomRepository;
     this.blockedRepository = blockedRepository;

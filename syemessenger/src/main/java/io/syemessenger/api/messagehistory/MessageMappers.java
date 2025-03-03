@@ -8,8 +8,8 @@ public class MessageMappers {
   public static MessageInfo toMessageInfo(HistoryMessage message) {
     return new MessageInfo()
         .id(message.id())
-        .roomId(message.room().id())
-        .senderId(message.sender().id())
+        .roomId(message.roomId())
+        .senderId(message.senderId())
         .message(message.message())
         .timestamp(message.timestamp());
   }

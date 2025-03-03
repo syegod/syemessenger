@@ -236,6 +236,8 @@ public class ListMessagesIT {
       messageRecords.add(newMessageRecord);
     }
 
+    insertRecords(dataSource, messageRecords);
+
     messageRecords = messageRecords.stream().filter(
         messageInfo -> {
           if (keyword != null) {
@@ -245,7 +247,6 @@ public class ListMessagesIT {
           }
         }).toList();
 
-    insertRecords(dataSource, messageRecords);
 
     final var expectedMessageRecords =
         messageRecords.stream()

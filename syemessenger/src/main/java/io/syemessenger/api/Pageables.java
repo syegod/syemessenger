@@ -6,8 +6,6 @@ import org.springframework.data.domain.Sort;
 
 public class Pageables {
 
-  private Pageables() {}
-
   public static Pageable toPageable(Integer offset, Integer limit, OrderBy orderBy) {
     if (offset == null) {
       offset = 0;
@@ -29,6 +27,10 @@ public class Pageables {
           orderBy.field("updated_at");
         } else if (orderBy.field().equals("owner")) {
           orderBy.field("owner_id");
+        } else if (orderBy.field().equals("senderId")) {
+          orderBy.field("sender_id");
+        } else if (orderBy.field().equals("roomId")) {
+          orderBy.field("room_id");
         }
       }
       if (orderBy.direction() == null) {

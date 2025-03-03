@@ -28,7 +28,11 @@ public class MessageController {
       throw new ServiceException(400, "Missing or invalid: roomId");
     }
 
-    messageService.subscribe(roomId, sessionContext.accountId(), sessionContext);
+    try {
+      messageService.subscribe(roomId, sessionContext.accountId(), sessionContext);
+    } catch(ServiceException ex) {
+      throw new ServiceException(ex.errorCode(), ex.getMessage());
+    }
 
     sessionContext.send(serviceMessage.clone().data(roomId));
   }

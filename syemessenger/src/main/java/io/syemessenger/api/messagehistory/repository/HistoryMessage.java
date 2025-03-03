@@ -19,13 +19,11 @@ public class HistoryMessage {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
-  @OneToOne
-  @JoinColumn(name = "sender_id")
-  private Account sender;
+  @Column(name = "sender_id")
+  private Long senderId;
 
-  @OneToOne
-  @JoinColumn(name = "room_id")
-  private Room room;
+  @Column(name = "room_id")
+  private Long roomId;
 
   private String message;
 
@@ -41,21 +39,21 @@ public class HistoryMessage {
     return this;
   }
 
-  public Account sender() {
-    return sender;
+  public Long senderId() {
+    return senderId;
   }
 
-  public HistoryMessage sender(Account sender) {
-    this.sender = sender;
+  public HistoryMessage senderId(Long senderId) {
+    this.senderId = senderId;
     return this;
   }
 
-  public Room room() {
-    return room;
+  public Long roomId() {
+    return roomId;
   }
 
-  public HistoryMessage room(Room room) {
-    this.room = room;
+  public HistoryMessage roomId(Long roomId) {
+    this.roomId = roomId;
     return this;
   }
 

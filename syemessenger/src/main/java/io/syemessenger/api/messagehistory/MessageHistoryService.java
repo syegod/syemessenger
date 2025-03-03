@@ -34,22 +34,12 @@ public class MessageHistoryService {
 
   @Transactional
   public void saveMessage(MessageInfo messageInfo) {
-    final var room = roomRepository.findById(messageInfo.roomId()).orElse(null);
-    if (room == null) {
-      throw new RuntimeException("Room not found");
-    }
-
-    final var sender = accountRepository.findById(messageInfo.senderId()).orElse(null);
-    if (sender == null) {
-      throw new RuntimeException("Account not found");
-    }
-
     final var now = LocalDateTime.now(Clock.systemUTC()).truncatedTo(ChronoUnit.MILLIS);
     try {
       historyMessageRepository.save(
           new HistoryMessage()
-              .room(room)
-              .sender(sender)
+              .roomId(messageInfo.roomId())
+              .senderId(messageInfo.senderId())
               .message(messageInfo.message())
               .timestamp(now));
     } catch (Exception ex) {
