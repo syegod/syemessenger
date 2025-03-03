@@ -46,9 +46,8 @@ public class IntegrationEnvironment implements AutoCloseable {
     return postgres;
   }
 
-  public <T> T getBean(Class<?> clazz) {
-    //noinspection unchecked
-    return (T) serviceBootstrap.applicationContext().getBean(clazz);
+  public <T> T getBean(Class<T> clazz) {
+    return serviceBootstrap.applicationContext().getBean(clazz);
   }
 
   public static void cleanTables(DataSource dataSource) {
