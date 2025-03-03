@@ -51,7 +51,7 @@ public class IntegrationEnvironmentExtension
   }
 
   @Override
-  public void close() throws Throwable {
+  public void close() {
     CloseHelper.close(environment);
   }
 

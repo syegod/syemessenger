@@ -78,7 +78,9 @@ public class SubscriptionRegistry {
   public void removeMembers(Long roomId, List<Long> memberIds) {
     registry.computeIfPresent(
         roomId,
-        (k, list) -> list.stream().filter(e -> !memberIds.contains(e.accountId())).toList());
+        (k, list) ->
+            new ArrayList<>(
+                list.stream().filter(e -> !memberIds.contains(e.accountId())).toList()));
     for (Long memberId : memberIds) {
       final var sessionContext = sessionContext(memberId);
       if (sessionContext != null) {

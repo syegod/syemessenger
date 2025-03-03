@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Stream;
 import javax.sql.DataSource;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -42,8 +43,8 @@ import org.junit.jupiter.params.provider.MethodSource;
 @ExtendWith(IntegrationEnvironmentExtension.class)
 public class ListMessagesIT {
 
-  @BeforeEach
-  void beforeEach(DataSource dataSource) {
+  @AfterEach
+  void afterEach(DataSource dataSource) {
     cleanTables(dataSource);
   }
 

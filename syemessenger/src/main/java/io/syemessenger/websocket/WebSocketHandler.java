@@ -48,7 +48,7 @@ public class WebSocketHandler {
 
   @OnWebSocketMessage
   public void onWebSocketText(String text) {
-    LOGGER.info("Received message [{}]", text);
+    LOGGER.debug("Received: {}", text);
     UUID cid = null;
     try {
       final var message = jsonMapper.readValue(text, ServiceMessage.class);

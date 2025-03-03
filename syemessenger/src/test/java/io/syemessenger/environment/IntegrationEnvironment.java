@@ -67,14 +67,14 @@ public class IntegrationEnvironment implements AutoCloseable {
   }
 
   public void close() {
+    if (serviceBootstrap != null) {
+      serviceBootstrap.close();
+    }
     if (postgres != null) {
       postgres.close();
     }
     if (kafka != null) {
       kafka.close();
-    }
-    if (serviceBootstrap != null) {
-      serviceBootstrap.close();
     }
   }
 }

@@ -23,15 +23,12 @@ import org.springframework.transaction.annotation.Transactional;
 public class MessageHistoryService {
 
   private final RoomRepository roomRepository;
-  private final AccountRepository accountRepository;
   private final HistoryMessageRepository historyMessageRepository;
 
   public MessageHistoryService(
       RoomRepository roomRepository,
-      AccountRepository accountRepository,
       HistoryMessageRepository historyMessageRepository) {
     this.roomRepository = roomRepository;
-    this.accountRepository = accountRepository;
     this.historyMessageRepository = historyMessageRepository;
   }
 
