@@ -226,7 +226,6 @@ public class ListMessagesIT {
     final var keyword = request.keyword();
     final var from = request.from();
     final var to = request.to();
-    final var timezone = request.timezone();
     final var offset = request.offset() != null ? request.offset() : 0;
     final var limit = request.limit() != null ? request.limit() : 50;
 
@@ -369,5 +368,10 @@ public class ListMessagesIT {
     }
 
     return builder.build();
+  }
+
+  @Test
+  void testListMessagesWithTimezone() {
+    fail("Implement");
   }
 }

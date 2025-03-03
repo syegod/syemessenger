@@ -17,7 +17,7 @@ public interface HistoryMessageRepository extends CrudRepository<HistoryMessage,
   @NativeQuery(
       "SELECT * FROM messages m "
           + "WHERE lower(m.message) LIKE '%' || lower(:keyword) || '%' "
-          + "AND m.timestamp BETWEEN :from AND :to ")
+          + "AND m.timestamp BETWEEN :from AND :to")
   Page<HistoryMessage> findByKeywordAndTimestamp(
       @Param("keyword") String keyword,
       @Param("from") Timestamp from,

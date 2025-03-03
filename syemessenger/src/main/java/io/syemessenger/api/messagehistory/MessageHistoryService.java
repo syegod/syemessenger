@@ -4,7 +4,6 @@ import static io.syemessenger.api.Pageables.toPageable;
 
 import io.syemessenger.LocalDateTimeConverter;
 import io.syemessenger.api.ServiceException;
-import io.syemessenger.api.account.repository.AccountRepository;
 import io.syemessenger.api.message.MessageInfo;
 import io.syemessenger.api.messagehistory.repository.HistoryMessage;
 import io.syemessenger.api.messagehistory.repository.HistoryMessageRepository;
@@ -14,6 +13,8 @@ import java.sql.Timestamp;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
@@ -26,8 +27,7 @@ public class MessageHistoryService {
   private final HistoryMessageRepository historyMessageRepository;
 
   public MessageHistoryService(
-      RoomRepository roomRepository,
-      HistoryMessageRepository historyMessageRepository) {
+      RoomRepository roomRepository, HistoryMessageRepository historyMessageRepository) {
     this.roomRepository = roomRepository;
     this.historyMessageRepository = historyMessageRepository;
   }
@@ -70,20 +70,28 @@ public class MessageHistoryService {
     final var localDateTimeConverter = new LocalDateTimeConverter();
 
     Timestamp fromTimestamp;
+    final var timezone = request.timezone();
     if (request.from() == null) {
       fromTimestamp = Timestamp.from(Instant.EPOCH);
     } else {
-      fromTimestamp = localDateTimeConverter.convertToDatabaseColumn(request.from());
+      fromTimestamp =
+          localDateTimeConverter.convertToDatabaseColumn(toUTC(request.from(), timezone));
     }
 
     Timestamp toTimestamp;
     if (request.to() == null) {
       toTimestamp = Timestamp.valueOf(LocalDateTime.now());
     } else {
-      toTimestamp = localDateTimeConverter.convertToDatabaseColumn(request.to());
+      toTimestamp = localDateTimeConverter.convertToDatabaseColumn(toUTC(request.to(), timezone));
     }
 
     return historyMessageRepository.findByKeywordAndTimestamp(
         keyword, fromTimestamp, toTimestamp, pageable);
+  }
+
+  private static LocalDateTime toUTC(LocalDateTime localDateTime, String timezone) {
+    final var zoneId = ZoneId.of(timezone);
+    final var zonedDateTime = localDateTime.atZone(zoneId);
+    return zonedDateTime.withZoneSameInstant(ZoneOffset.UTC).toLocalDateTime();
   }
 }
