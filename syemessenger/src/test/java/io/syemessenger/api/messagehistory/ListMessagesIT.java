@@ -20,6 +20,7 @@ import io.syemessenger.api.message.MessageInfo;
 import io.syemessenger.api.room.BlockMembersRequest;
 import io.syemessenger.api.room.RemoveMembersRequest;
 import io.syemessenger.api.room.RoomInfo;
+import io.syemessenger.environment.FromToTimestamp;
 import io.syemessenger.environment.IntegrationEnvironmentExtension;
 import io.syemessenger.environment.OffsetLimit;
 import java.sql.SQLException;
@@ -121,7 +122,7 @@ public class ListMessagesIT {
                 .from(LocalDateTime.now().minusDays(5))
                 .to(LocalDateTime.now().minusDays(6)),
             400,
-            "Missing or invalid: 'to' should be ahead of 'from'"),
+            "Missing or invalid: 'from' later than 'to'"),
         new FailedArgs(
             "No timezone provided",
             new ListMessagesRequest()
@@ -222,6 +223,9 @@ public class ListMessagesIT {
 
     final var request = args.request.apply(roomInfo);
     final var keyword = request.keyword();
+    final var from = request.from();
+    final var to = request.to();
+    final var timezone = request.timezone();
     final var offset = request.offset() != null ? request.offset() : 0;
     final var limit = request.limit() != null ? request.limit() : 50;
 
@@ -232,28 +236,39 @@ public class ListMessagesIT {
       final var message = "test@" + i;
       final var now = LocalDateTime.now(Clock.systemUTC()).truncatedTo(ChronoUnit.MILLIS);
       final var newMessageRecord =
-          new MessageRecord(i, accountInfo.id(), roomInfo.id(), message, now);
+          new MessageRecord(i, accountInfo.id(), roomInfo.id(), message, now.minusDays(n - i));
       messageRecords.add(newMessageRecord);
     }
 
     insertRecords(dataSource, messageRecords);
 
-    messageRecords = messageRecords.stream().filter(
-        messageInfo -> {
-          if (keyword != null) {
-            return messageInfo.message().contains(keyword);
-          } else {
-            return true;
-          }
-        }).toList();
-
+    messageRecords =
+        messageRecords.stream()
+            .filter(
+                messageRecord -> {
+                  if (keyword != null) {
+                    return messageRecord.message().contains(keyword);
+                  } else {
+                    return true;
+                  }
+                })
+            .filter(
+                messageRecord -> {
+                  if (from != null && to != null) {
+                    return messageRecord.timestamp().isAfter(from)
+                        && messageRecord.timestamp().isBefore(to);
+                  } else if (from != null) {
+                    return messageRecord.timestamp().isAfter(from);
+                  } else if (to != null) {
+                    return messageRecord.timestamp().isBefore(to);
+                  } else {
+                    return true;
+                  }
+                })
+            .toList();
 
     final var expectedMessageRecords =
-        messageRecords.stream()
-            .sorted(args.comparator)
-            .skip(offset)
-            .limit(limit)
-            .toList();
+        messageRecords.stream().sorted(args.comparator).skip(offset).limit(limit).toList();
 
     final var response = clientSdk.messageHistorySdk().listMessages(request);
     assertEquals(messageRecords.size(), response.totalCount(), "totalCount");
@@ -326,11 +341,32 @@ public class ListMessagesIT {
               Comparator.comparing(MessageRecord::id)));
     }
 
-    return builder.build();
-  }
+    // Filter by date
 
-  @Test
-  void testListMessagesWithTimeSpan() {
-    fail("Implement");
+    final FromToTimestamp[] fromToTimestampArray = {
+      new FromToTimestamp(LocalDateTime.now().minusDays(10), null, "Europe/Copenhagen"),
+      new FromToTimestamp(null, LocalDateTime.now().minusDays(5), "Europe/Copenhagen"),
+      new FromToTimestamp(
+          LocalDateTime.now().minusDays(10), LocalDateTime.now().minusDays(5), "Europe/Copenhagen"),
+      new FromToTimestamp(null, null, "Europe/Copenhagen"),
+    };
+
+    for (var fromTo : fromToTimestampArray) {
+      final var from = fromTo.from();
+      final var to = fromTo.to();
+      final var timezone = fromTo.timezone();
+      builder.add(
+          new SuccessArgs(
+              "From: " + from + ", to: " + to,
+              roomInfo ->
+                  new ListMessagesRequest()
+                      .roomId(roomInfo.id())
+                      .from(from)
+                      .to(to)
+                      .timezone(timezone),
+              Comparator.comparing(MessageRecord::id)));
+    }
+
+    return builder.build();
   }
 }

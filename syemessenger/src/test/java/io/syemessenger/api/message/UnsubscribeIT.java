@@ -90,9 +90,7 @@ public class UnsubscribeIT {
 
   @Test
   void testStopReceivingMessagesLeaveRoom(
-      AccountInfo accountInfo,
-      ClientSdk anotherClientSdk,
-      AccountInfo anotherAccountInfo) {
+      AccountInfo accountInfo, ClientSdk anotherClientSdk, AccountInfo anotherAccountInfo) {
     final var roomInfo = createRoom(accountInfo);
 
     login(anotherClientSdk, anotherAccountInfo);

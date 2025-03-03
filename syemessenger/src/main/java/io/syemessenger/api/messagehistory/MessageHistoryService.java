@@ -2,6 +2,7 @@ package io.syemessenger.api.messagehistory;
 
 import static io.syemessenger.api.Pageables.toPageable;
 
+import io.syemessenger.LocalDateTimeConverter;
 import io.syemessenger.api.ServiceException;
 import io.syemessenger.api.account.repository.AccountRepository;
 import io.syemessenger.api.message.MessageInfo;
@@ -9,7 +10,9 @@ import io.syemessenger.api.messagehistory.repository.HistoryMessage;
 import io.syemessenger.api.messagehistory.repository.HistoryMessageRepository;
 import io.syemessenger.api.room.repository.RoomRepository;
 import io.syemessenger.websocket.SessionContext;
+import java.sql.Timestamp;
 import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import org.springframework.data.domain.Page;
@@ -62,14 +65,28 @@ public class MessageHistoryService {
 
     final var pageable = toPageable(request.offset(), request.limit(), request.orderBy());
 
-    final var keyword = request.keyword();
-    Page<HistoryMessage> messagePage;
+    var keyword = request.keyword();
     if (keyword == null) {
-      messagePage = historyMessageRepository.findAll(pageable);
-    } else {
-      messagePage = historyMessageRepository.findByMessageContaining(keyword, pageable);
+      keyword = "";
     }
 
-    return messagePage;
+    final var localDateTimeConverter = new LocalDateTimeConverter();
+
+    Timestamp fromTimestamp;
+    if (request.from() == null) {
+      fromTimestamp = Timestamp.from(Instant.EPOCH);
+    } else {
+      fromTimestamp = localDateTimeConverter.convertToDatabaseColumn(request.from());
+    }
+
+    Timestamp toTimestamp;
+    if (request.to() == null) {
+      toTimestamp = Timestamp.valueOf(LocalDateTime.now());
+    } else {
+      toTimestamp = localDateTimeConverter.convertToDatabaseColumn(request.to());
+    }
+
+    return historyMessageRepository.findByKeywordAndTimestamp(
+        keyword, fromTimestamp, toTimestamp, pageable);
   }
 }
