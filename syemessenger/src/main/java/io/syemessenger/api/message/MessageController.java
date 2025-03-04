@@ -30,7 +30,7 @@ public class MessageController {
 
     try {
       messageService.subscribe(roomId, sessionContext.accountId(), sessionContext);
-    } catch(ServiceException ex) {
+    } catch (ServiceException ex) {
       throw new ServiceException(ex.errorCode(), ex.getMessage());
     }
 

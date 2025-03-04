@@ -223,10 +223,11 @@ public class ListMessagesIT {
 
     final var request = args.request.apply(roomInfo);
     final var keyword = request.keyword();
-    final var from = request.from();
-    final var to = request.to();
     final var offset = request.offset() != null ? request.offset() : 0;
     final var limit = request.limit() != null ? request.limit() : 50;
+    final var from = request.from();
+    final var to = request.to();
+    String timezone = request.timezone();
 
     login(clientSdk, accountInfo);
 
@@ -239,7 +240,7 @@ public class ListMessagesIT {
       messageRecords.add(newMessageRecord);
     }
 
-    insertRecords(dataSource, messageRecords);
+    insertRecords(dataSource, messageRecords, timezone);
 
     messageRecords =
         messageRecords.stream()
@@ -370,7 +371,7 @@ public class ListMessagesIT {
   }
 
   @Test
-  void testListMessagesWithTimezone() {
+  void testListMessagesWithDifferentTimezones() {
     fail("Implement");
   }
 }
