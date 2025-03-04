@@ -34,7 +34,6 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -344,11 +343,11 @@ public class ListMessagesIT {
     // Filter by date
 
     final FromToTimestamp[] fromToTimestampArray = {
-      new FromToTimestamp(LocalDateTime.now().minusDays(10), null, "Europe/Copenhagen"),
-      new FromToTimestamp(null, LocalDateTime.now().minusDays(5), "Europe/Copenhagen"),
+      new FromToTimestamp(LocalDateTime.now().minusDays(10), null, "Europe/Warsaw"),
+      new FromToTimestamp(null, LocalDateTime.now().minusDays(5), "Europe/Warsaw"),
       new FromToTimestamp(
-          LocalDateTime.now().minusDays(10), LocalDateTime.now().minusDays(5), "Europe/Copenhagen"),
-      new FromToTimestamp(null, null, "Europe/Copenhagen"),
+          LocalDateTime.now().minusDays(10), LocalDateTime.now().minusDays(5), "Europe/Warsaw"),
+      new FromToTimestamp(null, null, "Europe/Warsaw"),
     };
 
     for (var fromTo : fromToTimestampArray) {
