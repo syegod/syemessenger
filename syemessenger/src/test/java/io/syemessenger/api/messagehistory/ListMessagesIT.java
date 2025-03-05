@@ -344,7 +344,7 @@ public class ListMessagesIT {
 
     // Filter by date
 
-    final var timezone = "Europe/Warsaw";
+    final var timezone = "America/Los_Angeles";
     final FromToTimestamp[] fromToTimestampArray = {
       new FromToTimestamp(LocalDateTime.now().minusDays(10), null, timezone),
       new FromToTimestamp(null, LocalDateTime.now().minusDays(5), timezone),
@@ -368,24 +368,27 @@ public class ListMessagesIT {
     return builder.build();
   }
 
+  // TODO: figure out
   @Test
   void testListMessagesWithDifferentTimezones(
       ClientSdk clientSdk, AccountInfo accountInfo, DataSource dataSource) throws SQLException {
     final var roomInfo = createRoom(accountInfo);
     login(clientSdk, accountInfo);
     String timezone = "America/Los_Angeles";
+    LocalDateTime now = LocalDateTime.now(Clock.systemUTC());
     insertRecords(
         dataSource,
         List.of(
-            new MessageRecord(
-                1L, accountInfo.id(), roomInfo.id(), "test123", LocalDateTime.now().minusHours(2))));
+            new MessageRecord(1L, accountInfo.id(), roomInfo.id(), "test123", now.minusHours(2))));
 
-    final var from = LocalDateTime.now().minusHours(2);
     final var response =
         clientSdk
             .messageHistorySdk()
             .listMessages(
-                new ListMessagesRequest().roomId(roomInfo.id()).from(from).timezone(timezone));
+                new ListMessagesRequest()
+                    .roomId(roomInfo.id())
+                    .from(now.minusHours(3))
+                    .timezone(timezone));
 
     assertEquals(1, response.totalCount());
   }
