@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import io.syemessenger.LocalDateTimeConverter;
 import io.syemessenger.api.message.MessageInfo;
 import java.sql.SQLException;
-import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
@@ -32,8 +31,7 @@ public class MessageHistoryAssertions {
         messageInfo.timestamp());
   }
 
-  public static void insertRecords(
-      DataSource dataSource, List<MessageRecord> messageRecords, String timezone)
+  public static void insertRecords(DataSource dataSource, List<MessageRecord> messageRecords)
       throws SQLException {
     try (final var connection = dataSource.getConnection()) {
       connection.setAutoCommit(false);
@@ -44,7 +42,10 @@ public class MessageHistoryAssertions {
           preparedStatement.setLong(1, record.senderId());
           preparedStatement.setLong(2, record.roomId());
           preparedStatement.setString(3, record.message());
-          preparedStatement.setTimestamp(4, toUTCTimestamp(record.timestamp(), timezone));
+          preparedStatement.setTimestamp(
+              4,
+              new LocalDateTimeConverter()
+                  .convertToDatabaseColumn(toUTC(record.timestamp(), "UTC")));
           preparedStatement.executeUpdate();
           connection.commit();
         }
@@ -52,13 +53,9 @@ public class MessageHistoryAssertions {
     }
   }
 
-  private static Timestamp toUTCTimestamp(LocalDateTime localDateTime, String timezone) {
-    if (timezone == null) {
-      timezone = "UTC";
-    }
+  static LocalDateTime toUTC(LocalDateTime localDateTime, String timezone) {
     final var zoneId = ZoneId.of(timezone);
     final var zonedDateTime = localDateTime.atZone(zoneId);
-    LocalDateTime dateTime = zonedDateTime.withZoneSameInstant(ZoneOffset.UTC).toLocalDateTime();
-    return new LocalDateTimeConverter().convertToDatabaseColumn(dateTime);
+    return zonedDateTime.withZoneSameInstant(ZoneOffset.UTC).toLocalDateTime();
   }
 }

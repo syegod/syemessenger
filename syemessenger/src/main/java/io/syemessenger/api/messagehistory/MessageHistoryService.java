@@ -85,9 +85,8 @@ public class MessageHistoryService {
       toTimestamp = localDateTimeConverter.convertToDatabaseColumn(toUTC(request.to(), timezone));
     }
 
-    Page<HistoryMessage> byKeywordAndTimestamp = historyMessageRepository.findByKeywordAndTimestamp(
+    return historyMessageRepository.findByKeywordAndTimestamp(
         keyword, fromTimestamp, toTimestamp, pageable);
-    return byKeywordAndTimestamp;
   }
 
   private static LocalDateTime toUTC(LocalDateTime localDateTime, String timezone) {

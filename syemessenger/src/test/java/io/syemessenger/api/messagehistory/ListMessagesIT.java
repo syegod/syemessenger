@@ -3,6 +3,7 @@ package io.syemessenger.api.messagehistory;
 import static io.syemessenger.api.ErrorAssertions.assertError;
 import static io.syemessenger.api.account.AccountAssertions.login;
 import static io.syemessenger.api.messagehistory.MessageHistoryAssertions.insertRecords;
+import static io.syemessenger.api.messagehistory.MessageHistoryAssertions.toUTC;
 import static io.syemessenger.api.room.RoomAssertions.createRoom;
 import static io.syemessenger.environment.AssertionUtils.assertCollections;
 import static io.syemessenger.environment.AssertionUtils.getFields;
@@ -240,7 +241,7 @@ public class ListMessagesIT {
       messageRecords.add(newMessageRecord);
     }
 
-    insertRecords(dataSource, messageRecords, timezone);
+    insertRecords(dataSource, messageRecords);
 
     messageRecords =
         messageRecords.stream()
@@ -255,12 +256,12 @@ public class ListMessagesIT {
             .filter(
                 messageRecord -> {
                   if (from != null && to != null) {
-                    return messageRecord.timestamp().isAfter(from)
-                        && messageRecord.timestamp().isBefore(to);
+                    return messageRecord.timestamp().isAfter(toUTC(from, timezone))
+                        && messageRecord.timestamp().isBefore(toUTC(to, timezone));
                   } else if (from != null) {
-                    return messageRecord.timestamp().isAfter(from);
+                    return messageRecord.timestamp().isAfter(toUTC(from, timezone));
                   } else if (to != null) {
-                    return messageRecord.timestamp().isBefore(to);
+                    return messageRecord.timestamp().isBefore(toUTC(to, timezone));
                   } else {
                     return true;
                   }
@@ -343,27 +344,24 @@ public class ListMessagesIT {
 
     // Filter by date
 
+    final var timezone = "Europe/Warsaw";
     final FromToTimestamp[] fromToTimestampArray = {
-      new FromToTimestamp(LocalDateTime.now().minusDays(10), null, "Europe/Warsaw"),
-      new FromToTimestamp(null, LocalDateTime.now().minusDays(5), "Europe/Warsaw"),
+      new FromToTimestamp(LocalDateTime.now().minusDays(10), null, timezone),
+      new FromToTimestamp(null, LocalDateTime.now().minusDays(5), timezone),
       new FromToTimestamp(
-          LocalDateTime.now().minusDays(10), LocalDateTime.now().minusDays(5), "Europe/Warsaw"),
-      new FromToTimestamp(null, null, "Europe/Warsaw"),
+          LocalDateTime.now().minusDays(10), LocalDateTime.now().minusDays(5), timezone),
+      new FromToTimestamp(null, null, timezone),
     };
 
     for (var fromTo : fromToTimestampArray) {
       final var from = fromTo.from();
       final var to = fromTo.to();
-      final var timezone = fromTo.timezone();
+      final var tz = fromTo.timezone();
       builder.add(
           new SuccessArgs(
               "From: " + from + ", to: " + to,
               roomInfo ->
-                  new ListMessagesRequest()
-                      .roomId(roomInfo.id())
-                      .from(from)
-                      .to(to)
-                      .timezone(timezone),
+                  new ListMessagesRequest().roomId(roomInfo.id()).from(from).to(to).timezone(tz),
               Comparator.comparing(MessageRecord::id)));
     }
 
@@ -371,7 +369,24 @@ public class ListMessagesIT {
   }
 
   @Test
-  void testListMessagesWithDifferentTimezones() {
-    fail("Implement");
+  void testListMessagesWithDifferentTimezones(
+      ClientSdk clientSdk, AccountInfo accountInfo, DataSource dataSource) throws SQLException {
+    final var roomInfo = createRoom(accountInfo);
+    login(clientSdk, accountInfo);
+    String timezone = "America/Los_Angeles";
+    insertRecords(
+        dataSource,
+        List.of(
+            new MessageRecord(
+                1L, accountInfo.id(), roomInfo.id(), "test123", LocalDateTime.now().minusHours(2))));
+
+    final var from = LocalDateTime.now().minusHours(2);
+    final var response =
+        clientSdk
+            .messageHistorySdk()
+            .listMessages(
+                new ListMessagesRequest().roomId(roomInfo.id()).from(from).timezone(timezone));
+
+    assertEquals(1, response.totalCount());
   }
 }
