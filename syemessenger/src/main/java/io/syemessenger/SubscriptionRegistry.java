@@ -9,9 +9,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Named
 public class SubscriptionRegistry {
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(SubscriptionRegistry.class);
 
   private final Map<Long, List<SessionContext>> registry = new ConcurrentHashMap<>();
   private final Map<SessionContext, Long> sessions = new ConcurrentHashMap<>();
@@ -25,6 +29,7 @@ public class SubscriptionRegistry {
   }
 
   public void subscribe(Long roomId, SessionContext sessionContext) {
+    LOGGER.debug("Subscribe: session: {} on room: {}", sessionContext, roomId);
     sessions.compute(
         sessionContext,
         (k, currentRoomId) -> {
@@ -42,6 +47,7 @@ public class SubscriptionRegistry {
 
   public Long unsubscribe(SessionContext sessionContext) {
     final var roomId = roomId(sessionContext);
+    LOGGER.debug("Unsubscribe: {} from room: {}", sessionContext, roomId);
     sessions.compute(
         sessionContext,
         (k, currentRoomId) -> {
@@ -55,6 +61,7 @@ public class SubscriptionRegistry {
 
   public void onRoomMessage(MessageInfo messageInfo) {
     final var list = registry.get(messageInfo.roomId());
+    LOGGER.debug("Send to subscribers message: {}", messageInfo);
     if (list != null) {
       for (var sessionContext : list) {
         sessionContext.send(new ServiceMessage().qualifier("messages").data(messageInfo));
@@ -63,6 +70,11 @@ public class SubscriptionRegistry {
   }
 
   public void leaveRoom(Long roomId, Long accountId, Boolean isOwner) {
+    LOGGER.debug(
+        "Received leaveRoomEvent: roomId: {}, accountId: {}, isOwner: {}",
+        roomId,
+        accountId,
+        isOwner);
     final var sessionContext = sessionContext(accountId);
     if (sessionContext == null) {
       return;
@@ -76,6 +88,7 @@ public class SubscriptionRegistry {
   }
 
   public void removeMembers(Long roomId, List<Long> memberIds) {
+    LOGGER.debug("Received removeMembersEvent: roomId: {}, memberIds: {}", roomId, memberIds);
     registry.computeIfPresent(
         roomId,
         (k, list) ->
@@ -90,7 +103,18 @@ public class SubscriptionRegistry {
   }
 
   public void blockMembers(Long roomId, List<Long> memberIds) {
-    removeMembers(roomId, memberIds);
+    LOGGER.debug("Received blockMembersEvent: roomId: {}, memberIds: {}", roomId, memberIds);
+    registry.computeIfPresent(
+        roomId,
+        (k, list) ->
+            new ArrayList<>(
+                list.stream().filter(e -> !memberIds.contains(e.accountId())).toList()));
+    for (Long memberId : memberIds) {
+      final var sessionContext = sessionContext(memberId);
+      if (sessionContext != null) {
+        sessions.remove(sessionContext, roomId);
+      }
+    }
   }
 
   public Long roomId(SessionContext sessionContext) {

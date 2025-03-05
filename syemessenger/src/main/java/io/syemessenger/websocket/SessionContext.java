@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import io.syemessenger.api.ErrorData;
 import io.syemessenger.api.ServiceMessage;
+import java.util.StringJoiner;
 import java.util.UUID;
 import org.eclipse.jetty.websocket.api.Callback;
 import org.eclipse.jetty.websocket.api.Session;
@@ -47,5 +48,13 @@ public class SessionContext {
 
   public boolean isLoggedIn() {
     return accountId != null;
+  }
+
+  @Override
+  public String toString() {
+    return new StringJoiner(", ", SessionContext.class.getSimpleName() + "[", "]")
+        .add("session=" + session)
+        .add("accountId=" + accountId)
+        .toString();
   }
 }

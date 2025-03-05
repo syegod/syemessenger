@@ -3,7 +3,6 @@ package io.syemessenger;
 import io.syemessenger.api.ServiceException;
 import io.syemessenger.api.ServiceMessage;
 import io.syemessenger.websocket.SessionContext;
-import io.syemessenger.websocket.WebSocketHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import org.slf4j.Logger;
@@ -25,7 +24,13 @@ public class InvocationHandler {
 
   public void invoke(SessionContext sessionContext, ServiceMessage message) {
     try {
-      method.invoke(target, sessionContext, message.data(messageCodec.decode(message)));
+      ServiceMessage data = message.data(messageCodec.decode(message));
+      LOGGER.debug(
+          "Invoke controller method: {}, with session context: {} and ServiceMessage: {}",
+          method.getName(),
+          sessionContext,
+          data);
+      method.invoke(target, sessionContext, data);
     } catch (InvocationTargetException e) {
       final var cause = e.getCause();
       LOGGER.error("Exception occurred", cause);

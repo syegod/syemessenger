@@ -13,17 +13,21 @@ import io.syemessenger.sbe.RemoveMembersEventDecoder;
 import io.syemessenger.sbe.RoomMessageDecoder;
 import java.nio.ByteBuffer;
 import org.agrona.concurrent.UnsafeBuffer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 
 @Service
 public class KafkaMessageListener {
 
+  private static final Logger LOGGER = LoggerFactory.getLogger(KafkaMessageListener.class);
+
   private final SubscriptionRegistry subscriptionRegistry;
   private final MessageHistoryService messageHistoryService;
 
-  public KafkaMessageListener(SubscriptionRegistry subscriptionRegistry,
-      MessageHistoryService messageHistoryService) {
+  public KafkaMessageListener(
+      SubscriptionRegistry subscriptionRegistry, MessageHistoryService messageHistoryService) {
     this.subscriptionRegistry = subscriptionRegistry;
     this.messageHistoryService = messageHistoryService;
   }
@@ -66,12 +70,14 @@ public class KafkaMessageListener {
 
     if (RoomMessageDecoder.TEMPLATE_ID == headerDecoder.templateId()) {
       final var messageInfo = KafkaMessageCodec.decodeRoomMessage(byteBuffer);
+      LOGGER.debug("Save history message: {}", messageInfo);
       while (true) {
         try {
           messageHistoryService.saveMessage(messageInfo);
           break;
         } catch (Exception ex) {
           try {
+            //noinspection BusyWait
             Thread.sleep(3000);
           } catch (InterruptedException e) {
             throw new RuntimeException(e);
@@ -82,19 +88,23 @@ public class KafkaMessageListener {
   }
 
   private void onLeaveRoomEvent(LeaveRoomEvent leaveRoomEvent) {
+    LOGGER.debug("Received leaveRoomEvent: {}", leaveRoomEvent);
     subscriptionRegistry.leaveRoom(
         leaveRoomEvent.roomId(), leaveRoomEvent.accountId(), leaveRoomEvent.isOwner());
   }
 
   private void onRemoveMembersEvent(RemoveMembersEvent removeMembersEvent) {
+    LOGGER.debug("Received removeMembersEvent: {}", removeMembersEvent);
     subscriptionRegistry.removeMembers(removeMembersEvent.roomId(), removeMembersEvent.memberIds());
   }
 
   private void onBlockMembersEvent(BlockMembersEvent blockMembersEvent) {
+    LOGGER.debug("Received blockMembersEvent: {}", blockMembersEvent);
     subscriptionRegistry.blockMembers(blockMembersEvent.roomId(), blockMembersEvent.memberIds());
   }
 
   private void onRoomMessage(MessageInfo messageInfo) {
+    LOGGER.debug("Received roomMessage: {}", messageInfo);
     subscriptionRegistry.onRoomMessage(messageInfo);
   }
 }
