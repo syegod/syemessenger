@@ -21,12 +21,16 @@ import java.time.Clock;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.transaction.annotation.Transactional;
 
 @Named
 @Transactional
 public class RoomService {
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(RoomService.class);
 
   private final RoomRepository roomRepository;
   private final AccountRepository accountRepository;
@@ -45,6 +49,7 @@ public class RoomService {
   }
 
   public Room createRoom(CreateRoomRequest request, Long accountId) {
+    LOGGER.debug("Create: {}, ownerId: {}", request, accountId);
     final var account = accountRepository.findById(accountId).orElse(null);
     if (account == null) {
       throw new ServiceException(404, "Account not found");
@@ -65,6 +70,7 @@ public class RoomService {
   }
 
   public Room updateRoom(UpdateRoomRequest request, Long accountId) {
+    LOGGER.debug("Update: {}", request);
     final var room = roomRepository.findById(request.roomId()).orElse(null);
     if (room == null) {
       throw new ServiceException(404, "Room not found");
@@ -81,6 +87,7 @@ public class RoomService {
 
   @Transactional(readOnly = true)
   public Room getRoom(Long id) {
+    LOGGER.debug("Get: {}", id);
     final var room = roomRepository.findById(id).orElse(null);
     if (room == null) {
       throw new ServiceException(404, "Room not found");
@@ -90,6 +97,7 @@ public class RoomService {
   }
 
   public Long joinRoom(String name, Long accountId) {
+    LOGGER.debug("Join: name: {}, accountId: {}", name, accountId);
     final var room = roomRepository.findByName(name);
     if (room == null) {
       throw new ServiceException(404, "Room not found");
@@ -109,6 +117,7 @@ public class RoomService {
   }
 
   public Long leaveRoom(Long roomId, Long accountId) {
+    LOGGER.debug("Leave: roomId: {}, accountId: {}", roomId, accountId);
     final var room = roomRepository.findById(roomId).orElse(null);
     if (room == null) {
       throw new ServiceException(404, "Room not found");
@@ -142,6 +151,7 @@ public class RoomService {
   }
 
   public Long removeRoomMembers(RemoveMembersRequest request, Long accountId) {
+    LOGGER.debug("Remove members: {}", request);
     final var room = roomRepository.findById(request.roomId()).orElse(null);
     if (room == null) {
       throw new ServiceException(404, "Room not found");
@@ -166,6 +176,7 @@ public class RoomService {
   }
 
   public Long blockRoomMembers(BlockMembersRequest request, Long accountId) {
+    LOGGER.debug("Block members: {}", request);
     final var room = roomRepository.findById(request.roomId()).orElse(null);
     if (room == null) {
       throw new ServiceException(404, "Room not found");
@@ -197,6 +208,7 @@ public class RoomService {
   }
 
   public Long unblockRoomMembers(UnblockMembersRequest request, Long accountId) {
+    LOGGER.debug("Unblock members: {}", request);
     final var room = roomRepository.findById(request.roomId()).orElse(null);
     if (room == null) {
       throw new ServiceException(404, "Room not found");
@@ -217,6 +229,7 @@ public class RoomService {
 
   @Transactional(readOnly = true)
   public Page<Account> getBlockedMembers(GetBlockedMembersRequest request, Long accountId) {
+    LOGGER.debug("Get blocked members: {}", request);
     final var room = roomRepository.findById(request.roomId()).orElse(null);
     if (room == null) {
       throw new ServiceException(404, "Room not found");
@@ -233,6 +246,7 @@ public class RoomService {
 
   @Transactional(readOnly = true)
   public Page<Room> listRooms(ListRoomsRequest request) {
+    LOGGER.debug("List rooms: {}", request);
     final var pageable = toPageable(request.offset(), request.limit(), request.orderBy());
 
     var keyword = request.keyword();
@@ -249,6 +263,7 @@ public class RoomService {
 
   @Transactional(readOnly = true)
   public Page<Account> getRoomMembers(GetRoomMembersRequest request, Long accountId) {
+    LOGGER.debug("Get members: {}", request);
     final var roomMember = roomRepository.findRoomMember(request.roomId(), accountId);
     if (roomMember == null) {
       throw new ServiceException(403, "Not a room member");

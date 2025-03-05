@@ -5,6 +5,7 @@ import static io.syemessenger.api.Pageables.toPageable;
 import io.syemessenger.LocalDateTimeConverter;
 import io.syemessenger.api.ServiceException;
 import io.syemessenger.api.message.MessageInfo;
+import io.syemessenger.api.message.MessageService;
 import io.syemessenger.api.messagehistory.repository.HistoryMessage;
 import io.syemessenger.api.messagehistory.repository.HistoryMessageRepository;
 import io.syemessenger.api.room.repository.RoomRepository;
@@ -16,12 +17,16 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class MessageHistoryService {
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(MessageHistoryService.class);
 
   private final RoomRepository roomRepository;
   private final HistoryMessageRepository historyMessageRepository;
@@ -34,6 +39,7 @@ public class MessageHistoryService {
 
   @Transactional
   public void saveMessage(MessageInfo messageInfo) {
+    LOGGER.debug("Save message: {}", messageInfo);
     final var now = LocalDateTime.now(Clock.systemUTC()).truncatedTo(ChronoUnit.MILLIS);
     try {
       historyMessageRepository.save(
@@ -49,6 +55,7 @@ public class MessageHistoryService {
 
   public Page<HistoryMessage> listMessages(
       SessionContext sessionContext, ListMessagesRequest request) {
+    LOGGER.debug("List: {}", request);
     final var room = roomRepository.findById(request.roomId()).orElse(null);
     if (room == null) {
       throw new ServiceException(404, "Room not found");
