@@ -345,11 +345,12 @@ public class ListMessagesIT {
     // Filter by date
 
     final var timezone = "America/Los_Angeles";
+    final var now = LocalDateTime.now(Clock.systemUTC());
     final FromToTimestamp[] fromToTimestampArray = {
-      new FromToTimestamp(LocalDateTime.now().minusDays(10), null, timezone),
-      new FromToTimestamp(null, LocalDateTime.now().minusDays(5), timezone),
+      new FromToTimestamp(now.minusDays(10), null, timezone),
+      new FromToTimestamp(null, now.minusDays(5), timezone),
       new FromToTimestamp(
-          LocalDateTime.now().minusDays(10), LocalDateTime.now().minusDays(5), timezone),
+          now.minusDays(10), now.minusDays(5), timezone),
       new FromToTimestamp(null, null, timezone),
     };
 
