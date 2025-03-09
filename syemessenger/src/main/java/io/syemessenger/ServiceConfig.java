@@ -111,12 +111,12 @@ public class ServiceConfig {
     return this;
   }
 
-  private static String getProperty(String property) {
-    return getProperty(property, false);
-  }
-
   private static String getOptionalProperty(String property) {
     return getProperty(property, true);
+  }
+
+  private static String getProperty(String property) {
+    return getProperty(property, false);
   }
 
   private static String getProperty(String property, boolean isOptional) {
