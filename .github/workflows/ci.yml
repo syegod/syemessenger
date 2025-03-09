@@ -71,7 +71,7 @@ jobs:
       - name: Show Docker images
         run: docker images | grep ${GITHUB_REPOSITORY} || (echo Docker images not found && exit 1)
       - name: Maven Verify
-        if: inputs.tests == true && github.event_name != 'release'
+        if: github.event_name != 'release'
         run: |
           sudo echo "172.17.0.1 host.docker.internal" | sudo tee -a /etc/hosts
           sudo echo "127.0.0.1 $(eval hostname)" | sudo tee -a /etc/hosts
@@ -79,7 +79,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
       - name: Upload test containers logs
-        if: always() && inputs.tests == true
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: logs-${{ github.run_id }}-${{ github.run_number }}-${{ runner.name }}
