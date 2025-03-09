@@ -18,7 +18,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 @ExtendWith(IntegrationEnvironmentExtension.class)
-public class SendMessageIT {
+public class SendHistoryMessageIT {
 
   public static final Duration TIMEOUT = Duration.ofMillis(3000);
 

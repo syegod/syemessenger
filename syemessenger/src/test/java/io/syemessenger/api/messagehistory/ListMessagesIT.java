@@ -2,7 +2,8 @@ package io.syemessenger.api.messagehistory;
 
 import static io.syemessenger.api.ErrorAssertions.assertError;
 import static io.syemessenger.api.account.AccountAssertions.login;
-import static io.syemessenger.api.messagehistory.MessageHistoryAssertions.createMessageInfo;
+import static io.syemessenger.api.messagehistory.MessageHistoryAssertions.insertRecords;
+import static io.syemessenger.api.messagehistory.MessageHistoryAssertions.toUTC;
 import static io.syemessenger.api.room.RoomAssertions.createRoom;
 import static io.syemessenger.environment.AssertionUtils.assertCollections;
 import static io.syemessenger.environment.AssertionUtils.getFields;
@@ -20,8 +21,10 @@ import io.syemessenger.api.message.MessageInfo;
 import io.syemessenger.api.room.BlockMembersRequest;
 import io.syemessenger.api.room.RemoveMembersRequest;
 import io.syemessenger.api.room.RoomInfo;
+import io.syemessenger.environment.FromToTimestamp;
 import io.syemessenger.environment.IntegrationEnvironmentExtension;
 import io.syemessenger.environment.OffsetLimit;
+import java.sql.SQLException;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
@@ -31,7 +34,7 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Stream;
 import javax.sql.DataSource;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -40,8 +43,8 @@ import org.junit.jupiter.params.provider.MethodSource;
 @ExtendWith(IntegrationEnvironmentExtension.class)
 public class ListMessagesIT {
 
-  @BeforeEach
-  void beforeEach(DataSource dataSource) {
+  @AfterEach
+  void afterEach(DataSource dataSource) {
     cleanTables(dataSource);
   }
 
@@ -120,7 +123,7 @@ public class ListMessagesIT {
                 .from(LocalDateTime.now().minusDays(5))
                 .to(LocalDateTime.now().minusDays(6)),
             400,
-            "Missing or invalid: 'to' should be ahead of 'from'"),
+            "Missing or invalid: 'from' later than 'to'"),
         new FailedArgs(
             "No timezone provided",
             new ListMessagesRequest()
@@ -213,53 +216,69 @@ public class ListMessagesIT {
   @SuppressWarnings("unchecked")
   @ParameterizedTest(name = "{0}")
   @MethodSource("testListMessagesMethodSource")
-  void testListMessages(SuccessArgs args, ClientSdk clientSdk, AccountInfo accountInfo) {
+  void testListMessages(
+      SuccessArgs args, ClientSdk clientSdk, AccountInfo accountInfo, DataSource dataSource)
+      throws SQLException {
     final var roomInfo = createRoom(accountInfo);
-    final int n = 25;
+    final long n = 25;
 
     final var request = args.request.apply(roomInfo);
     final var keyword = request.keyword();
     final var offset = request.offset() != null ? request.offset() : 0;
     final var limit = request.limit() != null ? request.limit() : 50;
+    final var from = request.from();
+    final var to = request.to();
+    String timezone = request.timezone();
 
     login(clientSdk, accountInfo);
-    clientSdk.messageSdk().subscribe(roomInfo.id());
 
-    List<MessageInfo> messageInfos = new ArrayList<>();
-
-    for (int i = 1; i <= n; i++) {
+    List<MessageRecord> messageRecords = new ArrayList<>();
+    for (long i = 1; i <= n; i++) {
       final var message = "test@" + i;
-      clientSdk.messageSdk().send(message);
       final var now = LocalDateTime.now(Clock.systemUTC()).truncatedTo(ChronoUnit.MILLIS);
-      final var newMessageInfo = createMessageInfo(message, accountInfo.id(), roomInfo.id(), now);
-      messageInfos.add(newMessageInfo);
+      final var newMessageRecord =
+          new MessageRecord(i, accountInfo.id(), roomInfo.id(), message, now.minusDays(n - i));
+      messageRecords.add(newMessageRecord);
     }
 
-    final var expectedMessageInfos =
-        messageInfos.stream()
+    insertRecords(dataSource, messageRecords);
+
+    messageRecords =
+        messageRecords.stream()
             .filter(
-                messageInfo -> {
+                messageRecord -> {
                   if (keyword != null) {
-                    return messageInfo.message().contains(keyword);
+                    return messageRecord.message().contains(keyword);
                   } else {
                     return true;
                   }
                 })
-            .sorted(args.comparator)
-            .skip(offset)
-            .limit(limit)
+            .filter(
+                messageRecord -> {
+                  if (from != null && to != null) {
+                    return messageRecord.timestamp().isAfter(toUTC(from, timezone))
+                        && messageRecord.timestamp().isBefore(toUTC(to, timezone));
+                  } else if (from != null) {
+                    return messageRecord.timestamp().isAfter(toUTC(from, timezone));
+                  } else if (to != null) {
+                    return messageRecord.timestamp().isBefore(toUTC(to, timezone));
+                  } else {
+                    return true;
+                  }
+                })
             .toList();
 
-    try {
-      Thread.sleep(500);
-    } catch (InterruptedException e) {
-      throw new RuntimeException(e);
-    }
+    final var expectedMessageRecords =
+        messageRecords.stream().sorted(args.comparator).skip(offset).limit(limit).toList();
 
     final var response = clientSdk.messageHistorySdk().listMessages(request);
-    assertEquals(messageInfos.size(), response.totalCount(), "totalCount");
+    assertEquals(messageRecords.size(), response.totalCount(), "totalCount");
+
+    final var actualRecords =
+        response.messages().stream().map(MessageHistoryAssertions::toMessageRecord).toList();
+
     assertCollections(
-        expectedMessageInfos, response.messages(), MessageHistoryAssertions::assertMessage);
+        expectedMessageRecords, actualRecords, MessageHistoryAssertions::assertMessageRecord);
   }
 
   @SuppressWarnings("rawtypes")
@@ -298,7 +317,7 @@ public class ListMessagesIT {
           new SuccessArgs(
               "Keyword: " + keyword,
               roomInfo -> new ListMessagesRequest().roomId(roomInfo.id()).keyword(keyword),
-              Comparator.<MessageInfo, Long>comparing(MessageInfo::id)));
+              Comparator.comparing(MessageRecord::id)));
     }
 
     // Pagination
@@ -320,14 +339,58 @@ public class ListMessagesIT {
               "Offset: " + offset + ", limit: " + limit,
               roomInfo ->
                   new ListMessagesRequest().roomId(roomInfo.id()).offset(offset).limit(limit),
-              Comparator.<MessageInfo, Long>comparing(MessageInfo::id)));
+              Comparator.comparing(MessageRecord::id)));
+    }
+
+    // Filter by date
+
+    final var timezone = "America/Los_Angeles";
+    final var now = LocalDateTime.now(Clock.systemUTC());
+    final FromToTimestamp[] fromToTimestampArray = {
+      new FromToTimestamp(now.minusDays(10), null, timezone),
+      new FromToTimestamp(null, now.minusDays(5), timezone),
+      new FromToTimestamp(
+          now.minusDays(10), now.minusDays(5), timezone),
+      new FromToTimestamp(null, null, timezone),
+    };
+
+    for (var fromTo : fromToTimestampArray) {
+      final var from = fromTo.from();
+      final var to = fromTo.to();
+      final var tz = fromTo.timezone();
+      builder.add(
+          new SuccessArgs(
+              "From: " + from + ", to: " + to,
+              roomInfo ->
+                  new ListMessagesRequest().roomId(roomInfo.id()).from(from).to(to).timezone(tz),
+              Comparator.comparing(MessageRecord::id)));
     }
 
     return builder.build();
   }
 
+  // TODO: figure out
   @Test
-  void testListMessagesWithTimeSpan() {
-    fail("Implement");
+  void testListMessagesWithDifferentTimezones(
+      ClientSdk clientSdk, AccountInfo accountInfo, DataSource dataSource) throws SQLException {
+    final var roomInfo = createRoom(accountInfo);
+    login(clientSdk, accountInfo);
+    String timezone = "America/Los_Angeles";
+    LocalDateTime now = LocalDateTime.now(Clock.systemUTC());
+    insertRecords(
+        dataSource,
+        List.of(
+            new MessageRecord(1L, accountInfo.id(), roomInfo.id(), "test123", now.minusHours(2))));
+
+    final var response =
+        clientSdk
+            .messageHistorySdk()
+            .listMessages(
+                new ListMessagesRequest()
+                    .roomId(roomInfo.id())
+                    .from(now.minusHours(3))
+                    .timezone(timezone));
+
+    assertEquals(1, response.totalCount());
   }
 }

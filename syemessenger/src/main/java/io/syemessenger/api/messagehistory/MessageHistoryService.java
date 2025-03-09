@@ -2,56 +2,60 @@ package io.syemessenger.api.messagehistory;
 
 import static io.syemessenger.api.Pageables.toPageable;
 
+import io.syemessenger.LocalDateTimeConverter;
 import io.syemessenger.api.ServiceException;
-import io.syemessenger.api.account.repository.AccountRepository;
 import io.syemessenger.api.message.MessageInfo;
-import io.syemessenger.api.messagehistory.repository.Message;
-import io.syemessenger.api.messagehistory.repository.MessageRepository;
+import io.syemessenger.api.message.MessageService;
+import io.syemessenger.api.messagehistory.repository.HistoryMessage;
+import io.syemessenger.api.messagehistory.repository.HistoryMessageRepository;
 import io.syemessenger.api.room.repository.RoomRepository;
 import io.syemessenger.websocket.SessionContext;
+import java.sql.Timestamp;
 import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class MessageHistoryService {
 
+  private static final Logger LOGGER = LoggerFactory.getLogger(MessageHistoryService.class);
+
   private final RoomRepository roomRepository;
-  private final AccountRepository accountRepository;
-  private final MessageRepository messageRepository;
+  private final HistoryMessageRepository historyMessageRepository;
 
   public MessageHistoryService(
-      RoomRepository roomRepository,
-      AccountRepository accountRepository,
-      MessageRepository messageRepository) {
+      RoomRepository roomRepository, HistoryMessageRepository historyMessageRepository) {
     this.roomRepository = roomRepository;
-    this.accountRepository = accountRepository;
-    this.messageRepository = messageRepository;
+    this.historyMessageRepository = historyMessageRepository;
   }
 
+  @Transactional
   public void saveMessage(MessageInfo messageInfo) {
-    final var room = roomRepository.findById(messageInfo.roomId()).orElse(null);
-    if (room == null) {
-      throw new RuntimeException("Room not found");
-    }
-
-    final var sender = accountRepository.findById(messageInfo.senderId()).orElse(null);
-    if (sender == null) {
-      throw new RuntimeException("Account not found");
-    }
-
+    LOGGER.debug("Save message: {}", messageInfo);
     final var now = LocalDateTime.now(Clock.systemUTC()).truncatedTo(ChronoUnit.MILLIS);
     try {
-      messageRepository.save(
-          new Message().room(room).sender(sender).message(messageInfo.message()).timestamp(now));
+      historyMessageRepository.save(
+          new HistoryMessage()
+              .roomId(messageInfo.roomId())
+              .senderId(messageInfo.senderId())
+              .message(messageInfo.message())
+              .timestamp(now));
     } catch (Exception ex) {
       throw new RuntimeException(ex.getMessage());
     }
   }
 
-  public Page<Message> listMessages(SessionContext sessionContext, ListMessagesRequest request) {
+  public Page<HistoryMessage> listMessages(
+      SessionContext sessionContext, ListMessagesRequest request) {
+    LOGGER.debug("List: {}", request);
     final var room = roomRepository.findById(request.roomId()).orElse(null);
     if (room == null) {
       throw new ServiceException(404, "Room not found");
@@ -65,14 +69,36 @@ public class MessageHistoryService {
 
     final var pageable = toPageable(request.offset(), request.limit(), request.orderBy());
 
-    final var keyword = request.keyword();
-    Page<Message> messagePage;
+    var keyword = request.keyword();
     if (keyword == null) {
-      messagePage = messageRepository.findAll(pageable);
-    } else {
-      messagePage = messageRepository.findByMessageContaining(keyword, pageable);
+      keyword = "";
     }
 
-    return messagePage;
+    final var localDateTimeConverter = new LocalDateTimeConverter();
+
+    Timestamp fromTimestamp;
+    final var timezone = request.timezone();
+    if (request.from() == null) {
+      fromTimestamp = Timestamp.from(Instant.EPOCH);
+    } else {
+      fromTimestamp =
+          localDateTimeConverter.convertToDatabaseColumn(toUTC(request.from(), timezone));
+    }
+
+    Timestamp toTimestamp;
+    if (request.to() == null) {
+      toTimestamp = Timestamp.valueOf(LocalDateTime.now());
+    } else {
+      toTimestamp = localDateTimeConverter.convertToDatabaseColumn(toUTC(request.to(), timezone));
+    }
+
+    return historyMessageRepository.findByKeywordAndTimestamp(
+        keyword, fromTimestamp, toTimestamp, pageable);
+  }
+
+  private static LocalDateTime toUTC(LocalDateTime localDateTime, String timezone) {
+    final var zoneId = ZoneId.of(timezone);
+    final var zonedDateTime = localDateTime.atZone(zoneId);
+    return zonedDateTime.withZoneSameInstant(ZoneOffset.UTC).toLocalDateTime();
   }
 }

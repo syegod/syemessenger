@@ -2,24 +2,23 @@ package io.syemessenger.api.message;
 
 import io.syemessenger.SubscriptionRegistry;
 import io.syemessenger.api.ServiceException;
-import io.syemessenger.api.account.repository.AccountRepository;
-import io.syemessenger.api.messagehistory.repository.Message;
-import io.syemessenger.api.messagehistory.repository.MessageRepository;
 import io.syemessenger.api.room.repository.BlockedMemberId;
 import io.syemessenger.api.room.repository.BlockedRepository;
 import io.syemessenger.api.room.repository.RoomRepository;
 import io.syemessenger.kafka.KafkaMessageCodec;
 import io.syemessenger.websocket.SessionContext;
 import java.nio.ByteBuffer;
-import java.time.Clock;
 import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.concurrent.TimeUnit;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
 @Service
 public class MessageService {
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(MessageService.class);
 
   private final KafkaTemplate<Long, ByteBuffer> kafkaTemplate;
   private final RoomRepository roomRepository;
@@ -30,9 +29,7 @@ public class MessageService {
       KafkaTemplate<Long, ByteBuffer> kafkaTemplate,
       RoomRepository roomRepository,
       BlockedRepository blockedRepository,
-      SubscriptionRegistry subscriptionRegistry,
-      MessageRepository messageRepository,
-      AccountRepository accountRepository) {
+      SubscriptionRegistry subscriptionRegistry) {
     this.kafkaTemplate = kafkaTemplate;
     this.roomRepository = roomRepository;
     this.blockedRepository = blockedRepository;
@@ -40,6 +37,7 @@ public class MessageService {
   }
 
   public void subscribe(Long roomId, Long accountId, SessionContext sessionContext) {
+    LOGGER.debug("Subscribe: roomId: {}, accountId: {}", roomId, accountId);
     final var room = roomRepository.findById(roomId).orElse(null);
     if (room == null) {
       throw new ServiceException(404, "Room not found");
@@ -62,10 +60,12 @@ public class MessageService {
   }
 
   public Long unsubscribe(SessionContext sessionContext) {
+    LOGGER.debug("Unsubscribe: {}", sessionContext);
     return subscriptionRegistry.unsubscribe(sessionContext);
   }
 
   public Long send(SessionContext sessionContext, String messageText) {
+    LOGGER.debug("Send: {}", messageText);
     final var roomId = subscriptionRegistry.roomId(sessionContext);
 
     final var roomMember = roomRepository.findRoomMember(roomId, sessionContext.accountId());

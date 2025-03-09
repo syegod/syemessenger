@@ -48,8 +48,7 @@ public class ClientSdk implements AutoCloseable {
 
   @Override
   public void close() {
-    ws.sendClose(WebSocket.NORMAL_CLOSURE, "Exit")
-        .thenRun(() -> System.out.println("WebSocket closed"));
+    ws.sendClose(WebSocket.NORMAL_CLOSURE, "Exit").thenRun(() -> LOGGER.debug("WebSocket closed"));
   }
 
   private void sendText(ServiceMessage message) {
@@ -78,7 +77,10 @@ public class ClientSdk implements AutoCloseable {
               final var name = method.getName();
               final var cid = UUID.randomUUID();
 
-              sendText(new ServiceMessage().cid(cid).qualifier(name).data(request));
+              final var serviceMessage =
+                  new ServiceMessage().cid(cid).qualifier(name).data(request);
+              LOGGER.debug("Send: {}", serviceMessage);
+              sendText(serviceMessage);
 
               final var receiver = new Receiver(buffer);
               final var s = System.currentTimeMillis();
@@ -142,7 +144,9 @@ public class ClientSdk implements AutoCloseable {
       try {
         final var message = objectMapper.readValue(data.toString(), ServiceMessage.class);
 
-        buffer.offer(message.data(messageCodec.decode(message)));
+        final var serviceMessage = message.data(messageCodec.decode(message));
+        LOGGER.debug("Received: {}", serviceMessage);
+        buffer.offer(serviceMessage);
 
         return Listener.super.onText(webSocket, data, last);
       } catch (Exception e) {

@@ -2,9 +2,7 @@ package io.syemessenger.kafka;
 
 import io.syemessenger.SubscriptionRegistry;
 import io.syemessenger.api.message.MessageInfo;
-import io.syemessenger.api.message.MessageService;
 import io.syemessenger.api.messagehistory.MessageHistoryService;
-import io.syemessenger.api.messagehistory.repository.MessageRepository;
 import io.syemessenger.kafka.dto.BlockMembersEvent;
 import io.syemessenger.kafka.dto.LeaveRoomEvent;
 import io.syemessenger.kafka.dto.RemoveMembersEvent;
@@ -15,23 +13,28 @@ import io.syemessenger.sbe.RemoveMembersEventDecoder;
 import io.syemessenger.sbe.RoomMessageDecoder;
 import java.nio.ByteBuffer;
 import org.agrona.concurrent.UnsafeBuffer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.stereotype.Service;
 
 @Service
 public class KafkaMessageListener {
 
+  private static final Logger LOGGER = LoggerFactory.getLogger(KafkaMessageListener.class);
+
   private final SubscriptionRegistry subscriptionRegistry;
   private final MessageHistoryService messageHistoryService;
 
-  public KafkaMessageListener(SubscriptionRegistry subscriptionRegistry,
-      MessageHistoryService messageHistoryService) {
+  public KafkaMessageListener(
+      SubscriptionRegistry subscriptionRegistry, MessageHistoryService messageHistoryService) {
     this.subscriptionRegistry = subscriptionRegistry;
     this.messageHistoryService = messageHistoryService;
   }
 
-  @KafkaListener(topics = "messages", groupId = "1")
-  public void listenMessages(ByteBuffer byteBuffer) {
+  @KafkaListener(topics = "messages")
+  public void handleMessage(ByteBuffer byteBuffer, Acknowledgment acknowledgment) {
     final var headerDecoder = new MessageHeaderDecoder();
     final var directBuffer = new UnsafeBuffer(byteBuffer);
     headerDecoder.wrap(directBuffer, 0);
@@ -58,33 +61,53 @@ public class KafkaMessageListener {
       default:
         throw new IllegalArgumentException("Wrong templateId: " + headerDecoder.templateId());
     }
+    acknowledgment.acknowledge();
   }
 
-  @KafkaListener(topics = "messages", groupId = "2")
-  public void listenRoomMessages(ByteBuffer byteBuffer) {
+  @KafkaListener(topics = "messages", groupId = "message-history-group")
+  public void handleMessageHistory(ByteBuffer byteBuffer, Acknowledgment acknowledgment) {
     final var headerDecoder = new MessageHeaderDecoder();
     final var directBuffer = new UnsafeBuffer(byteBuffer);
     headerDecoder.wrap(directBuffer, 0);
 
     if (RoomMessageDecoder.TEMPLATE_ID == headerDecoder.templateId()) {
-      messageHistoryService.saveMessage(KafkaMessageCodec.decodeRoomMessage(byteBuffer));
+      final var messageInfo = KafkaMessageCodec.decodeRoomMessage(byteBuffer);
+      LOGGER.debug("Save history message: {}", messageInfo);
+      while (true) {
+        try {
+          messageHistoryService.saveMessage(messageInfo);
+          acknowledgment.acknowledge();
+          break;
+        } catch (Exception ex) {
+          try {
+            //noinspection BusyWait
+            Thread.sleep(3000);
+          } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+          }
+        }
+      }
     }
   }
 
   private void onLeaveRoomEvent(LeaveRoomEvent leaveRoomEvent) {
+    LOGGER.debug("Received leaveRoomEvent: {}", leaveRoomEvent);
     subscriptionRegistry.leaveRoom(
         leaveRoomEvent.roomId(), leaveRoomEvent.accountId(), leaveRoomEvent.isOwner());
   }
 
   private void onRemoveMembersEvent(RemoveMembersEvent removeMembersEvent) {
+    LOGGER.debug("Received removeMembersEvent: {}", removeMembersEvent);
     subscriptionRegistry.removeMembers(removeMembersEvent.roomId(), removeMembersEvent.memberIds());
   }
 
   private void onBlockMembersEvent(BlockMembersEvent blockMembersEvent) {
+    LOGGER.debug("Received blockMembersEvent: {}", blockMembersEvent);
     subscriptionRegistry.blockMembers(blockMembersEvent.roomId(), blockMembersEvent.memberIds());
   }
 
   private void onRoomMessage(MessageInfo messageInfo) {
+    LOGGER.debug("Received roomMessage: {}", messageInfo);
     subscriptionRegistry.onRoomMessage(messageInfo);
   }
 }

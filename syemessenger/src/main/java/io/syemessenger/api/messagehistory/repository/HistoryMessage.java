@@ -10,22 +10,21 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.Temporal;
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "messages")
-public class Message {
+public class HistoryMessage {
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
-  @OneToOne
-  @JoinColumn(name = "sender_id")
-  private Account sender;
+  @Column(name = "sender_id")
+  private Long senderId;
 
-  @OneToOne
-  @JoinColumn(name = "room_id")
-  private Room room;
+  @Column(name = "room_id")
+  private Long roomId;
 
   private String message;
 
@@ -36,26 +35,26 @@ public class Message {
     return id;
   }
 
-  public Message id(Long id) {
+  public HistoryMessage id(Long id) {
     this.id = id;
     return this;
   }
 
-  public Account sender() {
-    return sender;
+  public Long senderId() {
+    return senderId;
   }
 
-  public Message sender(Account sender) {
-    this.sender = sender;
+  public HistoryMessage senderId(Long senderId) {
+    this.senderId = senderId;
     return this;
   }
 
-  public Room room() {
-    return room;
+  public Long roomId() {
+    return roomId;
   }
 
-  public Message room(Room room) {
-    this.room = room;
+  public HistoryMessage roomId(Long roomId) {
+    this.roomId = roomId;
     return this;
   }
 
@@ -63,7 +62,7 @@ public class Message {
     return message;
   }
 
-  public Message message(String message) {
+  public HistoryMessage message(String message) {
     this.message = message;
     return this;
   }
@@ -72,7 +71,7 @@ public class Message {
     return timestamp;
   }
 
-  public Message timestamp(LocalDateTime timestamp) {
+  public HistoryMessage timestamp(LocalDateTime timestamp) {
     this.timestamp = timestamp;
     return this;
   }

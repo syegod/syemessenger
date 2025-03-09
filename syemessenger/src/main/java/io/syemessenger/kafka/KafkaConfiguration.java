@@ -4,6 +4,7 @@ import io.syemessenger.ServiceConfig;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
+import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.ByteBufferDeserializer;
@@ -48,6 +49,7 @@ public class KafkaConfiguration {
     config.put(ConsumerConfig.GROUP_ID_CONFIG, serviceConfig.kafkaConsumerGroup());
     config.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, LongDeserializer.class);
     config.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ByteBufferDeserializer.class);
+    config.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
     return new DefaultKafkaConsumerFactory<>(config);
   }
 
