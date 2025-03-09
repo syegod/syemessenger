@@ -28,7 +28,7 @@ jobs:
       fail-fast: false
       matrix:
         arch: [ 'linux/amd64' ]
-        mvn-verify-opts: [""]
+        mvn-verify-opts: [ "" ]
     steps:
       - name: jobName
         run: |
@@ -85,3 +85,81 @@ jobs:
           name: logs-${{ github.run_id }}-${{ github.run_number }}-${{ runner.name }}
           path: target/logs/
           overwrite: true
+
+  push:
+    outputs:
+      images: ${{ steps.pushDockerImages.outputs.images }}
+    if: (github.event_name == 'push' && github.ref_name == 'master') || github.event_name == 'release'
+    name: Push artifacts
+    needs: [ build ]
+    runs-on: ubuntu-latest
+    steps:
+      - name: jobName
+        run: echo '# Push 🚀' >> $GITHUB_STEP_SUMMARY
+      - name: Overwrite VERSION env
+        run: |
+          echo VERSION=$(echo ${VERSION} | sed 's/\//-/g') >> $GITHUB_ENV
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'maven'
+      - name: Set up Maven
+        run: cp build.settings.xml ~/.m2/settings.xml
+      - name: Maven Build
+        run: mvn clean install -DskipTests=true -Dmaven.javadoc.skip=true -Ddockerfile.skip=true -Dgithub.event.release.prerelease="${{ github.event.release.prerelease }}" -B -V -U
+        env:
+          GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Login to Docker
+        run: docker login ghcr.io -u ${GITHUB_ACTOR} --password ${{ secrets.PERSONAL_ACCESS_TOKEN }}
+      - name: Push Docker images
+        id: pushDockerImages
+        run: |
+          IMAGES=()
+          echo "## Docker Images" >> $GITHUB_STEP_SUMMARY
+          echo "| Image Name |" >> $GITHUB_STEP_SUMMARY
+          echo "| - | ">> $GITHUB_STEP_SUMMARY
+          for directory in `find * -maxdepth 10 -mindepth 0 -type f -name 'Dockerfile' | xargs dirname`
+          do
+            echo Run docker build for $directory
+            if [[ $directory == '.' ]]; then
+              image=${{ github.event.repository.name }}
+            else
+              image=$directory
+            fi
+            docker buildx build --push --platform linux/amd64,linux/arm64 \
+            -t ghcr.io/${GITHUB_REPOSITORY}/$image:${{ env.VERSION }} \
+            -t ghcr.io/${GITHUB_REPOSITORY}/$image:latest \
+            $directory
+            echo "| ghcr.io/${GITHUB_REPOSITORY}/$image:${{ env.VERSION }} |" >> $GITHUB_STEP_SUMMARY
+            IMAGES+=(\"ghcr.io/${GITHUB_REPOSITORY}/$image:${{ env.VERSION }}\")
+          done
+          # Convert the array to a JSON string
+          json_array="["
+          for element in "${IMAGES[@]}"; do
+              json_array+="$element,"
+          done
+          json_array="${json_array%,}]"
+          echo "::set-output name=img::$json_array"
+          
+          VERSION=$(date +%Y%m%d%H%M%S)
+          echo "images=$json_array" >> $GITHUB_OUTPUT
+          echo "####################################"
+          echo $VERSION
+          echo "####################################"
+          echo ${IMAGES[@]}
+          echo "####################################"
+          echo $json_array
+
+      - name: Rollback release
+        if: failure() && github.event_name == 'release'
+        run: |
+          echo Remove git tag
+          git push origin :refs/tags/${{ github.event.release.tag_name }}
