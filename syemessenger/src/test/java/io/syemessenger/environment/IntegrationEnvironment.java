@@ -36,6 +36,7 @@ public class IntegrationEnvironment implements AutoCloseable {
                   .shouldRunRoomOutboxProcessor(true));
 
       serviceBootstrap.start();
+      Thread.currentThread().join();
     } catch (Exception e) {
       close();
       throw new RuntimeException(e);

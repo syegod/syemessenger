@@ -40,8 +40,10 @@ public class OutboxRoomProcessor implements AutoCloseable {
 
   @PostConstruct
   public void init() {
-    executorService = Executors.newSingleThreadExecutor();
-    executorService.execute(this::run);
+    if (config.shouldRunRoomOutboxProcessor()) {
+      executorService = Executors.newSingleThreadExecutor();
+      executorService.execute(this::run);
+    }
   }
 
   void doWork() {
