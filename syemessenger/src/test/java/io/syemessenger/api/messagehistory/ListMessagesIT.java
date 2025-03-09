@@ -35,6 +35,7 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -369,8 +370,8 @@ public class ListMessagesIT {
     return builder.build();
   }
 
-  // TODO: figure out
   @Test
+  @Disabled("https://github.com/syegod/syemessenger/issues/47")
   void testListMessagesWithDifferentTimezones(
       ClientSdk clientSdk, AccountInfo accountInfo, DataSource dataSource) throws SQLException {
     final var roomInfo = createRoom(accountInfo);

@@ -49,7 +49,6 @@ public class KafkaConfiguration {
     config.put(ConsumerConfig.GROUP_ID_CONFIG, serviceConfig.kafkaConsumerGroup());
     config.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, LongDeserializer.class);
     config.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ByteBufferDeserializer.class);
-    config.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
     return new DefaultKafkaConsumerFactory<>(config);
   }
 

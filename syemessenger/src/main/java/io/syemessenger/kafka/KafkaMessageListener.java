@@ -16,7 +16,6 @@ import org.agrona.concurrent.UnsafeBuffer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.kafka.annotation.KafkaListener;
-import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -34,7 +33,7 @@ public class KafkaMessageListener {
   }
 
   @KafkaListener(topics = "messages")
-  public void handleMessage(ByteBuffer byteBuffer, Acknowledgment acknowledgment) {
+  public void handleMessage(ByteBuffer byteBuffer) {
     final var headerDecoder = new MessageHeaderDecoder();
     final var directBuffer = new UnsafeBuffer(byteBuffer);
     headerDecoder.wrap(directBuffer, 0);
@@ -61,11 +60,10 @@ public class KafkaMessageListener {
       default:
         throw new IllegalArgumentException("Wrong templateId: " + headerDecoder.templateId());
     }
-    acknowledgment.acknowledge();
   }
 
   @KafkaListener(topics = "messages", groupId = "message-history-group")
-  public void handleMessageHistory(ByteBuffer byteBuffer, Acknowledgment acknowledgment) {
+  public void handleMessageHistory(ByteBuffer byteBuffer) {
     final var headerDecoder = new MessageHeaderDecoder();
     final var directBuffer = new UnsafeBuffer(byteBuffer);
     headerDecoder.wrap(directBuffer, 0);
@@ -76,7 +74,6 @@ public class KafkaMessageListener {
       while (true) {
         try {
           messageHistoryService.saveMessage(messageInfo);
-          acknowledgment.acknowledge();
           break;
         } catch (Exception ex) {
           try {
