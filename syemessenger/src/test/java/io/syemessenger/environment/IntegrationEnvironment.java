@@ -1,5 +1,9 @@
 package io.syemessenger.environment;
 
+import com.github.dockerjava.api.model.ExposedPort;
+import com.github.dockerjava.api.model.HostConfig;
+import com.github.dockerjava.api.model.PortBinding;
+import com.github.dockerjava.api.model.Ports.Binding;
 import io.syemessenger.ServiceBootstrap;
 import io.syemessenger.ServiceConfig;
 import java.sql.PreparedStatement;

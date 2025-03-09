@@ -13,6 +13,32 @@ public class ServiceConfig {
   private boolean shouldRunRoomOutboxProcessor;
   private int roomOutboxProcessorRunDelay = 300;
 
+  public ServiceConfig() {}
+
+  public static ServiceConfig fromSystemProperties() {
+    final var port = getProperty("port");
+    final var dbUrl = getProperty("dbUrl");
+    final var dbUser = getProperty("dbUser");
+    final var dbPassword = getProperty("dbPassword");
+    final var kafkaBootstrapServers = getProperty("kafkaBootstrapServers");
+    final var kafkaConsumerGroup = getProperty("kafkaConsumerGroup");
+    final var shouldRunRoomOutboxProcessor = getOptionalProperty("shouldRunRoomOutboxProcessor");
+    final var roomOutboxProcessorRunDelay = getOptionalProperty("roomOutboxProcessorRunDelay");
+
+    return new ServiceConfig()
+        .port(Integer.parseInt(port))
+        .dbUrl(dbUrl)
+        .dbUser(dbUser)
+        .dbPassword(dbPassword)
+        .kafkaBootstrapServers(kafkaBootstrapServers)
+        .kafkaConsumerGroup(kafkaConsumerGroup)
+        .shouldRunRoomOutboxProcessor(Boolean.parseBoolean(shouldRunRoomOutboxProcessor))
+        .roomOutboxProcessorRunDelay(
+            roomOutboxProcessorRunDelay != null
+                ? Integer.parseInt(roomOutboxProcessorRunDelay)
+                : 300);
+  }
+
   public ServiceConfig port(int port) {
     this.port = port;
     return this;
@@ -83,6 +109,22 @@ public class ServiceConfig {
   public ServiceConfig roomOutboxProcessorRunDelay(int roomOutboxProcessorRunDelay) {
     this.roomOutboxProcessorRunDelay = roomOutboxProcessorRunDelay;
     return this;
+  }
+
+  private static String getOptionalProperty(String property) {
+    return getProperty(property, true);
+  }
+
+  private static String getProperty(String property) {
+    return getProperty(property, false);
+  }
+
+  private static String getProperty(String property, boolean isOptional) {
+    final var value = System.getProperty("syemessenger." + property);
+    if (!isOptional && value == null) {
+      throw new RuntimeException("Wrong config: missing " + property);
+    }
+    return value;
   }
 
   @Override
