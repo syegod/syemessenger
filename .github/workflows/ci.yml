@@ -134,7 +134,7 @@ jobs:
             else
               image=$directory
             fi
-            docker buildx build --push --platform linux/amd64,linux/arm64 \
+            docker buildx build --push --platform linux/amd64 \
             -t ghcr.io/${GITHUB_REPOSITORY}/$image:${{ env.VERSION }} \
             -t ghcr.io/${GITHUB_REPOSITORY}/$image:latest \
             $directory
