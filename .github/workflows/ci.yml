@@ -1,0 +1,87 @@
+name: CI
+
+on:
+  push:
+    branches: [ '**' ]
+    paths-ignore:
+      - '**/*.md'
+  pull_request:
+    branches: [ master ]
+  release:
+    types: [ published ]
+
+env:
+  VERSION: >
+    ${{ 
+      inputs.version && inputs.version 
+      || (github.event_name == 'push' || github.event_name == 'release') && github.ref_name 
+      || (github.event_name == 'pull_request') && github.head_ref 
+      || (github.event_name == 'schedule') && format('schedule-build-{0}', github.run_id)
+      || 'latest'
+    }}
+
+jobs:
+  build:
+    name: Build (${{ matrix.arch }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [ 'linux/amd64' ]
+        mvn-verify-opts: [""]
+    steps:
+      - name: jobName
+        run: |
+          echo '# Build 🚀' >> $GITHUB_STEP_SUMMARY
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'maven'
+      - name: Maven Build
+        run: mvn clean install -DskipTests=true -Dmaven.javadoc.skip=true -Ddockerfile.skip=true -Dgithub.event.release.prerelease="${{ github.event.release.prerelease }}" -B -V -U
+        env:
+          GITHUB_TOKEN: ${{ secrets.ORGANIZATION_TOKEN }}
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Login to Docker
+        run: docker login ghcr.io -u ${GITHUB_ACTOR} --password ${{ secrets.ORGANIZATION_TOKEN }}
+      - name: Prepare TEST_IMAGE_TAG env
+        run: |
+          echo TEST_IMAGE_TAG=$(echo ${VERSION} | sed 's/\//-/g') >> $GITHUB_ENV
+      - name: Build Docker images
+        run: |
+          for directory in `find * -maxdepth 10 -mindepth 0 -type f -name 'Dockerfile' | xargs dirname`
+          do
+            echo Run docker buildx build for $directory
+            if [[ $directory == '.' ]]; then
+              image=${{ github.event.repository.name }}
+            else
+              image=$directory
+            fi
+            docker buildx build --load --platform ${{ matrix.arch }} \
+            -t ghcr.io/${GITHUB_REPOSITORY}/$image:${{ env.TEST_IMAGE_TAG }} \
+            $directory
+          done
+      - name: Show Docker images
+        run: docker images | grep ${GITHUB_REPOSITORY} || (echo Docker images not found && exit 1)
+      - name: Maven Verify
+        if: inputs.tests == true && github.event_name != 'release'
+        run: |
+          sudo echo "172.17.0.1 host.docker.internal" | sudo tee -a /etc/hosts
+          sudo echo "127.0.0.1 $(eval hostname)" | sudo tee -a /etc/hosts
+          mvn verify ${{ matrix.mvn-verify-opts }} -Dgithub.event.release.prerelease="${{ github.event.release.prerelease }}" -B
+        env:
+          GITHUB_TOKEN: ${{ secrets.ORGANIZATION_TOKEN }}
+      - name: Upload test containers logs
+        if: always() && inputs.tests == true
+        uses: actions/upload-artifact@v4
+        with:
+          name: logs-${{ github.run_id }}-${{ github.run_number }}-${{ runner.name }}
+          path: target/logs/
+          overwrite: true
