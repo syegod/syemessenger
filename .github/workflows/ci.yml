@@ -109,8 +109,6 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
           cache: 'maven'
-      - name: Set up Maven
-        run: cp build.settings.xml ~/.m2/settings.xml
       - name: Maven Build
         run: mvn clean install -DskipTests=true -Dmaven.javadoc.skip=true -Ddockerfile.skip=true -Dgithub.event.release.prerelease="${{ github.event.release.prerelease }}" -B -V -U
         env:
