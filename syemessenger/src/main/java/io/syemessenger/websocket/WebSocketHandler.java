@@ -37,7 +37,9 @@ public class WebSocketHandler {
 
   @OnWebSocketClose
   public void onWebSocketClose(int statusCode, String reason) {
-    subscriptionRegistry.unsubscribe(sessionContext);
+    if (subscriptionRegistry.isSubscribed(sessionContext)) {
+      subscriptionRegistry.unsubscribe(sessionContext);
+    }
     sessionContext = null;
     LOGGER.info("WebSocket Close: {} - {}", statusCode, reason);
   }

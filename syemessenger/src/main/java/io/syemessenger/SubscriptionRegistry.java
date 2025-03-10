@@ -117,6 +117,10 @@ public class SubscriptionRegistry {
     }
   }
 
+  public boolean isSubscribed(SessionContext sessionContext) {
+    return sessions.containsKey(sessionContext);
+  }
+
   public Long roomId(SessionContext sessionContext) {
     final var roomId = sessions.get(sessionContext);
     if (roomId == null) {
