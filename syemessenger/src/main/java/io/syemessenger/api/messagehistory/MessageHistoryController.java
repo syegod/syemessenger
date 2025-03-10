@@ -6,7 +6,6 @@ import io.syemessenger.api.ServiceException;
 import io.syemessenger.api.ServiceMessage;
 import io.syemessenger.websocket.SessionContext;
 import jakarta.inject.Named;
-import java.time.LocalDateTime;
 
 @Named
 @RequestController
@@ -48,8 +47,6 @@ public class MessageHistoryController {
     if (from != null || to != null) {
       if (from != null && to != null && from.isAfter(to)) {
         throw new ServiceException(400, "Missing or invalid: 'from' later than 'to'");
-      } else if (from != null && from.isAfter(LocalDateTime.now())) {
-        throw new ServiceException(400, "Missing or invalid: from");
       }
       if (timezone == null) {
         throw new ServiceException(400, "Missing or invalid: timezone");

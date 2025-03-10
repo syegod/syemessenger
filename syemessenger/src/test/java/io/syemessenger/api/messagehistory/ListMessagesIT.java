@@ -27,6 +27,7 @@ import io.syemessenger.environment.OffsetLimit;
 import java.sql.SQLException;
 import java.time.Clock;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -35,7 +36,6 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -112,11 +112,6 @@ public class ListMessagesIT {
             new ListMessagesRequest().roomId(Long.MAX_VALUE).keyword(randomAlphanumeric(2)),
             400,
             "Missing or invalid: keyword"),
-        new FailedArgs(
-            "From is 10 days ahead",
-            new ListMessagesRequest().roomId(Long.MAX_VALUE).from(LocalDateTime.now().plusDays(10)),
-            400,
-            "Missing or invalid: from"),
         new FailedArgs(
             "From is ahead of to",
             new ListMessagesRequest()
@@ -350,8 +345,7 @@ public class ListMessagesIT {
     final FromToTimestamp[] fromToTimestampArray = {
       new FromToTimestamp(now.minusDays(10), null, timezone),
       new FromToTimestamp(null, now.minusDays(5), timezone),
-      new FromToTimestamp(
-          now.minusDays(10), now.minusDays(5), timezone),
+      new FromToTimestamp(now.minusDays(10), now.minusDays(5), timezone),
       new FromToTimestamp(null, null, timezone),
     };
 
@@ -371,27 +365,40 @@ public class ListMessagesIT {
   }
 
   @Test
-  @Disabled("https://github.com/syegod/syemessenger/issues/47")
   void testListMessagesWithDifferentTimezones(
       ClientSdk clientSdk, AccountInfo accountInfo, DataSource dataSource) throws SQLException {
     final var roomInfo = createRoom(accountInfo);
     login(clientSdk, accountInfo);
-    String timezone = "America/Los_Angeles";
-    LocalDateTime now = LocalDateTime.now(Clock.systemUTC());
+    String timezoneLA = "America/Los_Angeles";
+    String timezoneTokyo = "Asia/Tokyo";
+    LocalDateTime nowUTC = LocalDateTime.now(Clock.systemUTC());
+    LocalDateTime nowLA = LocalDateTime.now(ZoneId.of(timezoneLA));
+    LocalDateTime nowTokyo = LocalDateTime.now(ZoneId.of(timezoneTokyo));
     insertRecords(
         dataSource,
         List.of(
-            new MessageRecord(1L, accountInfo.id(), roomInfo.id(), "test123", now.minusHours(2))));
+            new MessageRecord(
+                1L, accountInfo.id(), roomInfo.id(), "test123", nowUTC.minusHours(2))));
 
-    final var response =
+    final var responseLA =
         clientSdk
             .messageHistorySdk()
             .listMessages(
                 new ListMessagesRequest()
                     .roomId(roomInfo.id())
-                    .from(now.minusHours(3))
-                    .timezone(timezone));
+                    .from(nowLA.minusHours(3))
+                    .timezone(timezoneLA));
 
-    assertEquals(1, response.totalCount());
+    final var responseTokyo =
+        clientSdk
+            .messageHistorySdk()
+            .listMessages(
+                new ListMessagesRequest()
+                    .roomId(roomInfo.id())
+                    .from(nowTokyo.minusHours(3))
+                    .timezone(timezoneTokyo));
+
+    assertEquals(1, responseLA.totalCount());
+    assertEquals(1, responseTokyo.totalCount());
   }
 }

@@ -5,7 +5,6 @@ import static io.syemessenger.api.Pageables.toPageable;
 import io.syemessenger.LocalDateTimeConverter;
 import io.syemessenger.api.ServiceException;
 import io.syemessenger.api.message.MessageInfo;
-import io.syemessenger.api.message.MessageService;
 import io.syemessenger.api.messagehistory.repository.HistoryMessage;
 import io.syemessenger.api.messagehistory.repository.HistoryMessageRepository;
 import io.syemessenger.api.room.repository.RoomRepository;
@@ -81,24 +80,25 @@ public class MessageHistoryService {
     if (request.from() == null) {
       fromTimestamp = Timestamp.from(Instant.EPOCH);
     } else {
-      fromTimestamp =
-          localDateTimeConverter.convertToDatabaseColumn(toUTC(request.from(), timezone));
+      fromTimestamp = toUTCTimestamp(localDateTimeConverter, request.from(), timezone);
     }
 
     Timestamp toTimestamp;
     if (request.to() == null) {
-      toTimestamp = Timestamp.valueOf(LocalDateTime.now());
+      toTimestamp = Timestamp.valueOf(LocalDateTime.now(Clock.systemUTC()));
     } else {
-      toTimestamp = localDateTimeConverter.convertToDatabaseColumn(toUTC(request.to(), timezone));
+      toTimestamp = toUTCTimestamp(localDateTimeConverter, request.to(), timezone);
     }
 
     return historyMessageRepository.findByKeywordAndTimestamp(
         keyword, fromTimestamp, toTimestamp, pageable);
   }
 
-  private static LocalDateTime toUTC(LocalDateTime localDateTime, String timezone) {
+  private static Timestamp toUTCTimestamp(
+      LocalDateTimeConverter converter, LocalDateTime localDateTime, String timezone) {
     final var zoneId = ZoneId.of(timezone);
     final var zonedDateTime = localDateTime.atZone(zoneId);
-    return zonedDateTime.withZoneSameInstant(ZoneOffset.UTC).toLocalDateTime();
+    return converter.convertToDatabaseColumn(
+        zonedDateTime.withZoneSameInstant(ZoneOffset.UTC).toLocalDateTime());
   }
 }
