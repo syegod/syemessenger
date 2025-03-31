@@ -27,7 +27,7 @@ The **Multi-Server Messenger App** is a fault-tolerant, highly performant messag
 - **Logging**: SLF4J
 - **Containerization**: Docker
 - **JSON Processing**: Jackson
-- **Java 21+**
+- **Java 21**
 - **Maven**
 - **Docker** (for running the Postgres database and Kafka)
 
