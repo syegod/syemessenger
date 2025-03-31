@@ -19,7 +19,7 @@ The **Multi-Server Messenger App** is a fault-tolerant, highly performant messag
 - **Web Server**: Jetty
 - **Database**: PostgreSQL with Spring Data JPA and Hibernate
 - **ORM**: Hibernate
-- **Transaction Management**: HikariCP
+- **Transaction Management and Connection Pooling**: HikariCP
 - **Database Migration**: Liquibase
 - **Messaging**: Kafka
 - **Serialization**: SBE (Simple Binary Encoding)
